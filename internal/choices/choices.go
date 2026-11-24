@@ -35,31 +35,82 @@ const telegramCommand = "/mira"
 // appPrefix starts a companion app action's key.
 const appPrefix = "mira:"
 
-// Labels are a button's titles in the person's language.
-type Labels struct{ Yes, No, Reply string }
+// Labels are a button's titles in the person's language; Proposal has %d
+// for the proposal's number.
+type Labels struct{ Yes, No, Reply, Proposal string }
 
 // LabelsFor are the buttons' titles in lang.
 func LabelsFor(lang i18n.Lang) Labels {
 	if lang == i18n.EN {
-		return Labels{Yes: "Yes", No: "No", Reply: "Reply"}
+		return Labels{Yes: "Yes", No: "No", Reply: "Reply", Proposal: "Proposal %d"}
 	}
-	return Labels{Yes: "Ja", No: "Nein", Reply: "Antworten"}
+	return Labels{Yes: "Ja", No: "Nein", Reply: "Antworten", Proposal: "Vorschlag %d"}
 }
 
-// TelegramKeyboard is telegram_bot's inline_keyboard for a yes/no question:
-// one row, no space after the comma (it would go into the next label).
-func TelegramKeyboard(thread string, l Labels) []string {
-	return []string{fmt.Sprintf("%s:%s %s %s,%s:%s %s %s", l.Yes, telegramCommand, thread, Yes, l.No, telegramCommand, thread, No)}
+// MaxProposals is how many proposals get a button (decision 2).
+const MaxProposals = 3
+
+// TelegramKeyboard is telegram_bot's inline_keyboard: for a yes/no question
+// one row, for proposals a row of them and a row with Nein. No space after a
+// comma: it would go into the next label (decision 3).
+func TelegramKeyboard(thread string, l Labels, proposals int) []string {
+	if proposals == 0 {
+		return []string{fmt.Sprintf("%s:%s %s %s,%s:%s %s %s", l.Yes, telegramCommand, thread, Yes, l.No, telegramCommand, thread, No)}
+	}
+	var row []string
+	for i := 1; i <= min(proposals, MaxProposals); i++ {
+		row = append(row, fmt.Sprintf(l.Proposal+":%s %s %d", i, telegramCommand, thread, i))
+	}
+	return []string{strings.Join(row, ","), fmt.Sprintf("%s:%s %s %s", l.No, telegramCommand, thread, No)}
 }
 
-// AppActions are the companion app's actions for a yes/no question, with a
-// typed answer as the third (Android shows three).
-func AppActions(thread string, l Labels) []map[string]any {
-	return []map[string]any{
-		{"action": appPrefix + thread + ":" + Yes, "title": l.Yes},
-		{"action": appPrefix + thread + ":" + No, "title": l.No},
-		{"action": appPrefix + thread + ":" + Reply, "title": l.Reply, "behavior": "textInput"},
+// AppActions are the companion app's actions, with a typed answer as the
+// last: Android shows three, so with proposals the first two and the typed
+// answer, whose "nein" or "den dritten" the turn understands (decision 4).
+func AppActions(thread string, l Labels, proposals int) []map[string]any {
+	reply := map[string]any{"action": appPrefix + thread + ":" + Reply, "title": l.Reply, "behavior": "textInput"}
+	if proposals == 0 {
+		return []map[string]any{
+			{"action": appPrefix + thread + ":" + Yes, "title": l.Yes},
+			{"action": appPrefix + thread + ":" + No, "title": l.No},
+			reply,
+		}
 	}
+	var out []map[string]any
+	for i := 1; i <= min(proposals, 2); i++ {
+		out = append(out, map[string]any{"action": fmt.Sprintf("%s%s:%d", appPrefix, thread, i), "title": fmt.Sprintf(l.Proposal, i)})
+	}
+	return append(out, reply)
+}
+
+// ProposalsText lists the proposals under a question, numbered as their
+// buttons.
+func ProposalsText(proposals []string) string {
+	var b strings.Builder
+	for i, p := range proposals {
+		if i == MaxProposals {
+			break
+		}
+		fmt.Fprintf(&b, "\n%d. %s", i+1, p)
+	}
+	return b.String()
+}
+
+// Proposals are the lines of a thread's field proposals.
+func Proposals(th store.Thread) []string {
+	var out []string
+	for _, line := range strings.Split(th.Fields["proposals"], "\n") {
+		if line = strings.TrimSpace(line); line != "" {
+			out = append(out, line)
+		}
+	}
+	return out
+}
+
+// isChoice is a proposal's number.
+func isChoice(s string) bool {
+	n, err := strconv.Atoi(s)
+	return err == nil && n >= 1 && n <= MaxProposals
 }
 
 // AppTag is the notification's tag for a thread's question.
@@ -89,7 +140,7 @@ func ParseTelegram(attrs map[string]any) (Tap, bool) {
 	}
 	data, _ := attrs["data"].(string)
 	parts := strings.Fields(data)
-	if len(parts) != 3 || parts[0] != telegramCommand || (parts[2] != Yes && parts[2] != No) {
+	if len(parts) != 3 || parts[0] != telegramCommand || (parts[2] != Yes && parts[2] != No && !isChoice(parts[2])) {
 		return Tap{}, false
 	}
 	t := Tap{Thread: parts[1], Choice: parts[2], Chat: toInt(attrs["chat_id"]), CallbackID: fmt.Sprint(attrs["id"])}
@@ -119,9 +170,9 @@ func ParseApp(data json.RawMessage, user string) (Tap, bool) {
 	if len(parts) != 2 || parts[0] == "" {
 		return Tap{}, false
 	}
-	switch parts[1] {
-	case Yes, No:
-	case Reply:
+	switch {
+	case parts[1] == Yes || parts[1] == No || isChoice(parts[1]):
+	case parts[1] == Reply:
 		if strings.TrimSpace(d.ReplyText) == "" {
 			return Tap{}, false
 		}
@@ -162,6 +213,8 @@ type Threads interface {
 	Get(ctx context.Context, id string) (store.Thread, error)
 	Confirm(ctx context.Context, id string) (string, error)
 	Cancel(ctx context.Context, id string) error
+	// Choose puts a chosen proposal into the thread and says yes.
+	Choose(ctx context.Context, id, proposal string) (string, error)
 }
 
 // Options make the taps' service.
@@ -323,6 +376,10 @@ func (s *Service) Handle(ctx context.Context, t Tap) {
 		}
 		return
 	}
+	if isChoice(t.Choice) {
+		s.choose(ctx, t, th)
+		return
+	}
 	if th.State != store.ThreadProposed {
 		s.o.Log.Info("a tap on a thread that waits for no yes", "thread", t.Thread, "state", th.State, "choice", t.Choice)
 		s.answer(ctx, t, tx.already)
@@ -344,6 +401,33 @@ func (s *Service) Handle(ctx context.Context, t Tap) {
 		done = fmt.Sprintf(tx.failed, err)
 	} else {
 		s.o.Log.Info("a thread confirmed by a tap", "thread", t.Thread, "person", th.Person)
+	}
+	if s.o.Tell != nil && strings.TrimSpace(done) != "" {
+		if err := s.o.Tell(ctx, th.Person, done); err != nil {
+			s.o.Log.Warn("a tap's outcome could not be told", "thread", t.Thread, "person", th.Person, "error", err)
+		}
+	}
+}
+
+// choose takes a tap on a proposal: its line goes into the thread's chosen
+// field, and the thread is confirmed (decision 7).
+func (s *Service) choose(ctx context.Context, t Tap, th store.Thread) {
+	tx := s.texts()
+	n, _ := strconv.Atoi(t.Choice)
+	props := Proposals(th)
+	if !store.ThreadOpen(th.State) || n > len(props) {
+		s.o.Log.Info("a tap on a proposal that is not there", "thread", t.Thread, "state", th.State, "choice", t.Choice,
+			"proposals", len(props))
+		s.answer(ctx, t, tx.already)
+		return
+	}
+	s.answer(ctx, t, tx.done)
+	done, err := s.o.Threads.Choose(ctx, t.Thread, props[n-1])
+	if err != nil {
+		s.o.Log.Warn("a tap's proposal failed", "thread", t.Thread, "person", th.Person, "choice", t.Choice, "error", err)
+		done = fmt.Sprintf(tx.failed, err)
+	} else {
+		s.o.Log.Info("a thread's proposal chosen by a tap", "thread", t.Thread, "person", th.Person, "choice", t.Choice)
 	}
 	if s.o.Tell != nil && strings.TrimSpace(done) != "" {
 		if err := s.o.Tell(ctx, th.Person, done); err != nil {

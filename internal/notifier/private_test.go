@@ -174,7 +174,7 @@ func TestPC01_AThreadWaitingForAYesAsksPrivatelyWithButtons(t *testing.T) {
 	}
 	e.ha.platforms["notify.telegram_anna"] = "telegram_bot"
 	e.ha.mu.Unlock()
-	e.n.asks = func(_ context.Context, id string) bool { return id == "th1" }
+	e.n.asks = func(_ context.Context, id string) ([]string, bool) { return nil, id == "th1" }
 	e.message("q", 1, func(m *store.Message) { private("anna")(m); m.ThreadID = "th1" })
 	e.clk.Set(at("08:00"))
 	e.tick()
@@ -193,7 +193,7 @@ func TestPC01_AThreadWaitingForAYesAsksPrivatelyWithButtons(t *testing.T) {
 	e2 := newEnv(t, func(c *config.Config) {
 		c.Persons = map[string]config.Person{"anna": {Entity: "person.anna", Channels: []string{"notify.mobile_app_annas_phone"}}}
 	})
-	e2.n.asks = func(_ context.Context, id string) bool { return id == "th1" }
+	e2.n.asks = func(_ context.Context, id string) ([]string, bool) { return nil, id == "th1" }
 	e2.message("q", 1, func(m *store.Message) { private("anna")(m); m.ThreadID = "th1" })
 	e2.clk.Set(at("08:00"))
 	e2.tick()
@@ -209,11 +209,61 @@ func TestPC01_AThreadWaitingForAYesAsksPrivatelyWithButtons(t *testing.T) {
 	e3 := newEnv(t, func(c *config.Config) {
 		c.Persons = map[string]config.Person{"anna": {Entity: "person.anna", Channels: []string{"notify.mobile_app_annas_phone"}}}
 	})
-	e3.n.asks = func(context.Context, string) bool { return false }
+	e3.n.asks = func(context.Context, string) ([]string, bool) { return nil, false }
 	e3.message("q", 1, func(m *store.Message) { private("anna")(m); m.ThreadID = "th1" })
 	e3.clk.Set(at("08:00"))
 	e3.tick()
 	if len(e3.tg.data) != 0 || len(e3.tg.sent["notify.mobile_app_annas_phone"]) != 1 {
 		t.Errorf("without a question: data %+v sent %v", e3.tg.data, e3.tg.sent)
+	}
+}
+
+// PC-02 Proposals become buttons
+func TestPC02_ProposalsBecomeButtons(t *testing.T) {
+	props := []string{"Donnerstag passt.", "Lieber Freitag.", "Ich melde mich."}
+	// Given a thread waiting for a choice among three proposals is asked over Anna's companion app
+	e := newEnv(t, func(c *config.Config) {
+		c.Persons = map[string]config.Person{"anna": {Entity: "person.anna", Channels: []string{"notify.mobile_app_annas_phone"}}}
+	})
+	e.n.asks = func(context.Context, string) ([]string, bool) { return props, true }
+	e.message("q", 1, func(m *store.Message) { private("anna")(m); m.ThreadID = "th1" })
+	e.clk.Set(at("08:00"))
+	e.tick()
+	// Then the notification has actions for the proposals and one to answer in words
+	data := e.tg.data["notify.mobile_app_annas_phone"]
+	if len(data) != 1 {
+		t.Fatalf("data %+v", data)
+	}
+	acts := data[0]["actions"].([]map[string]any)
+	if len(acts) != 3 || acts[0]["action"] != "mira:th1:1" || acts[1]["title"] != "Vorschlag 2" || acts[2]["behavior"] != "textInput" {
+		t.Errorf("actions %+v", acts)
+	}
+	if got := e.tg.sent["notify.mobile_app_annas_phone"][0]; !strings.Contains(got, "\n1. Donnerstag passt.\n2. Lieber Freitag.\n3. Ich melde mich.") {
+		t.Errorf("text %q", got)
+	}
+	// In Telegram: a button per proposal, and Nein.
+	e2 := newEnv(t, func(c *config.Config) {
+		c.Persons = map[string]config.Person{"anna": {Entity: "person.anna", Channels: []string{"notify.telegram_anna"}}}
+	})
+	e2.ha.set("notify.telegram_anna", "unknown", nil)
+	e2.ha.mu.Lock()
+	if e2.ha.platforms == nil {
+		e2.ha.platforms = map[string]string{}
+	}
+	e2.ha.platforms["notify.telegram_anna"] = "telegram_bot"
+	e2.ha.mu.Unlock()
+	e2.n.asks = func(context.Context, string) ([]string, bool) { return props, true }
+	e2.message("q", 1, func(m *store.Message) { private("anna")(m); m.ThreadID = "th1" })
+	e2.clk.Set(at("08:00"))
+	e2.tick()
+	var kb []string
+	for _, c := range e2.ha.calls {
+		if c.Domain == "telegram_bot" {
+			kb = c.Data["inline_keyboard"].([]string)
+		}
+	}
+	want := []string{"Vorschlag 1:/mira th1 1,Vorschlag 2:/mira th1 2,Vorschlag 3:/mira th1 3", "Nein:/mira th1 no"}
+	if !slices.Equal(kb, want) {
+		t.Errorf("keyboard %q", kb)
 	}
 }

@@ -84,10 +84,10 @@ type Options struct {
 	// recorded in the chat's history (docs/spec/telegram-history.md). Nil
 	// records nothing.
 	Record func(ctx context.Context, key, record, ack string) error
-	// Asks says whether a thread waits for its person's yes: its private
-	// message then gets the buttons "Ja" and "Nein"
-	// (docs/spec/private-choices.md, decision 2). Nil: no buttons.
-	Asks func(ctx context.Context, thread string) bool
+	// Asks says whether a thread waits for its person's answer: for a yes
+	// (no proposals; the buttons "Ja" and "Nein") or for a choice among its
+	// proposals (docs/spec/private-choices.md, decision 2). Nil: no buttons.
+	Asks func(ctx context.Context, thread string) (proposals []string, ok bool)
 }
 
 // PhoneNews is what is new at the FRITZ!Box: messages not heard, missed
@@ -109,7 +109,7 @@ type Notifier struct {
 	indicatorOn map[string]string
 	phone       func(ctx context.Context) (PhoneNews, error)
 	record      func(ctx context.Context, key, record, ack string) error
-	asks        func(ctx context.Context, thread string) bool
+	asks        func(ctx context.Context, thread string) (proposals []string, ok bool)
 	// phoneShown is what each screen's phone hint last showed.
 	phoneShown map[string]PhoneNews
 	// phoneHeld are the areas playing messages of the answering machine:
@@ -913,14 +913,18 @@ func (n *Notifier) sendPrivate(ctx context.Context, nt store.Message) error {
 	// A message of one thread that waits for a yes asks with buttons; to
 	// the house (several persons) never (private-choices.md, decision 2).
 	question := ""
+	var proposals []string
 	if n.asks != nil && nt.Receiver != store.ReceiverHouse {
-		if th := threadOf(nt); th != "" && n.asks(ctx, th) {
-			question = th
+		if th := threadOf(nt); th != "" {
+			if props, ok := n.asks(ctx, th); ok {
+				question, proposals = th, props
+				text += choices.ProposalsText(props)
+			}
 		}
 	}
 	var errs []error
 	for _, id := range recipients {
-		via, err := n.sendTo(ctx, id, text, question)
+		via, err := n.sendTo(ctx, id, text, question, len(proposals))
 		if err != nil {
 			errs = append(errs, fmt.Errorf("%s: %w", id, err))
 			continue
@@ -981,7 +985,7 @@ func threadOf(nt store.Message) string {
 // thread waiting for a yes), a Telegram chat gets the buttons as an inline
 // keyboard and the companion app as actions (docs/spec/private-choices.md);
 // another channel gets the text alone.
-func (n *Notifier) sendTo(ctx context.Context, personID, text, question string) (string, error) {
+func (n *Notifier) sendTo(ctx context.Context, personID, text, question string, proposals int) (string, error) {
 	p, ok := n.persons[personID]
 	if !ok {
 		return "", retry.Fatal(fmt.Errorf("unknown person"))
@@ -1013,13 +1017,13 @@ func (n *Notifier) sendTo(ctx context.Context, personID, text, question string) 
 		switch {
 		case entities[ch] && question != "" && n.platform(ctx, ch) == "telegram_bot":
 			err = n.ha.CallService(ctx, "telegram_bot", "send_message", map[string]any{"entity_id": ch, "title": "Mira",
-				"message": TelegramMarkdown(text), "inline_keyboard": choices.TelegramKeyboard(question, labels)}, nil)
+				"message": TelegramMarkdown(text), "inline_keyboard": choices.TelegramKeyboard(question, labels, proposals)}, nil)
 		case entities[ch]:
 			err = n.ha.CallService(ctx, "notify", "send_message", map[string]any{"title": "Mira", "message": n.forChannel(ctx, ch, text)},
 				&haws.Target{EntityID: []string{ch}})
 		case question != "" && strings.HasPrefix(ch, "notify.mobile_app_"):
 			err = n.ha.CallService(ctx, "notify", strings.TrimPrefix(ch, "notify."), map[string]any{"title": "Mira", "message": text,
-				"data": map[string]any{"tag": choices.AppTag(question), "actions": choices.AppActions(question, labels)}}, nil)
+				"data": map[string]any{"tag": choices.AppTag(question), "actions": choices.AppActions(question, labels, proposals)}}, nil)
 		default:
 			err = n.ha.CallService(ctx, "notify", strings.TrimPrefix(ch, "notify."), map[string]any{"title": "Mira", "message": text}, nil)
 		}

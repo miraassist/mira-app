@@ -1,7 +1,7 @@
 # Choices in a private question (buttons) – Spec
 
 Status 2026-11-24: decided (decision 1 by the maintainer, 2 to 12 taken while writing); the state table checked on
-the test HA (2026-11-24, the test HA's Telegram bot and the maintainer's phone); step 2 built, steps 3 and 4 not. Scenarios: [private-choices.feature](private-choices.feature) (PC-01 to
+the test HA (2026-11-24, the test HA's Telegram bot and the maintainer's phone); steps 2 and 3 built, step 4 not. Scenarios: [private-choices.feature](private-choices.feature) (PC-01 to
 PC-08).
 
 ## Goal
@@ -27,6 +27,7 @@ New is only the tap: buttons on the private message, and the tap as the answer.
 | # | Question | Decision |
 |---|---|---|
 | 1 | How a person answers a private question | Both: buttons for the quick answer, a message (Telegram chat, the app's Assist) for a changed one |
+| 1a | Where a chosen proposal goes (2026-11-24, A) | The thread's target names the field, `chosen: <field>`; its proposals are the lines of its field `proposals` (as `termin` has). A tap on proposal n puts line n into that field and says yes. A target without `chosen` gets no proposal buttons; `chosen` naming no field, or a target without `proposals`, is a problem of the skill |
 
 ### Taken while writing (2026-11-24)
 
@@ -34,7 +35,7 @@ New is only the tap: buttons on the private message, and the tap as the answer.
 |---|---|---|
 | 2 | Which questions get buttons | A thread waiting for a yes (its buttons "Ja" and "Nein"), and a thread waiting for a choice among proposals (one button per proposal, at most three, and "Nein"); asked over a private channel only. Every other private message stays without buttons |
 | 3 | Telegram | `telegram_bot.send_message` with `inline_keyboard` (one row per button, "Label:/data", no space after a comma: it goes into the next label); the data **must begin with "/"**: without it Home Assistant takes the whole pair as an upper-cased label (seen 2026-11-24: "Vorschlag 2:mira:t1:2" became the label "ORSCHLAG 2:MIRA:T1:2"). The tap arrives as the state of the bot's event entity with `event_type` `telegram_callback`: `data`, `command` and `args` (the data split at spaces), `chat_id`, `user_id`, `id` (a string), `message.message_id`. Mira answers it with `telegram_bot.answer_callback_query` **at once** (minutes later Telegram refuses: "Query is too old") and removes the buttons with `telegram_bot.edit_replymarkup` (an empty list); that edit fires a `telegram_sent` state of the same entity, which Mira passes over |
-| 4 | The companion app | `notify.mobile_app_<device>` with `data.actions` (`action`, `title`; one more with `behavior: textInput` for a typed answer) and a `tag`; the tap arrives as the event `mobile_app_notification_action` with `action`, `reply_text` (for the typed answer), `tag`, every action's key and title, `device_id`, and in its `context` the `user_id` of the app's Home Assistant user (seen 2026-11-24 on an Android phone). Android shows three actions: so at most three proposals, and "Nein" and the typed answer go together into "Antworten" (a typed "nein" is a no). The buttons show when the notification is expanded; a tap on the notification itself only opens the app |
+| 4 | The companion app | `notify.mobile_app_<device>` with `data.actions` (`action`, `title`; one more with `behavior: textInput` for a typed answer) and a `tag`; the tap arrives as the event `mobile_app_notification_action` with `action`, `reply_text` (for the typed answer), `tag`, every action's key and title, `device_id`, and in its `context` the `user_id` of the app's Home Assistant user (seen 2026-11-24 on an Android phone). Android shows three actions: so with proposals the first two and "Antworten", whose typed text ("nein", "den dritten") is a turn of the person (decision 12); Telegram shows all three and "Nein". The message lists the proposals numbered (at most three). The buttons show when the notification is expanded; a tap on the notification itself only opens the app |
 | 5 | Tying a tap to its question | `<id>`, a short id of the question Mira keeps (12 characters), and `<choice>`, `yes`, `no` or `1` to `3`. In Telegram the data is `/mira <id> <choice>` (decision 3: it must begin with "/"; it comes back as `command` `/mira` and `args`); in the app the action is `mira:<id>:<choice>`. Telegram allows 64 bytes of data (its Bot API); the companion app's docs advise an id in the action, since actions are shared across notifications |
 | 6 | Who may answer | Only the person asked: in Telegram the chat the question went to, in the app a tap whose event's `context.user_id` is the person's Home Assistant user. Another tap: refused, a log line |
 | 7 | What a tap does | Code, no model: "Ja" confirms the thread (`thread_confirm`'s path); a proposal fills the thread's field with it and confirms; "Nein" ends the thread as declined. The same as the person's typed "ja", "nein" or "den zweiten", only without a turn |
@@ -78,6 +79,6 @@ with the number of questions but the ids of the open ones.
 2. **Ja and Nein for threads** (decisions 2 to 7, 9 to 12, for a thread waiting for a yes): the buttons on the
    private message, the subscriptions, the person's check, the answer at once in Telegram, the typed answer in the
    app as a turn. PC-01, PC-03, PC-05, PC-06. Built 2026-11-24 (`internal/choices`, the notifier's `sendTo`).
-3. **Proposals as buttons** (decisions 2, 7): which field a chosen proposal goes into is still to be decided. PC-02,
-   PC-04.
+3. **Proposals as buttons** (decisions 1a, 2, 7): `chosen` in a target, the numbered proposals in the message, a
+   tap fills the field and confirms (`threads.ChooseThread`). PC-02, PC-04. Built 2026-11-24.
 4. **A tap on a pending confirmation** (decision 8). PC-07, PC-08.

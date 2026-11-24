@@ -156,6 +156,10 @@ type Target struct {
 	Agent  string         `yaml:"agent"`
 	Input  map[string]any `yaml:"input"`
 	Fields []TargetField  `yaml:"fields"`
+	// Chosen names the field a proposal chosen by a tap goes into; the
+	// proposals are the lines of the field proposals
+	// (docs/spec/private-choices.md, step 3).
+	Chosen string `yaml:"chosen"`
 	// Confirm asks the user for a yes before an action finish runs; the
 	// building blocks decide that themselves.
 	Confirm bool `yaml:"confirm"`
@@ -662,6 +666,16 @@ func load(root Root, name string, values map[string]any, opts Options) (Skill, *
 		for _, a := range []*Action{t.Finish.Action, t.Undo} {
 			if a != nil && !strings.Contains(a.Action, ".") {
 				return Skill{}, problem("targetaction", a.Action)
+			}
+		}
+		if t.Chosen != "" {
+			var chosen, proposals bool
+			for _, f := range t.Fields {
+				chosen = chosen || f.Name == t.Chosen
+				proposals = proposals || f.Name == "proposals"
+			}
+			if !chosen || !proposals {
+				return Skill{}, problem("targetchosen", t.Chosen)
 			}
 		}
 		for i, f := range t.Fields {

@@ -16,11 +16,23 @@ import (
 // Buttons on a private question and the taps that answer it
 // (docs/spec/private-choices.md).
 
-// threadAsks says whether a thread waits for its person's yes: its private
-// message gets the buttons (decision 2).
-func (a *app) threadAsks(ctx context.Context, id string) bool {
+// threadAsks says whether a thread waits for its person's answer: for a
+// yes, or for a choice among its proposals when its target names the field
+// a chosen one goes into and that field is still empty (decision 2).
+func (a *app) threadAsks(ctx context.Context, id string) ([]string, bool) {
 	th, err := a.store.GetThread(ctx, id)
-	return err == nil && th.State == store.ThreadProposed
+	if err != nil {
+		return nil, false
+	}
+	if th.State == store.ThreadProposed {
+		return nil, true
+	}
+	if chosen := a.threads.Chosen(th.Target); chosen != "" && store.ThreadOpen(th.State) && th.Fields[chosen] == "" {
+		if props := choices.Proposals(th); len(props) > 0 {
+			return props, true
+		}
+	}
+	return nil, false
 }
 
 type choiceThreads struct{ a *app }
@@ -35,6 +47,10 @@ func (t choiceThreads) Confirm(ctx context.Context, id string) (string, error) {
 
 func (t choiceThreads) Cancel(ctx context.Context, id string) error {
 	return t.a.threads.CancelThread(ctx, id)
+}
+
+func (t choiceThreads) Choose(ctx context.Context, id, proposal string) (string, error) {
+	return t.a.threads.ChooseThread(ctx, id, proposal)
 }
 
 // startChoices hears the taps for the notifier's life.

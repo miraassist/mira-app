@@ -11,7 +11,8 @@ Feature: PC Choices in a private question
   @step3
   Scenario: PC-02 Proposals become buttons
     Given a thread waiting for a choice among three proposals is asked over Anna's companion app
-    Then the notification has three actions, one per proposal, and one to answer in words
+    Then the notification has the first two proposals and one to answer in words, the text lists all three
+    And in Telegram there is a button per proposal and Nein
 
   @step2
   Scenario: PC-03 A tap on Ja confirms the thread without a model

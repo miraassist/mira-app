@@ -1156,6 +1156,40 @@ func contains(list []string, v string) bool {
 	return false
 }
 
+// ChooseThread puts a proposal chosen by a tap into the target's chosen
+// field and says yes, by the thread's id (docs/spec/private-choices.md,
+// step 3): the tap is the person's answer, so a thread started from a
+// document is confirmed at once.
+func (m *Manager) ChooseThread(ctx context.Context, id, value string) (string, error) {
+	th, err := m.opts.Store.GetThread(ctx, id)
+	if err != nil {
+		return "", err
+	}
+	if !store.ThreadOpen(th.State) {
+		return "", store.ErrNotFound
+	}
+	sk := m.targets[th.Target]
+	if sk.Target == nil || sk.Target.Chosen == "" {
+		return "", fmt.Errorf("the thread %s takes no proposal", id)
+	}
+	out, err := m.fill(ctx, tools.Invocation{Person: th.Person}, th, map[string]string{sk.Target.Chosen: value})
+	if err != nil {
+		return "", err
+	}
+	if th, err = m.opts.Store.GetThread(ctx, id); err != nil || th.State != store.ThreadProposed {
+		return out, nil
+	}
+	return m.confirm(ctx, th)
+}
+
+// Chosen is the field a thread's chosen proposal goes into, "" for none.
+func (m *Manager) Chosen(target string) string {
+	if sk, ok := m.targets[target]; ok && sk.Target != nil {
+		return sk.Target.Chosen
+	}
+	return ""
+}
+
 // CancelThread ends a thread by id (the web UI).
 func (m *Manager) CancelThread(ctx context.Context, id string) error {
 	th, err := m.opts.Store.GetThread(ctx, id)

@@ -110,3 +110,37 @@ func TestIN62_AFindingsToolCallCountsAsAfterThirdPartyText(t *testing.T) {
 		t.Errorf("a tool error: %v", err)
 	}
 }
+
+// ChooseThread puts a tapped proposal into the target's chosen field and
+// confirms (docs/spec/private-choices.md, step 3).
+func TestAChosenProposalFillsTheFieldAndFinishes(t *testing.T) {
+	e := setup(t)
+	var ran []ranTool
+	sk := skills.Skill{Name: "antwort", Description: "Antwortet", Target: &skills.Target{
+		Fields: []skills.TargetField{{Name: "to"}, {Name: "proposals"}, {Name: "body"}},
+		Chosen: "body",
+		Finish: skills.Finish{Name: skills.FinishTool, Tool: "antwort__send"},
+	}}
+	e.m = New(Options{Lang: i18n.DE, Store: e.st, Targets: []skills.Skill{sk}, Clock: e.clk,
+		RunTool: func(_ context.Context, name string, args json.RawMessage, thirdParty bool) (string, bool, error) {
+			var a map[string]any
+			_ = json.Unmarshal(args, &a)
+			ran = append(ran, ranTool{name, a, thirdParty})
+			return "Gesendet.", false, nil
+		}})
+	th := e.item(t, "antwort", "reply", "Handwerker: Termin?", map[string]string{"to": "h@example.org",
+		"proposals": "Donnerstag passt.\nLieber Freitag."}, e.clk.Now().Add(48*time.Hour))
+	if e.m.Chosen("antwort") != "body" {
+		t.Fatalf("chosen %q", e.m.Chosen("antwort"))
+	}
+	out, err := e.m.ChooseThread(context.Background(), th.ID, "Lieber Freitag.")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ran) != 1 || ran[0].args["body"] != "Lieber Freitag." || !ran[0].thirdParty || !strings.Contains(out, "Gesendet.") {
+		t.Fatalf("ran %+v out %q", ran, out)
+	}
+	if got, _ := e.st.GetThread(context.Background(), th.ID); got.State != store.ThreadDone {
+		t.Errorf("state %s", got.State)
+	}
+}

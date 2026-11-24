@@ -44,6 +44,7 @@ func (f *fakeHA) CallService(_ context.Context, domain, service string, data map
 type fakeThreads struct {
 	threads              map[string]store.Thread
 	confirmed, cancelled []string
+	chosen               []string
 	confirmErr           error
 }
 
@@ -58,6 +59,11 @@ func (f *fakeThreads) Get(_ context.Context, id string) (store.Thread, error) {
 func (f *fakeThreads) Confirm(_ context.Context, id string) (string, error) {
 	f.confirmed = append(f.confirmed, id)
 	return "Eingetragen: Elternabend.", f.confirmErr
+}
+
+func (f *fakeThreads) Choose(_ context.Context, id, proposal string) (string, error) {
+	f.chosen = append(f.chosen, id+": "+proposal)
+	return "Gesendet: " + proposal, nil
 }
 
 func (f *fakeThreads) Cancel(_ context.Context, id string) error {
@@ -217,5 +223,32 @@ func TestATypedAnswerIsATurnAndAFailingYesIsTold(t *testing.T) {
 	}
 	if _, ok := ParseApp(json.RawMessage(`{"action":"OPEN_x"}`), "u"); ok {
 		t.Error("another app action is a tap")
+	}
+}
+
+// PC-04 A tap on a proposal fills the field and confirms
+func TestPC04_ATapOnAProposalFillsTheFieldAndConfirms(t *testing.T) {
+	b := newBench(t, store.ThreadWaiting)
+	th := b.threads.threads["th1"]
+	th.Fields = map[string]string{"proposals": "Donnerstag passt.\nLieber Freitag.\nIch melde mich."}
+	b.threads.threads["th1"] = th
+	// When Anna taps the second proposal in the app
+	raw, _ := json.Marshal(map[string]any{"action": "mira:th1:2"})
+	tap, ok := ParseApp(raw, "u-anna")
+	if !ok {
+		t.Fatal("the tap does not parse")
+	}
+	b.s.Handle(context.Background(), tap)
+	// Then the thread's field holds the second proposal and the thread is confirmed
+	if strings.Join(b.threads.chosen, ",") != "th1: Lieber Freitag." || len(b.told) != 1 {
+		t.Fatalf("chosen %v told %v", b.threads.chosen, b.told)
+	}
+	// A proposal that is not there does nothing.
+	tg, _ := ParseTelegram(telegramTap("/mira th1 3", 1001))
+	th.Fields = map[string]string{"proposals": "Nur einer."}
+	b.threads.threads["th1"] = th
+	b.s.Handle(context.Background(), tg)
+	if len(b.threads.chosen) != 1 {
+		t.Errorf("chosen %v", b.threads.chosen)
 	}
 }

@@ -222,3 +222,33 @@ func TestATargetFinishesWithAToolOfItsSkill(t *testing.T) {
 		t.Errorf("inbox %+v takes %q", loaded[0].Inbox, loaded[0].Takes)
 	}
 }
+
+// chosen must name a field, and the target needs proposals
+// (docs/spec/private-choices.md, step 3).
+func TestChosenNamesAFieldOfATargetWithProposals(t *testing.T) {
+	for _, c := range []struct {
+		fields string
+		ok     bool
+	}{
+		{"        - {name: proposals, description: Vorschläge}\n        - {name: body, description: Text}\n", true},
+		{"        - {name: body, description: Text}\n", false},
+		{"        - {name: proposals, description: Vorschläge}\n", false},
+	} {
+		dir := filepath.Join(t.TempDir(), "antwort")
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		md := "---\nname: antwort\ndescription: Antwortet\nmetadata:\n  mira:\n    target:\n      chosen: body\n      fields:\n" + c.fields +
+			"      finish:\n        tool: antwort__send\n---\nAntworten.\n"
+		if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte(md), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		loaded, ps := skills.Load([]string{filepath.Dir(dir)}, map[string]map[string]any{"antwort": {}})
+		if c.ok != (len(ps) == 0 && len(loaded) == 1) {
+			t.Errorf("fields %q: loaded %d, problems %v", c.fields, len(loaded), problemText(ps))
+		}
+		if !c.ok && !strings.Contains(problemText(ps), "chosen") {
+			t.Errorf("the problem does not name chosen: %s", problemText(ps))
+		}
+	}
+}
