@@ -3509,6 +3509,8 @@ paths:
                           type: boolean
                         from_ha:
                           type: boolean
+                        move_error:
+                          type: string
                         in_file:
                           type: boolean
                       required:
@@ -3729,6 +3731,8 @@ paths:
                           type: boolean
                         from_ha:
                           type: boolean
+                        move_error:
+                          type: string
                         in_file:
                           type: boolean
                       required:
@@ -4003,6 +4007,8 @@ paths:
                           type: boolean
                         from_ha:
                           type: boolean
+                        move_error:
+                          type: string
                         in_file:
                           type: boolean
                       required:
@@ -4373,6 +4379,8 @@ paths:
                           type: boolean
                         from_ha:
                           type: boolean
+                        move_error:
+                          type: string
                         in_file:
                           type: boolean
                       required:
@@ -4584,6 +4592,8 @@ paths:
                   type: boolean
                 from_ha:
                   type: boolean
+                move_error:
+                  type: string
                 in_file:
                   type: boolean
               required:
@@ -4649,6 +4659,8 @@ paths:
                           type: boolean
                         from_ha:
                           type: boolean
+                        move_error:
+                          type: string
                         in_file:
                           type: boolean
                       required:
@@ -4935,6 +4947,8 @@ paths:
                           type: boolean
                         from_ha:
                           type: boolean
+                        move_error:
+                          type: string
                         in_file:
                           type: boolean
                       required:

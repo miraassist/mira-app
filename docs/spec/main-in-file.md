@@ -1,6 +1,6 @@
 # The main model in mira.yaml – Spec
 
-Status 2026-11-24: step 1 built (not released): the setup writes `main` into mira.yaml, the page edits it; a model the database still holds from before stays laid over and locked until step 2 moves it. Scenarios: [main-in-file.feature](main-in-file.feature).
+Status 2026-11-24: steps 1 and 2 built (not released): the setup writes `main` into mira.yaml, the page edits it; an installation's model of before moves into the file at its first start, and when the file cannot take it, Mira runs as before and says so (repair `model_file`, the integration's text in its next release). Scenarios: [main-in-file.feature](main-in-file.feature).
 
 ## Goal
 
@@ -92,7 +92,7 @@ Each start does this only while `setup.llm` is there, so once it is moved nothin
 | Setup writes `main` | `mira.yaml` or its folder is read only; the secrets file is encrypted and `MIRA_SECRET_KEY` is missing or wrong; the file does not parse; the result does not validate | Nothing is written, the secret is put back, the service does not restart | The integration's form shows the service's error (422 with the cause and the file); the service's log names the file and the cause (decision 6) |
 | Setup writes `main` | The secret could not be put back after the file failed | As on the page ([Silent fallbacks](fallbacks.md), row 31) | Log line "the change failed and its secrets could not be put back" |
 | Moving at start | The file or the secrets file cannot be written, or the result does not validate | Mira runs with `setup.llm` laid over the file as before; `setup.llm` stays; the next start tries again | Log line (warn) with the file and the cause; a problem in `/v1/status` with source `model_file`, name `main`, the cause as text → the integration's repair "Mira kann ihr KI-Modell nicht in die mira.yaml übernehmen" / "Mira can't move her AI model into mira.yaml" with the cause and: make the file writable, then restart the app; the page shows `main` read only with the cause |
-| Moving at start | `setup.llm` does not parse | As today in `setup.Load` (the value is left out) | **New:** a log line with the start of the value; Mira then waits for the setup as without a model |
+| Moving at start | `setup.llm` does not parse | As today in `setup.Load` (the value is left out) | **New:** a log line with the key, the value's length and the parse error, not the value's start: it holds the model's key; Mira then waits for the setup as without a model |
 | Moving at start | Deleting `setup.llm` fails after the file was written | The file holds; the next start writes the same values again | Log line with the error |
 
 The source `model_file` is new: an integration before the release that knows it shows it with a skill's text and

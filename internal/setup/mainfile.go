@@ -3,6 +3,7 @@ package setup
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -75,6 +76,10 @@ func CheckMain(f config.File, l LLM) error {
 	return f.Check(secrets, fn)
 }
 
+// ErrNotDeleted: the model is in mira.yaml, but the database still holds
+// the one from before; it is laid over the file until it is gone.
+var ErrNotDeleted = errors.New("the model is in mira.yaml, but the database's copy could not be deleted")
+
 // WriteMain puts the setup's model into mira.yaml and its key into the
 // secrets file; then a model the database still holds from before is gone,
 // so it is no longer laid over the file.
@@ -84,7 +89,7 @@ func WriteMain(ctx context.Context, st *store.Store, f config.File, l LLM) error
 		return err
 	}
 	if err := st.DeleteKV(ctx, keyLLM); err != nil && !errors.Is(err, store.ErrNotFound) {
-		return err
+		return fmt.Errorf("%w: %v", ErrNotDeleted, err)
 	}
 	return nil
 }

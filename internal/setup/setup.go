@@ -14,6 +14,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"math/big"
 	"strconv"
 	"strings"
@@ -111,7 +112,12 @@ func Load(ctx context.Context, st *store.Store) (Settings, error) {
 	}
 	if raw != "" {
 		var l LLM
-		if json.Unmarshal([]byte(raw), &l) == nil {
+		if err := json.Unmarshal([]byte(raw), &l); err != nil {
+			// The value holds the model's key, so only its length is said
+			// (docs/spec/main-in-file.md, failures).
+			slog.Warn("the setup's model in the database cannot be read; it is left out", "key", keyLLM,
+				"length", len(raw), "error", err)
+		} else {
 			s.LLM = &l
 		}
 	}

@@ -115,6 +115,9 @@ func (e *editor) modelsState(ctx context.Context, top *yaml.Node, st *ui.EditSta
 				Warmup: l.WarmupOnStart || l.WarmupOnPrefixChange}
 		}
 		m.FromHA = fromHA && name == config.MainModel
+		if m.FromHA && e.a.mainMoveErr != nil {
+			m.MoveError = e.a.mainMoveErr.Error()
+		}
 		st.Models[name] = m
 	}
 }
@@ -222,7 +225,7 @@ func (e *editor) SaveModel(ctx context.Context, name string, m ui.ModelEdit) err
 	case name == config.MainModel && newName != name:
 		return errors.New("main kann nicht umbenannt werden: Es ist das Modell, das jeder Teil ohne eigenes Modell nimmt.")
 	case name == config.MainModel && e.fromHA(ctx):
-		return errors.New("main kommt aus der Einrichtung in Home Assistant: Ändern geht dort unter Einstellungen → Geräte & Dienste → Mira → Konfigurieren.")
+		return errors.New(mainLocked(e.a.mainMoveErr))
 	case !modelNamePattern.MatchString(newName):
 		return fmt.Errorf("Der Name „%s“ geht nicht: kleine Buchstaben und Ziffern, verbunden mit - oder _.", newName)
 	}
@@ -876,6 +879,17 @@ func (e *editor) writeSections(sections map[string][]byte, keep []string) error 
 }
 
 // --- helpers ---------------------------------------------------------------
+
+// mainLocked says why main cannot be saved on the page: it is still in the
+// database, because mira.yaml could not take it (docs/spec/main-in-file.md,
+// decision 3).
+func mainLocked(cause error) string {
+	text := "main lässt sich hier noch nicht ändern: Mira konnte es nicht in die mira.yaml übernehmen."
+	if cause != nil {
+		text += " Grund: " + cause.Error() + "."
+	}
+	return text + " Mach die Datei beschreibbar und starte Mira neu."
+}
 
 // alwaysOn are the skills that are on without an entry.
 func alwaysOn() []string {

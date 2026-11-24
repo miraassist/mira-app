@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"syscall"
 	"time"
@@ -47,6 +48,43 @@ type prepared struct {
 	// path is the mira.yaml Mira read and the page writes
 	// (docs/spec/editing.md).
 	path string
+	// mainMoveErr: the setup's model of before could not move into
+	// mira.yaml and is still laid over it (docs/spec/main-in-file.md,
+	// decision 3).
+	mainMoveErr error
+}
+
+// moveMain writes the model the database holds from before into mira.yaml
+// and reads the file anew. When the file cannot take it, the model stays in
+// the database and is laid over the file as before; p says why, for the
+// problem and the page, and the next start tries again.
+func moveMain(ctx context.Context, st *store.Store, path, file string, cfg config.Config, hasLLM bool,
+	s *setup.Settings, p *prepared) (config.Config, bool, error) {
+	// What of main in the file the setup's values replace, by name only.
+	covered := slices.DeleteFunc(setup.Covered(cfg, *s), func(name string) bool {
+		return !strings.HasPrefix(name, "models.main.")
+	})
+	err := setup.WriteMain(ctx, st, config.File{Path: file, Secrets: config.DefaultSecrets()}, *s.LLM)
+	switch {
+	case errors.Is(err, setup.ErrNotDeleted):
+		// The file holds the same values the database lays over it; the
+		// next start deletes the copy.
+		slog.Error("the setup's model moved into mira.yaml, but its copy in the database could not be deleted; the next start tries again",
+			"file", file, "error", err)
+	case err != nil:
+		slog.Warn("the setup's model could not move into mira.yaml; it is laid over the file as before, and the next start tries again",
+			"file", file, "error", err)
+		p.mainMoveErr = fmt.Errorf("%s: %w", file, err)
+		return cfg, hasLLM, nil
+	default:
+		s.LLM = nil
+		slog.Info("the setup's model moved into mira.yaml", "file", file, "replaced", strings.Join(covered, ", "))
+	}
+	moved, has, err := config.LoadOptional(path)
+	if err != nil {
+		return cfg, hasLLM, configError{err}
+	}
+	return moved, has, nil
 }
 
 func prepare(ctx context.Context, path string) (prepared, error) {
@@ -86,6 +124,13 @@ func prepareFrom(ctx context.Context, path string, cfg config.Config, hasLLM, va
 	s, err := setup.Load(ctx, st)
 	if err != nil {
 		return prepared{}, err
+	}
+	if s.LLM != nil && validate {
+		// The setup's model of before moves into mira.yaml
+		// (docs/spec/main-in-file.md, decision 3).
+		if cfg, hasLLM, err = moveMain(ctx, st, path, p.path, cfg, hasLLM, &s, &p); err != nil {
+			return prepared{}, err
+		}
 	}
 	if covered := setup.Covered(cfg, s); len(covered) > 0 {
 		// docs/spec/kv-cleanup.md, decision 9: what the integration set

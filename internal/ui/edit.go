@@ -74,8 +74,12 @@ type ModelEdit struct {
 	// Warmup is the switch "Vorwärmen": warmup_on_start and
 	// warmup_on_prefix_change of a local model (docs/spec/models.md, step 7).
 	Warmup bool `json:"warmup,omitempty"`
-	// FromHA: main as the integration sets it up; changed there, not here.
+	// FromHA: main still in the database from an older setup, laid over
+	// mira.yaml, so it is read only here (docs/spec/main-in-file.md,
+	// decision 3).
 	FromHA bool `json:"from_ha,omitempty"`
+	// MoveError is why that main could not move into mira.yaml.
+	MoveError string `json:"move_error,omitempty"`
 	// InFile: the entry is in mira.yaml (else Mira's default).
 	InFile bool `json:"in_file"`
 }

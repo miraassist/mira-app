@@ -134,6 +134,10 @@ type app struct {
 	// haFromSetup: the Home Assistant token came from the integration's
 	// setup; only then is a refused token the integration's repair.
 	haFromSetup bool
+	// mainMoveErr: the setup's model of before could not move into
+	// mira.yaml (docs/spec/main-in-file.md, decision 3); a problem, and the
+	// page keeps main read only.
+	mainMoveErr error
 	// pairing: Home Assistant pairs with a code (the token is the service's
 	// own).
 	pairing bool
@@ -246,6 +250,8 @@ type buildOptions struct {
 	// haFromSetup: the Home Assistant token came from the integration's
 	// setup (prepared.haFromSetup).
 	haFromSetup bool
+	// mainMoveErr is prepared.mainMoveErr.
+	mainMoveErr error
 	// logTo is where the log goes (prepared.logTo); standard error when nil.
 	logTo io.Writer
 }
@@ -263,7 +269,7 @@ func build(ctx context.Context, cfg config.Config, opts buildOptions) (*app, err
 	}
 	slog.SetDefault(tel.Logger)
 	a := &app{cfg: cfg, log: tel.Logger, tel: tel, warmup: func(string) {}, pairing: opts.pairing, configPath: opts.configPath, haFromSetup: opts.haFromSetup,
-		speaker: speakerid.New(cfg.SpeakerID.URL, cfg.SpeakerID.Token)}
+		mainMoveErr: opts.mainMoveErr, speaker: speakerid.New(cfg.SpeakerID.URL, cfg.SpeakerID.Token)}
 
 	a.store, err = store.Open(ctx, store.Options{Path: cfg.Store.Path})
 	if err != nil {
@@ -1101,7 +1107,8 @@ func (a *app) close() {
 func runAgent(parent context.Context, cfg config.Config, p prepared) error {
 	ctx, cancel := context.WithCancel(parent)
 	defer cancel()
-	a, err := build(ctx, cfg, buildOptions{pairing: p.pairing, configPath: p.path, haFromSetup: p.haFromSetup, logTo: p.logTo})
+	a, err := build(ctx, cfg, buildOptions{pairing: p.pairing, configPath: p.path, haFromSetup: p.haFromSetup, logTo: p.logTo,
+		mainMoveErr: p.mainMoveErr})
 	if err != nil {
 		return err
 	}
@@ -2136,6 +2143,11 @@ func (a *app) allProblems() []haconv.Problem {
 			p := skills.NewProblem(skill, skills.KindNoAnnounce, skills.SectionAnnounce)
 			out = append(out, haconv.Problem{Source: "skill", Name: skill, Text: p.Text(a.lang)})
 		}
+	}
+	// The setup's model of before still in the database, because mira.yaml
+	// cannot take it (docs/spec/main-in-file.md, decision 3).
+	if a.mainMoveErr != nil {
+		out = append(out, haconv.Problem{Source: "model_file", Name: config.MainModel, Text: a.mainMoveErr.Error()})
 	}
 	// A model that failed for its key or its address (docs/spec/models.md, When a model fails).
 	if a.engine != nil {

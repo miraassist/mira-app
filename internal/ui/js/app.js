@@ -1129,7 +1129,7 @@ class MiraEditor extends Light {
     const locked = f.from_ha;
     const others = Object.keys(s.models).filter(n => n !== (name || f.name));
     return html`
-      ${locked ? html`<p class="hint">${T.ed_main_ha}</p>` : nothing}
+      ${locked ? html`<p class="msg err">${T.ed_main_ha}${f.move_error ? html`<br><code>${f.move_error}</code>` : nothing}</p>` : nothing}
       <div class="grid">
         ${name === "main" ? nothing : this.field(T.ed_name, "name", { placeholder: "smart" })}
         <label>${T.mod_provider}</label><select ?disabled=${locked} @change=${ev => this.setProvider(ev.target.value)}>
