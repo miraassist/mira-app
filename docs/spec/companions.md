@@ -179,6 +179,24 @@ Departures, each with its reason:
   cannot be reached).
 - Nothing grows while Mira runs; a companion's skills change only with a reload (a restart).
 
+## A companion's skills on a tab of its own, groups, and Home Assistant for the companion (proposed 2026-11-24)
+
+Proposed 2026-11-24 for the companion mira-pro (its repository's `docs/spec/pro-skills.md`), in general terms. The
+maintainer's wish of 2026-11-24: a paid skill is listed and set on its companion's own tab "<title> Skills" in the
+group "Fähigkeiten", exactly as Mira's tab "Skills"; it is on as soon as it is set up; Mira's list gets groups; Mira
+hands her Home Assistant to the companion; the companion serves the skills page and Mira only shows it. The details
+below taken while writing, to be confirmed. Not built.
+
+| # | Question | Proposed | Why |
+|---|---|---|---|
+| 28 | A companion's skill (`metadata.mira.tier`, any value) | Not listed on the tab "Skills" but on its companion's tab (decision 29); on whenever it is loaded, without an entry under `skills` in `mira.yaml`. When it cannot load, the repair in Home Assistant (Settings → Repairs) still says so, as for every skill | Its companion serves it only when it is set up, so loaded means set up; a second switch in Mira would contradict that |
+| 29 | A companion's skills page | A registration may name a second page (`skills_page`, a path under its page, e.g. `skills/`); Mira's page shows it as a tab "<title> Skills" in the group "Fähigkeiten", an iframe of `companion/<name>/<skills_page>` as its first page in "Einrichten" (decision 8); its calls pass on as the first page's (decision 7). Mira draws nothing of it (the maintainer, 2026-11-24: the companion serves and saves it; independence over a little code repeated) | A companion's skills are set where they are listed, and the companion that uses the settings keeps them; no interface hands settings between the two |
+| 30 | Groups (`metadata.mira.category`) | The tabs of skills group them by their category, shown as it is; skills without one under "Weitere" / "More" | The list is easier to read; a fixed list of categories can follow |
+| 31 | Home Assistant for a companion | The answer to a registration is `200 {"home_assistant": {"url", "token"}}` with Mira's `ha.url` and `ha.token`, instead of `204` | A companion needs Home Assistant with an administrator's token, as Mira does; the owner set it once, in Mira; it registers at every start, so a new token reaches it then |
+
+Steps: **10.** `tier` and the companion's skills page (decisions 28, 29). **11.** `category` (decision 30). **12.** The
+registration's answer (decision 31). Scenarios to be written with the steps.
+
 ## What it does
 
 1. **Registering** (decision 6): a companion calls `PUT /v1/companions/{name}` with its partner token; Mira checks the
