@@ -65,6 +65,9 @@ type Handler struct {
 	// to 20); Clock bounds its call. Without Models every model is unknown.
 	Models func() map[string]Model
 	Clock  clock.Clock
+	// Wake connects the MCP servers under a registered companion's address
+	// that are not connected (decision 21); nil for none.
+	Wake func(ctx context.Context, url string)
 }
 
 func (h *Handler) log() *slog.Logger {
@@ -142,6 +145,11 @@ func (h *Handler) put(w http.ResponseWriter, r *http.Request) {
 	default:
 		h.Log.Info("companion registered", "name", name, "url", reg.URL, "token", c.Name)
 		w.WriteHeader(http.StatusNoContent)
+		// It is up again: its MCP servers connect now, not at the next
+		// retry; the answer does not wait (decision 21).
+		if h.Wake != nil {
+			go h.Wake(context.WithoutCancel(r.Context()), strings.TrimRight(reg.URL, "/"))
+		}
 	}
 }
 

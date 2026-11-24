@@ -79,6 +79,16 @@ Mira, and the models stay in one place.
 | 19 | Bounds | The text and the system prompt together at most 64 KiB; the call at most 60 s (the model's own timeout when shorter) |
 | 20 | Its trace | A log line `companion model call` with the token's name, the model, the tokens and the time, never the texts; the call is in the partner activity (decision 12) like the companion's other calls |
 
+### A companion's registration wakes its MCP servers (decided 2026-11-24, the maintainer, A)
+
+Seen 2026-11-24: after mira-pro restarted, Mira noticed the dropped MCP session at once, but connected again only
+with her retry loop (every 30 s, longer after failures); a call in between failed ("mcp server not connected"). A
+companion registers at every start (`PUT /v1/companions/{name}`): that is the signal it is up again.
+
+| # | Question | Decision |
+|---|---|---|
+| 21 | What a registration does to MCP | After it is kept, Mira wakes every MCP server whose address lies under the companion's (`<url>/…`, a skill's `mcp.url`) and that is not connected: connected at once, its waits start anew (`mcp.Host.Wake`, as Home Assistant's connection does). A server connected already keeps its session. A connect that fails is the retry loop's again, with its log line. The answer to the registration does not wait for it. Left: a call between the companion's start and its registration (seconds) still fails; a call on a dropped connection is not retried (Mira's private TODO) |
+
 ### Step by step
 
 1. The companion calls `POST /v1/complete` with its partner token. No token, or another token than a partner's or the
@@ -147,6 +157,7 @@ Mira, and the models stay in one place.
 5. **The run on the test HA** with a companion: registered, its tab in the panel, its page loading and saving, a reload.
 6. **A companion asks one of Mira's models** (decisions 13 to 20): `POST /v1/complete`. BS-09 to BS-12. Built
    2026-11-24.
+7. **A registration wakes the companion's MCP servers** (decision 21). BS-13.
 
 Built: steps 1 to 4. BS-07 (a non-admin through the integration) has no coded test yet.
 

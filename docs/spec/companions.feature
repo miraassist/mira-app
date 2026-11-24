@@ -72,3 +72,10 @@ Feature: BS Companion services
     When the text is over 64 KiB, the model unknown, or the model fails
     Then the answers are 400, 400 naming the models, and 502 with the model's error
     And no log line holds the texts
+
+  @step7
+  Scenario: BS-13 A companion's registration wakes its MCP servers
+    Given a skill's MCP server at http://pro:8792/mcp/mail is not connected, and another one elsewhere neither
+    When the companion pro registers with the address http://pro:8792
+    Then Mira connects the server under that address at once, and leaves the other one to its retry loop
+    And a server under that address that is connected keeps its session

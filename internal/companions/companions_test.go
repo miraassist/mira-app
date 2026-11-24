@@ -303,3 +303,26 @@ func TestBS12_WhatDoesNotFitIsRefusedAndNeverLogged(t *testing.T) {
 		t.Errorf("no log line for the failure:\n%s", f.logs)
 	}
 }
+
+// BS-13, the registration's part: once kept, it wakes the servers under the
+// companion's address, without the answer waiting; a refused one does not.
+func TestBS13_ARegistrationWakesTheCompanionsServers(t *testing.T) {
+	f := newFixture(t)
+	woken := make(chan string, 2)
+	f.h.Wake = func(_ context.Context, url string) { woken <- url }
+	tok := f.partner("Pro")
+	if rec := f.call("PUT", "/v1/companions/pro", tok, Registration{Title: "Pro", URL: "http://mira-pro:8792/", Token: "s"}); rec.Code != http.StatusNoContent {
+		t.Fatalf("answer %d %s", rec.Code, rec.Body)
+	}
+	if got := <-woken; got != "http://mira-pro:8792" {
+		t.Errorf("woken %q", got)
+	}
+	if rec := f.call("PUT", "/v1/companions/pro", tok, Registration{Title: "", URL: "http://mira-pro:8792", Token: "s"}); rec.Code != http.StatusBadRequest {
+		t.Fatalf("answer %d", rec.Code)
+	}
+	select {
+	case got := <-woken:
+		t.Errorf("a refused registration woke %q", got)
+	default:
+	}
+}

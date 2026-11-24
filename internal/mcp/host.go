@@ -944,6 +944,30 @@ func (h *Host) Wake(ctx context.Context, name string) {
 	h.rebuild()
 }
 
+// WakeUnder wakes the servers whose address lies under base (base/…) and
+// that are not connected: a companion registered, so it is up again
+// (docs/spec/companions.md, decision 21). A connected one keeps its
+// session; a failed connect is the retry loop's again. It answers the
+// servers it connected.
+func (h *Host) WakeUnder(ctx context.Context, base string) []string {
+	base = strings.TrimRight(base, "/") + "/"
+	var woken []string
+	for _, s := range h.servers {
+		if !strings.HasPrefix(s.cfg.URL, base) || s.connected() {
+			continue
+		}
+		if err := s.connectNow(ctx, true, false); err != nil {
+			continue // fatal, or kept and logged by failedConnect
+		}
+		h.log.Info("mcp server reconnected", "server", s.cfg.Name, "reason", "companion registered", "companion", base)
+		woken = append(woken, s.cfg.Name)
+	}
+	if len(woken) > 0 {
+		h.rebuild()
+	}
+	return woken
+}
+
 // Reconnect connects a skill's server anew after its connection changed:
 // connected, it is connected at once; disconnected or expired, its tools
 // are dropped. The old connection is retired: calls on it finish

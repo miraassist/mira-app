@@ -1703,7 +1703,13 @@ func (a *app) httpHandler(runCtx context.Context) http.Handler {
 	}
 	// Companion services (docs/spec/companions.md).
 	comp := &companions.Handler{Store: a.store, Log: a.log.With("component", "companions"), Restart: restart,
-		Models: a.companionModels, Clock: a.clock}
+		Models: a.companionModels, Clock: a.clock,
+		// A registered companion is up again: its skills' MCP servers connect now (decision 21).
+		Wake: func(ctx context.Context, url string) {
+			if a.mcp != nil {
+				a.mcp.WakeUnder(ctx, url)
+			}
+		}}
 	uiOpts := ui.Options{
 		Companions: comp,
 		Token:      cfg.Server.Token, Sections: config.UISections, Config: uiConfig{a: a, runCtx: runCtx},
