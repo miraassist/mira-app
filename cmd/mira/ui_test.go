@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/config"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/testsupport/fakeha"
-	"github.com/miraassist/mira/internal/testsupport/fakellm"
-	"github.com/miraassist/mira/internal/testsupport/logcap"
+	"github.com/miraassist/mira-app/internal/config"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/testsupport/fakeha"
+	"github.com/miraassist/mira-app/internal/testsupport/fakellm"
+	"github.com/miraassist/mira-app/internal/testsupport/logcap"
 )
 
 // TestUIChangesApplyWithoutRestart edits the notifier and the satellites

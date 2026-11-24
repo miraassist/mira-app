@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/miraassist/mira/internal/api"
-	"github.com/miraassist/mira/internal/companions"
+	"github.com/miraassist/mira-app/internal/api"
+	"github.com/miraassist/mira-app/internal/companions"
 )
 
 // Companions are the companion services registered with Mira (docs/spec/companions.md).

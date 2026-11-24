@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/llm"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/llm"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // The announcement knows the kinds (docs/spec/messages.md, step 6).

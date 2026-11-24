@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // ToolMove is the tool that takes the music along.

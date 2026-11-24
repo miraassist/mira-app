@@ -11,13 +11,13 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/miraassist/mira/internal/excerpt"
-	"github.com/miraassist/mira/internal/ha/automation"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/threads"
-	"github.com/miraassist/mira/internal/tools"
-	"github.com/miraassist/mira/internal/watch"
+	"github.com/miraassist/mira-app/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/ha/automation"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/threads"
+	"github.com/miraassist/mira-app/internal/tools"
+	"github.com/miraassist/mira-app/internal/watch"
 )
 
 // Changing the household's tasks in the conversation

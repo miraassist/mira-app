@@ -13,9 +13,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/ui"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/ui"
 )
 
 // schedules is the page "Schedules" (docs/spec/schedules.md): the skills'

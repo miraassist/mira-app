@@ -14,11 +14,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/miraassist/mira/internal/announce"
-	"github.com/miraassist/mira/internal/api"
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/setup"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/announce"
+	"github.com/miraassist/mira-app/internal/api"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/setup"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // prepared is the config as the service runs with it: mira.yaml, if there is

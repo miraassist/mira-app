@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/miraassist/mira/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/excerpt"
 )
 
 // State reads one entity's state as Home Assistant's REST interface gives

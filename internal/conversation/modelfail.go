@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/llm"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/llm"
 )
 
 // A model that failed for its key or its address is said in the turn and

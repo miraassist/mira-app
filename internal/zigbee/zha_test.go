@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/devices"
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/devices"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // ZHA: docs/spec/device-onboarding.md, step 6. The messages are ZHA's as

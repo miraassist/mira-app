@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/testsupport/logcap"
+	"github.com/miraassist/mira-app/internal/testsupport/logcap"
 )
 
 // A skill the manifest names is not in the archive: the restore goes on

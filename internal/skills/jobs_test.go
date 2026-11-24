@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // Scheduled jobs: docs/spec/scheduled-jobs.md, step 1.

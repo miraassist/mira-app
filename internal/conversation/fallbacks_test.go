@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/conversation"
-	"github.com/miraassist/mira/internal/testsupport/fakellm"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/conversation"
+	"github.com/miraassist/mira-app/internal/testsupport/fakellm"
 )
 
 // The skills a conversation opened cannot be read: the turn runs without

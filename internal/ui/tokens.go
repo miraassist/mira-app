@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/miraassist/mira/internal/access"
-	"github.com/miraassist/mira/internal/api"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/access"
+	"github.com/miraassist/mira-app/internal/api"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // Tokens are the named access tokens beside the integration's, made and

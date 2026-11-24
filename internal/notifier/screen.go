@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/store"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // A satellite without an indicator light may show waiting messages on its

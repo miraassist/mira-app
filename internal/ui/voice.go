@@ -11,7 +11,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/miraassist/mira/internal/speakerid"
+	"github.com/miraassist/mira-app/internal/speakerid"
 )
 
 // Voices is the speaker-id service as the page needs it: who has a voice,

@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/startools"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/startools"
 )
 
 // fakeRequester answers every request with its answer and records them.

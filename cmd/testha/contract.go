@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // The TECHO5 contract is what a TECHO5 device offers Home Assistant: its

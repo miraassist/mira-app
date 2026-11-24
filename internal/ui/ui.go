@@ -28,14 +28,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miraassist/mira/docs"
-	"github.com/miraassist/mira/internal/access"
-	"github.com/miraassist/mira/internal/api"
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/memfile"
-	"github.com/miraassist/mira/internal/satellite"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/waiting"
+	"github.com/miraassist/mira-app/docs"
+	"github.com/miraassist/mira-app/internal/access"
+	"github.com/miraassist/mira-app/internal/api"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/memfile"
+	"github.com/miraassist/mira-app/internal/satellite"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/waiting"
 )
 
 //go:embed index.html

@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/llm"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/llm"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // Asynchronous runs (docs/spec/agents.md, Runtime): each in a goroutine of

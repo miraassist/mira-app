@@ -3,7 +3,7 @@ package tools_test
 import (
 	"testing"
 
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // When the satellite keeps listening: docs/spec/keep-listening.md, step 1.

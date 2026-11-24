@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // Take makes the chosen thread the turn's own (docs/spec/messages.md,

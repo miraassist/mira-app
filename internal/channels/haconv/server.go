@@ -18,16 +18,16 @@ import (
 
 	"github.com/oklog/ulid/v2"
 
-	"github.com/miraassist/mira/internal/api"
-	"github.com/miraassist/mira/internal/channels/telegram"
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/conversation"
-	"github.com/miraassist/mira/internal/excerpt"
-	"github.com/miraassist/mira/internal/mailcal"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/tasks"
-	"github.com/miraassist/mira/internal/trace"
-	"github.com/miraassist/mira/internal/watch"
+	"github.com/miraassist/mira-app/internal/api"
+	"github.com/miraassist/mira-app/internal/channels/telegram"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/conversation"
+	"github.com/miraassist/mira-app/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/mailcal"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/tasks"
+	"github.com/miraassist/mira-app/internal/trace"
+	"github.com/miraassist/mira-app/internal/watch"
 )
 
 // Conversation is the part of the engine the API needs.

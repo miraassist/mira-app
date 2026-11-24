@@ -11,15 +11,15 @@ import (
 
 	"github.com/oklog/ulid/v2"
 
-	"github.com/miraassist/mira/internal/clip"
-	"github.com/miraassist/mira/internal/clock"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/notifier"
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/tools"
-	"github.com/miraassist/mira/internal/ui"
-	"github.com/miraassist/mira/internal/voicemail"
+	"github.com/miraassist/mira-app/internal/clip"
+	"github.com/miraassist/mira-app/internal/clock"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/notifier"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/tools"
+	"github.com/miraassist/mira-app/internal/ui"
+	"github.com/miraassist/mira-app/internal/voicemail"
 )
 
 // The answering machine at the satellite (docs/spec/voicemail.md):

@@ -16,7 +16,7 @@ import (
 	"strconv"
 	"sync"
 
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // Repository is Mira's repository at GitHub, as the marketplace lists it.

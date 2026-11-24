@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/skills"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/skills"
 )
 
 func sum(b []byte) string { h := sha256.Sum256(b); return hex.EncodeToString(h[:]) }

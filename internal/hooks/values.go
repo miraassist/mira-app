@@ -9,8 +9,8 @@ import (
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // The kinds of a verdict.

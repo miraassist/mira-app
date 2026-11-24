@@ -14,12 +14,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/access"
-	"github.com/miraassist/mira/internal/clock"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/store/storetest"
-	"github.com/miraassist/mira/internal/testsupport/fakeha"
+	"github.com/miraassist/mira-app/internal/access"
+	"github.com/miraassist/mira-app/internal/clock"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/store/storetest"
+	"github.com/miraassist/mira-app/internal/testsupport/fakeha"
 )
 
 // haSetup is the interface with Mira's connection to a fake Home Assistant

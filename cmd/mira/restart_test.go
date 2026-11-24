@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/miraassist/mira/internal/config"
+	"github.com/miraassist/mira-app/internal/config"
 )
 
 // BE-27: saves of the settings and changes of the persons at once restart

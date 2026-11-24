@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/music"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/music"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 func groupTool(t *testing.T, ha *fakeHA, players []music.Player, logs *bytes.Buffer) tools.InternalTool {

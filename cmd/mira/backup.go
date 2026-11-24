@@ -3,8 +3,8 @@ package main
 import (
 	"path/filepath"
 
-	"github.com/miraassist/mira/internal/backup"
-	"github.com/miraassist/mira/internal/config"
+	"github.com/miraassist/mira-app/internal/backup"
+	"github.com/miraassist/mira-app/internal/config"
 )
 
 // backupMira is what goes into Mira's snapshot and what a restore writes

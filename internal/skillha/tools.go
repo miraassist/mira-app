@@ -7,9 +7,9 @@ import (
 	"maps"
 	"slices"
 
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/tools"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // ToolName is the name of a skill script's tool (docs/spec/skill-files.md,

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/miraassist/mira/internal/alarm"
-	"github.com/miraassist/mira/internal/calendar"
-	"github.com/miraassist/mira/internal/todo"
-	"github.com/miraassist/mira/internal/trace"
+	"github.com/miraassist/mira-app/internal/alarm"
+	"github.com/miraassist/mira-app/internal/calendar"
+	"github.com/miraassist/mira-app/internal/todo"
+	"github.com/miraassist/mira-app/internal/trace"
 )
 
 // haActions lets a skill finish with a Home Assistant action

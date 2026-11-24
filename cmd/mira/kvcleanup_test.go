@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/setup"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/setup"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // docs/spec/kv-cleanup.md, decision 9: what the integration set covers

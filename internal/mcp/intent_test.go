@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/mcp"
-	"github.com/miraassist/mira/internal/testsupport/fakemcp"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/mcp"
+	"github.com/miraassist/mira-app/internal/testsupport/fakemcp"
 )
 
 // Home Assistant's intent answers where nothing succeeded

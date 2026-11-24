@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/testsupport/logcap"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/testsupport/logcap"
 )
 
 // The delivery fails, and setting its message back to open fails too: the

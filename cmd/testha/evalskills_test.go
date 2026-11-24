@@ -8,7 +8,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/miraassist/mira/internal/trace"
+	"github.com/miraassist/mira-app/internal/trace"
 )
 
 // A skill whose settings need a variable testenv/.env lacks is left out of

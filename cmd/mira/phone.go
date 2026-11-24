@@ -10,10 +10,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/miraassist/mira/internal/excerpt"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/phone"
-	"github.com/miraassist/mira/internal/skills"
+	"github.com/miraassist/mira-app/internal/excerpt"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/phone"
+	"github.com/miraassist/mira-app/internal/skills"
 )
 
 // The phone (docs/spec/phone.md): a TECHO5 satellite's ESPHome actions

@@ -5,12 +5,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/mcp"
-	"github.com/miraassist/mira/internal/startools"
-	"github.com/miraassist/mira/internal/testsupport/fakemcp"
-	"github.com/miraassist/mira/internal/testsupport/logcap"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/mcp"
+	"github.com/miraassist/mira-app/internal/startools"
+	"github.com/miraassist/mira-app/internal/testsupport/fakemcp"
+	"github.com/miraassist/mira-app/internal/testsupport/logcap"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // SL-22 mira.tool calls a read-only tool the skill names

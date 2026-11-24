@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // The running plans, with the room's name instead of its id; anyone with

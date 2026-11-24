@@ -14,11 +14,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/clock"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // Devices Home Assistant found: docs/spec/found-devices.md, steps 3 and 4.

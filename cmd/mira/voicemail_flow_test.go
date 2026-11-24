@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/clip"
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/clip"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // A recording counts as played when the speaker played and went idle, as

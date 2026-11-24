@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/config"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/config"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // Retries of a private delivery: docs/spec/retry.md, step 2.

@@ -4,18 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/miraassist/mira/internal/clock"
+	"github.com/miraassist/mira-app/internal/clock"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/store/storetest"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/store/storetest"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // fakeFinisher asks once, then proposes; Commit says done.

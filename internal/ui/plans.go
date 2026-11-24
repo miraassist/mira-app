@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // Plan is a running plan (docs/spec/threads.md, Pläne) as the page shows

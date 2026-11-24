@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/i18n"
+	"github.com/miraassist/mira-app/internal/i18n"
 )
 
 const progSum = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"

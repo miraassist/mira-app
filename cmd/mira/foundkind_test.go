@@ -8,16 +8,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/devices"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/store/storetest"
-	"github.com/miraassist/mira/internal/threads"
-	"github.com/miraassist/mira/internal/tools"
-	"github.com/miraassist/mira/internal/voicemail"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/devices"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/store/storetest"
+	"github.com/miraassist/mira-app/internal/threads"
+	"github.com/miraassist/mira-app/internal/tools"
+	"github.com/miraassist/mira-app/internal/voicemail"
 )
 
 // docs/spec/messages.md, step 5: found devices as a kind.

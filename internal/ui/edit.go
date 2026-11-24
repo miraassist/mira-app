@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/miraassist/mira/internal/api"
-	"github.com/miraassist/mira/internal/llm"
+	"github.com/miraassist/mira-app/internal/api"
+	"github.com/miraassist/mira-app/internal/llm"
 )
 
 // Editing models, agents and skills (docs/spec/editing.md): the page

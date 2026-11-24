@@ -3,7 +3,7 @@ package notifier
 import (
 	"testing"
 
-	"github.com/miraassist/mira/internal/i18n"
+	"github.com/miraassist/mira-app/internal/i18n"
 )
 
 func TestTextsComplete(t *testing.T) {

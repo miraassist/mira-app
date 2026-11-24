@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/i18n"
+	"github.com/miraassist/mira-app/internal/i18n"
 )
 
 // docs/spec/messages.md, Delivery: read out on request, the message comes

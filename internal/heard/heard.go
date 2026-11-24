@@ -17,7 +17,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/miraassist/mira/internal/clock"
+	"github.com/miraassist/mira-app/internal/clock"
 )
 
 // The start value until a satellite has measurements (row 12).

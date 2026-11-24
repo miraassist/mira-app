@@ -12,13 +12,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/conversation"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/store/storetest"
-	"github.com/miraassist/mira/internal/tasks"
-	"github.com/miraassist/mira/internal/watch"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/conversation"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/store/storetest"
+	"github.com/miraassist/mira-app/internal/tasks"
+	"github.com/miraassist/mira-app/internal/watch"
 )
 
 type fakeConversation struct {

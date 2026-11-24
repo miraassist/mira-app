@@ -17,8 +17,9 @@ var (
 	reSpecLink = regexp.MustCompile(`\]\(([A-Za-z0-9_-]+\.(?:md|feature))(?:#[^)]*)?\)`)
 	// The files that name specs.
 	textFiles = []string{".go", ".py", ".md", ".feature", ".yaml", ".yml", ".js", ".html", ".json", ".sh", ".txt"}
-	// Specs of the other repository (miraassist/mira-fritz) named here.
-	foreignSpecs = []string{"fritz.md"}
+	// Specs of the other repositories named here: Mira FRITZ!Box's
+	// (miraassist/mira-fritz) and the integration's (miraassist/mira).
+	foreignSpecs = []string{"fritz.md", "ha-integration.md"}
 )
 
 // Every spec the repository names, by its path or by a link between specs,

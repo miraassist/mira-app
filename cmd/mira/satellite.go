@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/miraassist/mira/internal/alarm"
-	"github.com/miraassist/mira/internal/excerpt"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/radio"
+	"github.com/miraassist/mira-app/internal/alarm"
+	"github.com/miraassist/mira-app/internal/excerpt"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/radio"
 )
 
 // speakerOf is the media player of a satellite's device, where Mira plays

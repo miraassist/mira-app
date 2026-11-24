@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/miraassist/mira/internal/routes"
+	"github.com/miraassist/mira-app/internal/routes"
 )
 
 // File is where the description goes, and the service's version comes from.

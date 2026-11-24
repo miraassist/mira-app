@@ -27,10 +27,10 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/prompt"
-	"github.com/miraassist/mira/internal/retry"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/prompt"
+	"github.com/miraassist/mira-app/internal/retry"
 )
 
 // ErrUnknownTool is returned for a name no connected server offers.

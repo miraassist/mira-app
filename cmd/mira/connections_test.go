@@ -7,12 +7,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/mcp"
-	"github.com/miraassist/mira/internal/oauth"
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/testsupport/fakeoauth"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/mcp"
+	"github.com/miraassist/mira-app/internal/oauth"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/testsupport/fakeoauth"
 )
 
 // CO-07 A refused refresh token makes the connection expired (the repair

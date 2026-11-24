@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // ToolDue names the to-dos due by a day (docs/spec/todo-due.md, Reading).

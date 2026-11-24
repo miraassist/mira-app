@@ -6,9 +6,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/miraassist/mira/internal/config"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/config"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // Several satellites in a room (docs/spec/satellites-rooms.md): the bath

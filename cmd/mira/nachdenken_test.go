@@ -7,13 +7,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/agent"
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/llm"
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/testsupport/fakellm"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/agent"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/llm"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/testsupport/fakellm"
+	"github.com/miraassist/mira-app/internal/tools"
 	"gopkg.in/yaml.v3"
 )
 

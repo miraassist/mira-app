@@ -6,16 +6,16 @@ import (
 	"testing"
 	"time"
 
-	fakeclock "github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/conversation"
-	"github.com/miraassist/mira/internal/hooks"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/llm"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/store/storetest"
-	"github.com/miraassist/mira/internal/testsupport/fakellm"
-	"github.com/miraassist/mira/internal/tools"
+	fakeclock "github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/conversation"
+	"github.com/miraassist/mira-app/internal/hooks"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/llm"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/store/storetest"
+	"github.com/miraassist/mira-app/internal/testsupport/fakellm"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 func TestAfterwordFollowsAVoiceAnswer(t *testing.T) {

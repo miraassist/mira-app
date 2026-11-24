@@ -10,11 +10,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/access"
-	"github.com/miraassist/mira/internal/api"
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/store/storetest"
+	"github.com/miraassist/mira-app/internal/access"
+	"github.com/miraassist/mira-app/internal/api"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/store/storetest"
 )
 
 const integration = "the-integrations-token"

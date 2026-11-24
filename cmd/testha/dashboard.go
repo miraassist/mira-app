@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // dashboardPath is the URL path of the test HA's dashboard (it needs a hyphen).

@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/miraassist/mira/internal/agent"
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/llm"
-	"github.com/miraassist/mira/internal/prompt"
+	"github.com/miraassist/mira-app/internal/agent"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/llm"
+	"github.com/miraassist/mira-app/internal/prompt"
 )
 
 // A local model with warm_slots keeps the conversation prompt warm in one

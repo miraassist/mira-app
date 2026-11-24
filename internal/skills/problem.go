@@ -3,7 +3,7 @@ package skills
 import (
 	"fmt"
 
-	"github.com/miraassist/mira/internal/i18n"
+	"github.com/miraassist/mira-app/internal/i18n"
 )
 
 // Problem is why an enabled skill did not start, worded so that whoever

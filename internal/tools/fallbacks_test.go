@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/miraassist/mira/internal/testsupport/logcap"
+	"github.com/miraassist/mira-app/internal/testsupport/logcap"
 )
 
 // A tool call's arguments that are no JSON object: the hooks see none, and

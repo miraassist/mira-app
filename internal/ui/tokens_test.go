@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/access"
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/store/storetest"
+	"github.com/miraassist/mira-app/internal/access"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/store/storetest"
 )
 
 // tokenServer is the page with real access tokens; it answers with the

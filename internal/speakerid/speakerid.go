@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
+	"github.com/miraassist/mira-app/internal/clock"
 )
 
 // Timeout bounds one question: a service that is down or slow costs a turn

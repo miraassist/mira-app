@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/mcp"
-	"github.com/miraassist/mira/internal/skills"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/mcp"
+	"github.com/miraassist/mira-app/internal/skills"
 )
 
 // The shipped skill rewe (docs/spec/rewe.md): korb as its MCP server over

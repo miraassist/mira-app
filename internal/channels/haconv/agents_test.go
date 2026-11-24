@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/agent"
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/llm"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/store/storetest"
+	"github.com/miraassist/mira-app/internal/agent"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/llm"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/store/storetest"
 )
 
 // answerModel answers with its text, or waits until the call ends when it

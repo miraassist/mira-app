@@ -15,11 +15,11 @@ import (
 
 	"go.starlark.net/starlark"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/excerpt"
-	"github.com/miraassist/mira/internal/prompt"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/prompt"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // Rules Mira writes and manages on request (docs/spec/hooks-writing.md):

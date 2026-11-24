@@ -21,7 +21,7 @@ import (
 
 	"golang.org/x/net/html/charset"
 
-	"github.com/miraassist/mira/internal/i18n"
+	"github.com/miraassist/mira-app/internal/i18n"
 )
 
 const (

@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/miraassist/mira/internal/agent"
-	"github.com/miraassist/mira/internal/excerpt"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/agent"
+	"github.com/miraassist/mira-app/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/store"
 	"log/slog"
 )
 

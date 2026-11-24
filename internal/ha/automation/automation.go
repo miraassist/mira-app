@@ -13,8 +13,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/miraassist/mira/internal/excerpt"
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/excerpt"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // HA is what saving and deleting need of the Home Assistant client.

@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/config"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/config"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // Private messages: docs/spec/schedule-receiver.md, step 1.

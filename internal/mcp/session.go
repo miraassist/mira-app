@@ -8,10 +8,10 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/mcp/transport"
-	"github.com/miraassist/mira/internal/prompt"
-	"github.com/miraassist/mira/internal/retry"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/mcp/transport"
+	"github.com/miraassist/mira-app/internal/prompt"
+	"github.com/miraassist/mira-app/internal/retry"
 )
 
 // The logical session of a server (docs/spec/mcp-connections.md): one loop

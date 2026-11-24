@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/ha/automation"
+	"github.com/miraassist/mira-app/internal/ha/automation"
 )
 
 // The tasks are saved and deleted through Home Assistant's automation config

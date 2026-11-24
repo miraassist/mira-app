@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/llm"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/llm"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // worker is a background agent that may read and act.

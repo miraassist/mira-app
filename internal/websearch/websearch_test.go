@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 func fixture(t *testing.T, name string) []byte {

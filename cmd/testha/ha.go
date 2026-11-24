@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 const (

@@ -13,8 +13,8 @@ import (
 	"log/slog"
 	"sync"
 
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 type Options struct {

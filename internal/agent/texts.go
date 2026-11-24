@@ -1,6 +1,6 @@
 package agent
 
-import "github.com/miraassist/mira/internal/i18n"
+import "github.com/miraassist/mira-app/internal/i18n"
 
 // texts are what the model reads when a tool call of a run does not run.
 type texts struct {

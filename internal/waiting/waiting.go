@@ -14,9 +14,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/i18n"
+	"github.com/miraassist/mira-app/internal/clock"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/i18n"
 )
 
 // VideoPath is where Home Assistant serves the videos to satellites: the

@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/testsupport/fakeha"
-	"github.com/miraassist/mira/internal/testsupport/logcap"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/testsupport/fakeha"
+	"github.com/miraassist/mira-app/internal/testsupport/logcap"
 )
 
 // The state cannot be watched: it counts as not reached, and the log names

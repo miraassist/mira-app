@@ -11,12 +11,12 @@ import (
 	"strings"
 	"testing"
 
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/retry"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/tools"
-	"github.com/miraassist/mira/internal/watch"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/retry"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/tools"
+	"github.com/miraassist/mira-app/internal/watch"
 )
 
 // groupHouse plays Home Assistant for the group watch: its blueprints, the

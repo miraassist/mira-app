@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // Compaction (docs/spec/context.md): the model sees the running thread and

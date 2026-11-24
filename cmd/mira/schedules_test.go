@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/testsupport/logcap"
-	"github.com/miraassist/mira/internal/ui"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/testsupport/logcap"
+	"github.com/miraassist/mira-app/internal/ui"
 )
 
 // The page "Schedules" (docs/spec/schedules.md, step 3).

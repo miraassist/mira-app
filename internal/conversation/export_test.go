@@ -3,8 +3,8 @@ package conversation
 import (
 	"time"
 
-	"github.com/miraassist/mira/internal/agent"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/agent"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // SetAgentWait shortens how long a voice conversation waits for an agent

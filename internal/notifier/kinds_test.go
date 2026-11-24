@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // docs/spec/messages.md, Kinds of messages.

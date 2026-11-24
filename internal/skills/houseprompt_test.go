@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // A job of the scheduler waits for Home Assistant's prompt instead of

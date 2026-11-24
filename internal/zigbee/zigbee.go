@@ -19,13 +19,13 @@ import (
 
 	"github.com/oklog/ulid/v2"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/devices"
-	"github.com/miraassist/mira/internal/excerpt"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/devices"
+	"github.com/miraassist/mira-app/internal/excerpt"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // Skill is the skill whose tools these are.

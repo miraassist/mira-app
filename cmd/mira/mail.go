@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miraassist/mira/internal/calendar"
-	"github.com/miraassist/mira/internal/mailcal"
-	"github.com/miraassist/mira/internal/skills"
+	"github.com/miraassist/mira-app/internal/calendar"
+	"github.com/miraassist/mira-app/internal/mailcal"
+	"github.com/miraassist/mira-app/internal/skills"
 )
 
 // The mail calendar (docs/spec/mail-calendar.md) keeps its entries in Home

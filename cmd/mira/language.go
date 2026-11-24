@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/language"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/language"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // newLanguages builds the resolver of docs/spec/language.md. Before anyone

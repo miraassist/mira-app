@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/retry"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/retry"
 )
 
 // fakeTemplates plays render_template: the answer of each call in order.

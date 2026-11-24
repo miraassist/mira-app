@@ -4,11 +4,11 @@ import (
 	"context"
 	"strings"
 
-	"github.com/miraassist/mira/internal/agent"
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/prompt"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/agent"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/prompt"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // BackgroundContext builds an agent's background profile

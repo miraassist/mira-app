@@ -9,11 +9,11 @@ import (
 
 	sdk "github.com/a2aproject/a2a-go/v2/a2a"
 
-	"github.com/miraassist/mira/internal/a2a/transport"
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/store/storetest"
-	"github.com/miraassist/mira/internal/testsupport/logcap"
+	"github.com/miraassist/mira-app/internal/a2a/transport"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/store/storetest"
+	"github.com/miraassist/mira-app/internal/testsupport/logcap"
 )
 
 // fakeWire stands for a call's transport: it records what the loop asks

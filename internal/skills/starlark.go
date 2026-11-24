@@ -8,8 +8,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/miraassist/mira/internal/startools"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/startools"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // toolsSection is metadata.mira.tools: which of the skill's Starlark tools

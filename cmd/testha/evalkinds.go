@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
+	"github.com/miraassist/mira-app/internal/clock"
 )
 
 // The steps that put a waiting message of a kind (docs/spec/evals.md,

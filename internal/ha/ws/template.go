@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/miraassist/mira/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/excerpt"
 )
 
 // CmdRenderTemplate renders a template in Home Assistant: a subscription

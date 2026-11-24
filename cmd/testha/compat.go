@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/ha/assistprompt"
-	"github.com/miraassist/mira/internal/ha/structure"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/mcp"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/ha/assistprompt"
+	"github.com/miraassist/mira-app/internal/ha/structure"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/mcp"
 )
 
 // compat checks what Mira relies on against the running test Home Assistant,

@@ -8,11 +8,11 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/miraassist/mira/internal/a2a"
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/skills"
-	a2afake "github.com/miraassist/mira/testenv/a2a_fake"
+	"github.com/miraassist/mira-app/internal/a2a"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/skills"
+	a2afake "github.com/miraassist/mira-app/testenv/a2a_fake"
 )
 
 // A skill's remote agent starts no model agent and is no problem of the

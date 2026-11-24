@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/clock"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // Registry events that invalidate the house structure.

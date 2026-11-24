@@ -15,7 +15,7 @@ import (
 
 	sdk "github.com/a2aproject/a2a-go/v2/a2a"
 
-	"github.com/miraassist/mira/internal/retry"
+	"github.com/miraassist/mira-app/internal/retry"
 )
 
 // RM-27 The transport knows nothing of the call

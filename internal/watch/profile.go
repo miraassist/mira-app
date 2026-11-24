@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // Kind is what a power sensor's device does as its device profile sees it

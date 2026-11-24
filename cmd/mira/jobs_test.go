@@ -10,8 +10,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/ui"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/ui"
 )
 
 // Scheduled jobs on the page: docs/spec/scheduled-jobs.md, step 2.

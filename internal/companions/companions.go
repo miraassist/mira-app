@@ -17,9 +17,9 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/miraassist/mira/internal/access"
-	"github.com/miraassist/mira/internal/api"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/access"
+	"github.com/miraassist/mira-app/internal/api"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // Limits of decisions 6 and 7.

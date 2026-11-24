@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/miraassist/mira/internal/excerpt"
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/excerpt"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // HA is what the routes to Home Assistant need of Mira's connection

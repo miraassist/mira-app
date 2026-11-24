@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/inbox"
-	"github.com/miraassist/mira/internal/mailcal"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/inbox"
+	"github.com/miraassist/mira-app/internal/mailcal"
 )
 
 // A mail into Mira's inbox in an eval (docs/spec/evals.md, The inbox): the

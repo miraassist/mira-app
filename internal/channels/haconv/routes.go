@@ -3,12 +3,12 @@ package haconv
 import (
 	"net/http"
 
-	"github.com/miraassist/mira/internal/api"
-	"github.com/miraassist/mira/internal/backup"
-	"github.com/miraassist/mira/internal/inbox"
-	"github.com/miraassist/mira/internal/mailcal"
-	"github.com/miraassist/mira/internal/oauth"
-	"github.com/miraassist/mira/internal/tasks"
+	"github.com/miraassist/mira-app/internal/api"
+	"github.com/miraassist/mira-app/internal/backup"
+	"github.com/miraassist/mira-app/internal/inbox"
+	"github.com/miraassist/mira-app/internal/mailcal"
+	"github.com/miraassist/mira-app/internal/oauth"
+	"github.com/miraassist/mira-app/internal/tasks"
 )
 
 // routes registers the integration's interface (docs/spec/openapi.md).

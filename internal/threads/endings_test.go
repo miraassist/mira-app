@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/testsupport/logcap"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/testsupport/logcap"
 )
 
 // EN-01 A turn that ended takes no result of its agents

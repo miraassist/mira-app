@@ -1,6 +1,6 @@
 package history
 
-import "github.com/miraassist/mira/internal/i18n"
+import "github.com/miraassist/mira-app/internal/i18n"
 
 // texts are the tool's description and its answers: facts for the model,
 // which words them itself.

@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/miraassist/mira/internal/excerpt"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/retry"
+	"github.com/miraassist/mira-app/internal/excerpt"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/retry"
 )
 
 // HA is what the blueprints need of Home Assistant: its blueprint commands.

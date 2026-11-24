@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
+	"github.com/miraassist/mira-app/internal/clock"
 )
 
 // serve answers /api/match with body and records the text asked for; a

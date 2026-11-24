@@ -15,8 +15,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/miraassist/mira/internal/ha/structure"
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/ha/structure"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // Entity is what the planner may choose from.

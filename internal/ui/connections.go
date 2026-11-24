@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/miraassist/mira/internal/api"
+	"github.com/miraassist/mira-app/internal/api"
 )
 
 // Connections are the skills' logins at services, for the Connections page

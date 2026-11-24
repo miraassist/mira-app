@@ -10,9 +10,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/memfile"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/memfile"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // runMemory is "mira memory export [-o FILE]" and "mira memory import FILE

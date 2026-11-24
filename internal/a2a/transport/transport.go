@@ -19,8 +19,8 @@ import (
 
 	sdk "github.com/a2aproject/a2a-go/v2/a2a"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/retry"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/retry"
 )
 
 // Client is the part of the SDK's client a transport uses.

@@ -15,14 +15,14 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/miraassist/mira/internal/agent"
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/llm"
-	"github.com/miraassist/mira/internal/mcp"
-	"github.com/miraassist/mira/internal/phone"
-	"github.com/miraassist/mira/internal/setup"
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/ui"
+	"github.com/miraassist/mira-app/internal/agent"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/llm"
+	"github.com/miraassist/mira-app/internal/mcp"
+	"github.com/miraassist/mira-app/internal/phone"
+	"github.com/miraassist/mira-app/internal/setup"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/ui"
 )
 
 // editor is the editing on Mira's page (docs/spec/editing.md): it writes

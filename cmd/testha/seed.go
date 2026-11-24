@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // simulated maps each simulated sensor to the input_boolean that drives it

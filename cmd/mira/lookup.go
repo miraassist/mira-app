@@ -5,7 +5,7 @@ import (
 	"slices"
 	"sync"
 
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // What a satellite's tools need of its device (its speaker, its node name,

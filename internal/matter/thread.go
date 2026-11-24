@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/miraassist/mira/internal/excerpt"
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/excerpt"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // threadNet is one of Home Assistant's Thread networks

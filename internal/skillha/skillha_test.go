@@ -14,12 +14,12 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/prompt"
-	"github.com/miraassist/mira/internal/retry"
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/tools"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/prompt"
+	"github.com/miraassist/mira-app/internal/retry"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // fakeHA is Home Assistant as the sync sees it: its blueprints by path with

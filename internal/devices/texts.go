@@ -1,6 +1,6 @@
 package devices
 
-import "github.com/miraassist/mira/internal/i18n"
+import "github.com/miraassist/mira-app/internal/i18n"
 
 // coreTexts are the descriptions and results of device_assign and
 // device_finish: facts for the model, which words them itself.

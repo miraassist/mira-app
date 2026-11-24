@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/store/storetest"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/store/storetest"
 )
 
 type fakeAssessor struct {

@@ -1,4 +1,4 @@
-module github.com/miraassist/mira
+module github.com/miraassist/mira-app
 
 go 1.27.3
 

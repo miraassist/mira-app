@@ -5,7 +5,7 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/miraassist/mira/internal/ha/automation"
+	"github.com/miraassist/mira-app/internal/ha/automation"
 )
 
 // Tidying up (docs/spec/hacs-default.md, 3 and 4): a timer's automation

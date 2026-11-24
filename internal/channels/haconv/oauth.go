@@ -6,7 +6,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/miraassist/mira/internal/oauth"
+	"github.com/miraassist/mira-app/internal/oauth"
 )
 
 // Logins are the skills' connections as the integration needs them for a

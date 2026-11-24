@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/retry"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/retry"
 )
 
 // The tests' house: a fixed time zone and a fixed now, so they pass at any

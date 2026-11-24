@@ -6,7 +6,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/miraassist/mira/internal/startools"
+	"github.com/miraassist/mira-app/internal/startools"
 )
 
 // ToolInfo is one of a skill's Starlark tools as the page shows it.

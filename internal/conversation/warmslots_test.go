@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/testsupport/fakellm"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/testsupport/fakellm"
 )
 
 // warmHarness is a harness whose main model has warm slots

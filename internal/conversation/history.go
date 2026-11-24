@@ -5,10 +5,10 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/ha/structure"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/ha/structure"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // The thread's history (docs/spec/thread-history.md): a turn that belongs to

@@ -14,13 +14,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/miraassist/mira/internal/a2a"
-	"github.com/miraassist/mira/internal/access"
-	"github.com/miraassist/mira/internal/api"
-	"github.com/miraassist/mira/internal/channels/haconv"
-	"github.com/miraassist/mira/internal/companions"
-	"github.com/miraassist/mira/internal/setup"
-	"github.com/miraassist/mira/internal/ui"
+	"github.com/miraassist/mira-app/internal/a2a"
+	"github.com/miraassist/mira-app/internal/access"
+	"github.com/miraassist/mira-app/internal/api"
+	"github.com/miraassist/mira-app/internal/channels/haconv"
+	"github.com/miraassist/mira-app/internal/companions"
+	"github.com/miraassist/mira-app/internal/setup"
+	"github.com/miraassist/mira-app/internal/ui"
 )
 
 // Parts are the handlers of the interface.

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/miraassist/mira/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/excerpt"
 )
 
 // carryOverKV moves the lists kept as keys of kv into their tables

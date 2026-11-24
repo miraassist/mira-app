@@ -20,9 +20,9 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/retry"
-	"github.com/miraassist/mira/internal/telemetry"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/retry"
+	"github.com/miraassist/mira-app/internal/telemetry"
 )
 
 // Error is a non-2xx response from the LLM server.

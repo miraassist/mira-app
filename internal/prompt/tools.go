@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/miraassist/mira/internal/llm"
+	"github.com/miraassist/mira-app/internal/llm"
 )
 
 // ServerSeparator joins an MCP server name and a tool name into the name the

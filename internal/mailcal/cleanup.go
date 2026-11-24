@@ -2,7 +2,7 @@ package mailcal
 
 import (
 	"context"
-	"github.com/miraassist/mira/internal/clock"
+	"github.com/miraassist/mira-app/internal/clock"
 	"strings"
 	"time"
 )

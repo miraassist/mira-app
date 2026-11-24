@@ -4,14 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/ha/structure"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/hooks"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/prompt"
-	"github.com/miraassist/mira/internal/threads"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/ha/structure"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/hooks"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/prompt"
+	"github.com/miraassist/mira-app/internal/threads"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // HK-84 A skill's action is a call of its own for the hooks

@@ -1,6 +1,6 @@
 package notifier
 
-import "github.com/miraassist/mira/internal/store"
+import "github.com/miraassist/mira-app/internal/store"
 
 // The shipped skills take these kinds (docs/spec/messages.md, decision 33);
 // the service sets them from the skills' takes.

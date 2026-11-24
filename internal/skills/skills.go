@@ -32,10 +32,10 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/schedule"
-	"github.com/miraassist/mira/internal/startools"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/schedule"
+	"github.com/miraassist/mira-app/internal/startools"
 )
 
 // Skill is one loaded and enabled skill.

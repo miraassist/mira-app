@@ -12,13 +12,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miraassist/mira/internal/api"
-	"github.com/miraassist/mira/internal/channels/haconv"
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/setup"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/api"
+	"github.com/miraassist/mira-app/internal/channels/haconv"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/setup"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // limitedSentence is a turn's answer while mira.yaml cannot be read.

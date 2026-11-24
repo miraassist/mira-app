@@ -16,7 +16,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/miraassist/mira/internal/llm"
+	"github.com/miraassist/mira-app/internal/llm"
 )
 
 // Step is one scripted reply. Give it Content, ToolCalls, or both.

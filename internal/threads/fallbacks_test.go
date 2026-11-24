@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/testsupport/logcap"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/testsupport/logcap"
 )
 
 // The work is done after the turn stopped waiting, and the thread cannot be

@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/llm"
-	"github.com/miraassist/mira/internal/prompt"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/llm"
+	"github.com/miraassist/mira-app/internal/prompt"
 )
 
 // What the log says about the context (docs/system.md): every call to the

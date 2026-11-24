@@ -7,12 +7,12 @@ import (
 	"slices"
 	"time"
 
-	"github.com/miraassist/mira/internal/excerpt"
-	"github.com/miraassist/mira/internal/ha/structure"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/music"
-	"github.com/miraassist/mira/internal/prompt"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/ha/structure"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/music"
+	"github.com/miraassist/mira-app/internal/prompt"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // musicPlayers are the exposed Music Assistant players of the house

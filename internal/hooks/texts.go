@@ -1,6 +1,6 @@
 package hooks
 
-import "github.com/miraassist/mira/internal/i18n"
+import "github.com/miraassist/mira-app/internal/i18n"
 
 // texts are what the built-in hooks say (text(key) in a hook), the engine's
 // own messages and the rule tools (docs/spec/hooks-writing.md).

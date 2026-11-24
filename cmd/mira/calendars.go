@@ -7,12 +7,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/miraassist/mira/internal/calendar"
-	"github.com/miraassist/mira/internal/config"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/todo"
-	"github.com/miraassist/mira/internal/trace"
+	"github.com/miraassist/mira-app/internal/calendar"
+	"github.com/miraassist/mira-app/internal/config"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/todo"
+	"github.com/miraassist/mira-app/internal/trace"
 )
 
 // Calendars and to-do lists Mira may use: those exposed to Assist

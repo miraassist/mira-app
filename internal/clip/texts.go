@@ -1,6 +1,6 @@
 package clip
 
-import "github.com/miraassist/mira/internal/i18n"
+import "github.com/miraassist/mira-app/internal/i18n"
 
 // texts are the tool's description and results: facts for the model, which
 // words them itself.

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/testsupport/logcap"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/testsupport/logcap"
 )
 
 // A hit's page cannot be read: the next hit is taken, and the log names the

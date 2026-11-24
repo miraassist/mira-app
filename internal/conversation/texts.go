@@ -3,7 +3,7 @@ package conversation
 import (
 	"context"
 
-	"github.com/miraassist/mira/internal/i18n"
+	"github.com/miraassist/mira-app/internal/i18n"
 )
 
 // texts are what the engine itself writes: into layer 7, back to the model,

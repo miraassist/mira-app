@@ -20,7 +20,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/miraassist/mira/internal/schedule"
+	"github.com/miraassist/mira-app/internal/schedule"
 )
 
 // Channel names a conversation channel. Each one gets its own llama.cpp slot

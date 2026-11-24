@@ -15,7 +15,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/miraassist/mira/internal/clock"
+	"github.com/miraassist/mira-app/internal/clock"
 	"log/slog"
 	"sort"
 	"strings"
@@ -24,13 +24,13 @@ import (
 
 	"github.com/oklog/ulid/v2"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/ha/structure"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/retry"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/telemetry"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/ha/structure"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/retry"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/telemetry"
 )
 
 // HA is the part of the Home Assistant client the notifier needs.

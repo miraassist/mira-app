@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/miraassist/mira/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/excerpt"
 	"strings"
 
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // radioSource is the Radio Browser of Home Assistant's media sources.

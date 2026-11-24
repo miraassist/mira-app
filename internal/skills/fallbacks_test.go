@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/miraassist/mira/internal/testsupport/logcap"
+	"github.com/miraassist/mira-app/internal/testsupport/logcap"
 )
 
 // A skill whose SKILL.md cannot be read is missing from the list, and the

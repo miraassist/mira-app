@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/schedule"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/schedule"
 )
 
 // JobTemplate is what a skill offers to schedule (docs/spec/scheduled-jobs.md):

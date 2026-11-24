@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/miraassist/mira/internal/i18n"
+	"github.com/miraassist/mira-app/internal/i18n"
 )
 
 // KindOfBlueprint is the kind of device a blueprint of a power sensor

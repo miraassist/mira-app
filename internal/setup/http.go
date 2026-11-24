@@ -18,10 +18,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/miraassist/mira/internal/api"
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/llm"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/api"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/llm"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // Handler serves pairing and setup (docs/spec/setup.md):

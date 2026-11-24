@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/mailcal"
-	"github.com/miraassist/mira/internal/retry"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/mailcal"
+	"github.com/miraassist/mira-app/internal/retry"
 )
 
 var berlin = func() *time.Location {

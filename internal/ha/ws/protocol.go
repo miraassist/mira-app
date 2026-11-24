@@ -11,7 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/miraassist/mira/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/excerpt"
 )
 
 // Message types of the Home Assistant WebSocket API.

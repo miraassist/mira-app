@@ -10,7 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/miraassist/mira/internal/speakerid"
+	"github.com/miraassist/mira-app/internal/speakerid"
 )
 
 // fakeVoices is the speaker-id service: what it heard, and the samples.

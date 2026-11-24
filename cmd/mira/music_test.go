@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/music"
+	"github.com/miraassist/mira-app/internal/music"
 )
 
 // MU-43 Relative: the place in the song comes from the player's attributes

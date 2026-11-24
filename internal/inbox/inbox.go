@@ -24,11 +24,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/excerpt"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/mailcal"
-	"github.com/miraassist/mira/internal/retry"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/mailcal"
+	"github.com/miraassist/mira-app/internal/retry"
 )
 
 // The tags of the inbox in Paperless.

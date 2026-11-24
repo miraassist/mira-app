@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/ha/structure"
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/ha/structure"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // restarted is the notifier a restart makes: the same environment and the

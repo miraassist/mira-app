@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/mcp"
-	"github.com/miraassist/mira/internal/testsupport/fakemcp"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/mcp"
+	"github.com/miraassist/mira-app/internal/testsupport/fakemcp"
 )
 
 // compatHost is Mira's MCP host connected to a fake server as "ha".

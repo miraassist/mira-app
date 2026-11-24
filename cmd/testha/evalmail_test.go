@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
+	"github.com/miraassist/mira-app/internal/clock"
 )
 
 func TestFillDaysNamesTheGermanDate(t *testing.T) {

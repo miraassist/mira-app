@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/conversation"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/prompt"
-	"github.com/miraassist/mira/internal/speakerid"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/conversation"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/prompt"
+	"github.com/miraassist/mira-app/internal/speakerid"
 )
 
 // identify says who is speaking in a turn: a person key, or "" for someone

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/ui"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/ui"
 )
 
 // setupCalls calls a skill's setup tools for an admin on the page

@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/miraassist/mira/internal/ha/structure"
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/ha/structure"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // A satellite whose own ring shows the room's messages gets no screen hint

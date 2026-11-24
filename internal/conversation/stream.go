@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/miraassist/mira/internal/llm"
+	"github.com/miraassist/mira-app/internal/llm"
 )
 
 // Piece is a part of a voice answer, handed on while the answer is written

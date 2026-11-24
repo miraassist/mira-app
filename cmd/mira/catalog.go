@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miraassist/mira/internal/agent"
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/llm"
-	"github.com/miraassist/mira/internal/setup"
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/ui"
+	"github.com/miraassist/mira-app/internal/agent"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/llm"
+	"github.com/miraassist/mira-app/internal/setup"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/ui"
 )
 
 // catalog is every skill and agent as Mira loaded them, for the view on her

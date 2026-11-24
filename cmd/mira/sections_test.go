@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/ha/structure"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/ha/structure"
 )
 
 // The settings sections in the file, what Home Assistant sends in memory

@@ -23,8 +23,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/llm"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/llm"
 )
 
 // Mail is one mail as the Mira integration hands it over.

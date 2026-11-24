@@ -17,7 +17,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/miraassist/mira/internal/config"
+	"github.com/miraassist/mira-app/internal/config"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".

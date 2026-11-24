@@ -16,9 +16,9 @@ import (
 	"testing"
 	"time"
 
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/tools"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // Bringing a Wi-Fi device into the Wi-Fi: docs/spec/wifi-onboarding.md,

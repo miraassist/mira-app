@@ -9,7 +9,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // kvExposed is what Home Assistant exposes to Assist, as the Mira

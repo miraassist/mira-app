@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"github.com/miraassist/mira/internal/clip"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/clip"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // newClip builds clip_play (docs/spec/music-quiz.md) on Home Assistant:

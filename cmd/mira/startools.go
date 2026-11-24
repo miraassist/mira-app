@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/startools"
-	"github.com/miraassist/mira/internal/tools"
-	"github.com/miraassist/mira/internal/ui"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/startools"
+	"github.com/miraassist/mira-app/internal/tools"
+	"github.com/miraassist/mira-app/internal/ui"
 )
 
 // starlarkTry runs a skill's Starlark tool for an admin on the page

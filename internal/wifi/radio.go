@@ -17,8 +17,8 @@ import (
 
 	"github.com/godbus/dbus/v5"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/excerpt"
 )
 
 // AP is a Wi-Fi network a scan saw.

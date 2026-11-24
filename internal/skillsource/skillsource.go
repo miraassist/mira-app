@@ -22,10 +22,10 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/excerpt"
-	"github.com/miraassist/mira/internal/retry"
-	"github.com/miraassist/mira/internal/skills"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/retry"
+	"github.com/miraassist/mira-app/internal/skills"
 )
 
 // Policy is the spec's retry (Errors): three tries, waiting 2 s, then 4 s; a

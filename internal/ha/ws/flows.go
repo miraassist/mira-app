@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/miraassist/mira/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/excerpt"
 )
 
 // Config flows Home Assistant discovered and waits for a yes for

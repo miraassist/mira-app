@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // docs/spec/inbox.md, section 8, and docs/spec/threads.md, Started by code:

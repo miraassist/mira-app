@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // The delivery record (docs/spec/telegram-history.md, step 3).

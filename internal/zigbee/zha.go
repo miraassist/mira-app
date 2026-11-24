@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/miraassist/mira/internal/devices"
-	"github.com/miraassist/mira/internal/excerpt"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/devices"
+	"github.com/miraassist/mira-app/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // ZHA, Home Assistant's own Zigbee (docs/spec/device-onboarding.md, ZHA,

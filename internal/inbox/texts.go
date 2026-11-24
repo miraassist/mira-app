@@ -1,6 +1,6 @@
 package inbox
 
-import "github.com/miraassist/mira/internal/i18n"
+import "github.com/miraassist/mira-app/internal/i18n"
 
 // texts are the inbox's messages to the people.
 type texts struct {

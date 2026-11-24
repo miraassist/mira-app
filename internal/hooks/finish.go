@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miraassist/mira/internal/prompt"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/threads"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/prompt"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/threads"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // RuleField is the field of the skill "regel" the agent fills with the rule

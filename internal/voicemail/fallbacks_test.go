@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/miraassist/mira/internal/config"
+	"github.com/miraassist/mira-app/internal/config"
 )
 
 // The speaker cannot play the message: the playback ends, the message stays

@@ -10,9 +10,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/miraassist/mira/internal/excerpt"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/retry"
+	"github.com/miraassist/mira-app/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/retry"
 )
 
 // The group watch (docs/spec/group-watch.md): a watch group is a selection

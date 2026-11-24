@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/miraassist/mira/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/excerpt"
 )
 
 // Message states. A message with a delivery time (a reminder) is scheduled

@@ -19,9 +19,9 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // The states of a connection, as the Connections page shows them.

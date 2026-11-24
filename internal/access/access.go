@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // Kinds of callers.

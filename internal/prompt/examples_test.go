@@ -1,10 +1,10 @@
 package prompt
 
 import (
-	"github.com/miraassist/mira/internal/i18n"
+	"github.com/miraassist/mira-app/internal/i18n"
 	"testing"
 
-	"github.com/miraassist/mira/internal/llm"
+	"github.com/miraassist/mira-app/internal/llm"
 )
 
 func tool(name string) llm.Tool {

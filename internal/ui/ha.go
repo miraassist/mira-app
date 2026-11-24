@@ -3,8 +3,8 @@ package ui
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/excerpt"
 	"net/http"
 	"slices"
 	"sort"

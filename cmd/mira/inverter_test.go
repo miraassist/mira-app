@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/miraassist/mira/internal/llm"
+	"github.com/miraassist/mira-app/internal/llm"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -12,13 +12,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/config"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/testsupport/fakeha"
-	"github.com/miraassist/mira/internal/testsupport/fakellm"
-	"github.com/miraassist/mira/internal/testsupport/fakemcp"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/config"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/testsupport/fakeha"
+	"github.com/miraassist/mira-app/internal/testsupport/fakellm"
+	"github.com/miraassist/mira-app/internal/testsupport/fakemcp"
 )
 
 // TestInverterCaseEndToEnd is the M3 acceptance scenario through the real

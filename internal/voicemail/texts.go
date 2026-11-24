@@ -1,6 +1,6 @@
 package voicemail
 
-import "github.com/miraassist/mira/internal/i18n"
+import "github.com/miraassist/mira-app/internal/i18n"
 
 // texts are the tools' descriptions and results: facts for the model, which
 // words them itself.

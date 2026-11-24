@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miraassist/mira/internal/i18n"
+	"github.com/miraassist/mira-app/internal/i18n"
 )
 
 // Entry is one item on the timeline.

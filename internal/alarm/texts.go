@@ -3,7 +3,7 @@ package alarm
 import (
 	"strings"
 
-	"github.com/miraassist/mira/internal/i18n"
+	"github.com/miraassist/mira-app/internal/i18n"
 )
 
 type texts struct {

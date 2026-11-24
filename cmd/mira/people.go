@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/miraassist/mira/internal/config"
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/config"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // people is the directory of Home Assistant's persons: with Home Assistant

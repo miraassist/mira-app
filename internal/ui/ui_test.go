@@ -13,11 +13,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/docs"
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/store/storetest"
-	"github.com/miraassist/mira/internal/tasks"
+	"github.com/miraassist/mira-app/docs"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/store/storetest"
+	"github.com/miraassist/mira-app/internal/tasks"
 )
 
 type fakeConfig struct {

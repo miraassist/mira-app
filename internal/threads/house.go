@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // A thread of the house that Mira's code keeps for a target: one at a time,

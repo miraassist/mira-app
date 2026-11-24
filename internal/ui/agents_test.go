@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/agent"
-	"github.com/miraassist/mira/internal/llm"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/agent"
+	"github.com/miraassist/mira-app/internal/llm"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // storeRun writes a run as the runtime does: its record, its steps, its end.

@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/llm"
-	"github.com/miraassist/mira/internal/testsupport/fakellm"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/llm"
+	"github.com/miraassist/mira-app/internal/testsupport/fakellm"
 )
 
 func TestChatSendsSlotAndCachePrompt(t *testing.T) {

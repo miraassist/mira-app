@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	a2afake "github.com/miraassist/mira/testenv/a2a_fake"
+	a2afake "github.com/miraassist/mira-app/testenv/a2a_fake"
 )
 
 func main() {

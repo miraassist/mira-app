@@ -5,8 +5,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // Tests for docs/spec/messages.md, Who sees which open messages.

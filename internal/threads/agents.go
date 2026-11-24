@@ -9,8 +9,8 @@ import (
 
 	"github.com/oklog/ulid/v2"
 
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // Agents fill a thread's fields, as the user does (docs/spec/agents.md,

@@ -10,16 +10,16 @@ import (
 
 	"github.com/oklog/ulid/v2"
 
-	"github.com/miraassist/mira/internal/agent"
-	"github.com/miraassist/mira/internal/devices"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/matter"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/threads"
-	"github.com/miraassist/mira/internal/tools"
-	"github.com/miraassist/mira/internal/waiting"
-	"github.com/miraassist/mira/internal/wifi"
-	"github.com/miraassist/mira/internal/zigbee"
+	"github.com/miraassist/mira-app/internal/agent"
+	"github.com/miraassist/mira-app/internal/devices"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/matter"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/threads"
+	"github.com/miraassist/mira-app/internal/tools"
+	"github.com/miraassist/mira-app/internal/waiting"
+	"github.com/miraassist/mira-app/internal/wifi"
+	"github.com/miraassist/mira-app/internal/zigbee"
 )
 
 // Taking devices into the house by voice: the skill geraet-einbinden

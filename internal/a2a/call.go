@@ -15,10 +15,10 @@ import (
 
 	sdk "github.com/a2aproject/a2a-go/v2/a2a"
 
-	"github.com/miraassist/mira/internal/a2a/transport"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/retry"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/a2a/transport"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/retry"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // The calls of the remote agents (docs/spec/remote-agents.md, B to E and

@@ -9,10 +9,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/channels/haconv"
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/testsupport/fakellm"
-	"github.com/miraassist/mira/internal/ui"
+	"github.com/miraassist/mira-app/internal/channels/haconv"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/testsupport/fakellm"
+	"github.com/miraassist/mira-app/internal/ui"
 )
 
 // writeSkill writes a skill folder with its SKILL.md.

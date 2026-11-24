@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 func (e *env) reminder(id string, due time.Time, area, receiver string) {

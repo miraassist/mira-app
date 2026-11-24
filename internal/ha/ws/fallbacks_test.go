@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/miraassist/mira/internal/testsupport/logcap"
+	"github.com/miraassist/mira-app/internal/testsupport/logcap"
 )
 
 // An entities event that is no JSON is dropped, and the log says so.

@@ -14,17 +14,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/a2a"
-	"github.com/miraassist/mira/internal/channels/haconv"
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/testsupport/logcap"
-	"github.com/miraassist/mira/internal/threads"
-	"github.com/miraassist/mira/internal/tools"
-	a2afake "github.com/miraassist/mira/testenv/a2a_fake"
+	"github.com/miraassist/mira-app/internal/a2a"
+	"github.com/miraassist/mira-app/internal/channels/haconv"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/testsupport/logcap"
+	"github.com/miraassist/mira-app/internal/threads"
+	"github.com/miraassist/mira-app/internal/tools"
+	a2afake "github.com/miraassist/mira-app/testenv/a2a_fake"
 )
 
 // remoteEnv is the app with a skill whose target's field "fact" a remote

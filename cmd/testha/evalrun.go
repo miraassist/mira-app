@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miraassist/mira/internal/trace"
+	"github.com/miraassist/mira-app/internal/trace"
 )
 
 // Expect is what a step must lead to (docs/spec/evals.md): the result and

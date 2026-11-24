@@ -3,8 +3,8 @@ package main
 import (
 	"testing"
 
-	"github.com/miraassist/mira/internal/calendar"
-	"github.com/miraassist/mira/internal/config"
+	"github.com/miraassist/mira-app/internal/calendar"
+	"github.com/miraassist/mira-app/internal/config"
 )
 
 // Personal schedules run for whom a personal message reaches (a channel, or

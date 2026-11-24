@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/setup"
-	"github.com/miraassist/mira/internal/ui"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/setup"
+	"github.com/miraassist/mira-app/internal/ui"
 )
 
 const editConfig = `# test house

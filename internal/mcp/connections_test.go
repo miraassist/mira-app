@@ -8,9 +8,9 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/mcp/transport"
-	"github.com/miraassist/mira/internal/testsupport/fakemcp"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/mcp/transport"
+	"github.com/miraassist/mira-app/internal/testsupport/fakemcp"
 )
 
 // gatedServer is a fake server with a tool "slow" that holds each call

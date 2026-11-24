@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/store"
-	"github.com/miraassist/mira/internal/store/storetest"
-	a2afake "github.com/miraassist/mira/testenv/a2a_fake"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/store/storetest"
+	a2afake "github.com/miraassist/mira-app/testenv/a2a_fake"
 )
 
 // callHost is a host with the store and a channel of what it delivers.

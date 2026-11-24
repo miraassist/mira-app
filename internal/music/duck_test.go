@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/miraassist/mira/internal/music"
+	"github.com/miraassist/mira-app/internal/music"
 )
 
 // duckHA is the fake Home Assistant of the ducking tests: the players'

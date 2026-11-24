@@ -11,13 +11,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/ha/structure"
-	haws "github.com/miraassist/mira/internal/ha/ws"
-	"github.com/miraassist/mira/internal/mcp"
-	"github.com/miraassist/mira/internal/music"
-	"github.com/miraassist/mira/internal/testsupport/fakemcp"
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/ha/structure"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/mcp"
+	"github.com/miraassist/mira-app/internal/music"
+	"github.com/miraassist/mira-app/internal/testsupport/fakemcp"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // MU-40 A volume tool call of the turn keeps the players it reaches: only a

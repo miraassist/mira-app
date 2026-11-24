@@ -19,7 +19,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/miraassist/mira/internal/trace"
+	"github.com/miraassist/mira-app/internal/trace"
 )
 
 // The eval runner (docs/spec/evals.md): it plays fixed scenarios end to end

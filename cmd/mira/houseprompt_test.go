@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/miraassist/mira/internal/config"
-	"github.com/miraassist/mira/internal/ha/structure"
+	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/ha/structure"
 )
 
 // HP-05 There is no own structure block

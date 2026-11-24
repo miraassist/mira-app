@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/mailcal"
+	"github.com/miraassist/mira-app/internal/mailcal"
 )
 
 // inboxStub stands for the inbox: it only checks its own token, as the

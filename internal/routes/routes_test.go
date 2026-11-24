@@ -15,10 +15,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miraassist/mira/internal/api"
-	"github.com/miraassist/mira/internal/channels/haconv"
-	"github.com/miraassist/mira/internal/setup"
-	"github.com/miraassist/mira/internal/ui"
+	"github.com/miraassist/mira-app/internal/api"
+	"github.com/miraassist/mira-app/internal/channels/haconv"
+	"github.com/miraassist/mira-app/internal/setup"
+	"github.com/miraassist/mira-app/internal/ui"
 )
 
 // described is the generated description as JSON.

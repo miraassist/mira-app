@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miraassist/mira/internal/i18n"
+	"github.com/miraassist/mira-app/internal/i18n"
 )
 
 // How a turn's person is known, when Mira recognized them rather than being

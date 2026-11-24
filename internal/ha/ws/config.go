@@ -11,7 +11,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/miraassist/mira/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/excerpt"
 )
 
 // ErrNotAdmin: Home Assistant refused a command or a request because Mira's

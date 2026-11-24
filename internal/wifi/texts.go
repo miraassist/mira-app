@@ -1,6 +1,6 @@
 package wifi
 
-import "github.com/miraassist/mira/internal/i18n"
+import "github.com/miraassist/mira-app/internal/i18n"
 
 // texts are the tools' descriptions and results (facts for the model) and
 // what Mira says herself at the thread's satellite. The home Wi-Fi's

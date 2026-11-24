@@ -11,7 +11,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/store"
 	"github.com/oklog/ulid/v2"
 )
 

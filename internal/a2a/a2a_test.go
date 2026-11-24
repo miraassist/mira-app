@@ -17,12 +17,12 @@ import (
 
 	sdk "github.com/a2aproject/a2a-go/v2/a2a"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/oauth"
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/store"
-	a2afake "github.com/miraassist/mira/testenv/a2a_fake"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/oauth"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/store"
+	a2afake "github.com/miraassist/mira-app/testenv/a2a_fake"
 )
 
 // skillFile writes the skill recherche with a remote agent; agent is the

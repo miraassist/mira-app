@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/skills"
-	"github.com/miraassist/mira/internal/startools"
+	"github.com/miraassist/mira-app/internal/skills"
+	"github.com/miraassist/mira-app/internal/startools"
 )
 
 // The shipped skill boerse (docs/spec/boerse.md).

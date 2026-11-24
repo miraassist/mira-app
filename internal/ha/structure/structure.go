@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // Registry is the raw input of a build.

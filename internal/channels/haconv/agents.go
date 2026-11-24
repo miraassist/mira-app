@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miraassist/mira/internal/agent"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/agent"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // Agents is what Home Assistant's mira.agent, mira.agent_result and

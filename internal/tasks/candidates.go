@@ -7,9 +7,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/miraassist/mira/internal/excerpt"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/watch"
+	"github.com/miraassist/mira-app/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/watch"
 )
 
 // ToolWatchCandidates lists the house's candidates for a watch

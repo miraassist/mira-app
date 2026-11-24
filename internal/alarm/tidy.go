@@ -5,7 +5,7 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/miraassist/mira/internal/ha/automation"
+	"github.com/miraassist/mira-app/internal/ha/automation"
 )
 
 // Tidying up: a once-alarm goes once it rang and its run is over, if Mira

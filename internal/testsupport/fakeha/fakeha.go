@@ -17,7 +17,7 @@ import (
 
 	"github.com/coder/websocket"
 
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // ServiceCall is one recorded call_service command.

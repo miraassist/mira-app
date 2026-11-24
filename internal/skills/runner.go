@@ -12,11 +12,11 @@ import (
 
 	"github.com/oklog/ulid/v2"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/excerpt"
-	"github.com/miraassist/mira/internal/i18n"
-	"github.com/miraassist/mira/internal/schedule"
-	"github.com/miraassist/mira/internal/store"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/schedule"
+	"github.com/miraassist/mira-app/internal/store"
 )
 
 // Tasker runs one scheduled job and returns its JSON answer. The

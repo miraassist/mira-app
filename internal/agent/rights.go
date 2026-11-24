@@ -3,7 +3,7 @@ package agent
 import (
 	"strings"
 
-	"github.com/miraassist/mira/internal/tools"
+	"github.com/miraassist/mira-app/internal/tools"
 )
 
 // Rights is the small rights model (docs/spec/agents.md, Rights): only what

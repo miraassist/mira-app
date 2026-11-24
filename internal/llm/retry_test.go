@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miraassist/mira/internal/clock"
-	"github.com/miraassist/mira/internal/llm"
-	"github.com/miraassist/mira/internal/retry"
+	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/llm"
+	"github.com/miraassist/mira-app/internal/retry"
 )
 
 // Retries of the model client: docs/spec/retry.md, step 4.

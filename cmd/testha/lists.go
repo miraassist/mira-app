@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"time"
 
-	haws "github.com/miraassist/mira/internal/ha/ws"
+	haws "github.com/miraassist/mira-app/internal/ha/ws"
 )
 
 // The test house's calendars and to-do list (docs/spec/calendar.md): a

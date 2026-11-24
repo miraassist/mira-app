@@ -1,7 +1,7 @@
 package prompt
 
 import (
-	"github.com/miraassist/mira/internal/llm"
+	"github.com/miraassist/mira-app/internal/llm"
 )
 
 // Request is the assembled prompt, ready to be handed to the LLM client.

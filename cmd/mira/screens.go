@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/miraassist/mira/internal/config"
+	"github.com/miraassist/mira-app/internal/config"
 )
 
 // screens finds the on-screen overlays the satellites' devices offer: an
