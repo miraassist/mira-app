@@ -38,6 +38,15 @@ service, one of:
         - ./data:/var/lib/mira   # memory, messages, database
   ```
 
+### Moving the app
+
+Until version 0.30, the app came from `https://github.com/miraassist/mira`. Home Assistant's Marketplace takes no
+repository with an app any more, so the app is here now, and to Home Assistant it is another app. To move: copy
+`mira.yaml` from the old app's config folder (`/addon_configs/…_mira/`), add
+`https://github.com/miraassist/mira-app` under Settings → Apps → App store → Repositories, install Mira from there,
+put `mira.yaml` into its config folder, start it, then remove the old app and the old repository. The integration
+stays where it was.
+
 More: [Installing Mira in detail](docs/install.md) · the guide's setup: [Deutsch](docs/guide/de.md#einrichtung) ·
 [English](docs/guide/en.md#setup).
 
