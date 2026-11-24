@@ -66,8 +66,9 @@ now change what is there and add new ones, without opening a file on the server.
   shows a wrong key.
 - **New model:** a name and the same form.
 - **Rename:** another name in the form; the agents and fallbacks that name the model are changed with it.
-- **main** can neither be renamed nor deleted. When the integration in Home Assistant sets main up, main is read only
-  here, with a hint: change it in Home Assistant under Configure (one place for a setting).
+- **main** can neither be renamed nor deleted. The integration's setup writes it into the file like the page does, so
+  it is edited here like every model ([The main model in mira.yaml](main-in-file.md)); read only only while a model of an older setup could not move into
+  the file, with the cause.
 - **Delete:** only a model no agent takes and none falls back to; otherwise the page names who uses it.
 
 ## Agents
@@ -176,7 +177,8 @@ nothing of this.
 3. Changes hold after a restart, with a button for it.
 4. Bundled skills: only on/off and settings.
 5. Nested parts (thread, MCP, input/output schemas) as YAML text with a check, not as forms.
-6. main is changed in Home Assistant when the integration set it up.
+6. main is changed in Home Assistant when the integration set it up. Replaced 2026-11-24: the setup writes main into
+   the file, and the page edits it ([The main model in mira.yaml](main-in-file.md)).
 7. **Skills as entries** (2026-10-24): under `skills`, beside `dirs`, each key is a skill with its settings; without
    `enabled` it is on, `enabled: false` switches it off and keeps its settings. Mira's own skills are on without an
    entry and can be switched off, for a replacement of one's own. The old `skills.enabled` is refused with a hint,

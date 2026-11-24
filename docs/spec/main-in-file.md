@@ -1,6 +1,6 @@
 # The main model in mira.yaml – Spec
 
-Status 2026-11-24: steps 1 and 2 built (not released): the setup writes `main` into mira.yaml, the page edits it; an installation's model of before moves into the file at its first start, and when the file cannot take it, Mira runs as before and says so (repair `model_file`, the integration's text in its next release). Scenarios: [main-in-file.feature](main-in-file.feature).
+Status 2026-11-24: steps 1 to 3 built (not released; step 3, the documents, with the guide where it named the model): the setup writes `main` into mira.yaml, the page edits it; an installation's model of before moves into the file at its first start, and when the file cannot take it, Mira runs as before and says so (repair `model_file`, the integration's text in its next release). Scenarios: [main-in-file.feature](main-in-file.feature).
 
 ## Goal
 

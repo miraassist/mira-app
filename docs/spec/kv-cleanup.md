@@ -38,13 +38,13 @@ Read in the code, the test HA's database and a backup of the maintainer's live d
 | # | Question | Decision |
 |---|---|---|
 | 1 | What belongs in `kv` | Single values, and families of keys with a prefix, **when [Database](../database.md) describes each**: the key, who writes and reads it, what it holds, whether it grows. A key that is not described there is not written |
-| 2 | Configuration in the database | Home Assistant's address and token and the main model **stay in `kv` and are laid over `mira.yaml`** at start, as today: a named exception to "`mira.yaml` is the one truth". Reason: the integration sets them, not the user (the setup, a new token the admin pastes, the integration's options for the model; Mira's page shows the main model as "from Home Assistant"); they belong to the pairing, which stays in `kv`; and a setup cannot fail on a `mira.yaml` that cannot be written. Changed the same day: first they were to move into `mira.yaml` |
+| 2 | Configuration in the database | Home Assistant's address and token and the main model **stay in `kv` and are laid over `mira.yaml`** at start, as today: a named exception to "`mira.yaml` is the one truth". Reason: the integration sets them, not the user (the setup, a new token the admin pastes, the integration's options for the model; Mira's page shows the main model as "from Home Assistant"); they belong to the pairing, which stays in `kv`; and a setup cannot fail on a `mira.yaml` that cannot be written. Changed the same day: first they were to move into `mira.yaml`. For the main model replaced 2026-11-24: it goes into `mira.yaml` ([The main model in mira.yaml](main-in-file.md), decision 1) |
 | 3 | Copies of Home Assistant | Stay in `kv`: the integration sends them, and they must hold across a restart of the service until it sends again. Named as copies in [Database](../database.md) |
 | 4 | Tables in disguise | Each gets a table: the schedules' last runs, the languages, the found devices said, the mails read, the Paperless owners |
 | 5 | Dead keys | A migration deletes them; the constant `telegram.offset` and its test go |
 | 6 | Order | This spec first, then the steps |
-| 7 | `mira reset` | Unchanged: the setup's values go with the database, as today (decision 2) |
-| 8 | A read-only `mira.yaml` | Unchanged: the setup works as today (decision 2) |
+| 7 | `mira reset` | Unchanged: the setup's values go with the database, as today (decision 2). For the model replaced 2026-11-24: it is in `mira.yaml` and stays ([The main model in mira.yaml](main-in-file.md), decision 4) |
+| 8 | A read-only `mira.yaml` | Unchanged: the setup works as today (decision 2). For the model replaced 2026-11-24: the setup is refused with the file and the cause ([The main model in mira.yaml](main-in-file.md), decision 6) |
 | 9 | A value of `mira.yaml` the setup's values cover | Said: a log line at start names each setting of `mira.yaml` that a value from the setup replaces (`ha.url`, `ha.token`, the main model's endpoint, model, key), never the secret value. Before, it was replaced silently |
 
 ## The new tables

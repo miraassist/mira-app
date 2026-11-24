@@ -327,8 +327,9 @@ Mira's tables, their relations, what each holds, who writes and reads it and how
 the one place for the schema.
 
 - Configuration: `mira.yaml` is the one truth; Mira's page writes it, secrets go into the secrets file
-  ([Editing](spec/editing.md)). The one exception: Home Assistant's address and token and the main model, as the
-  integration's setup sent them, are kept in the database and laid over `mira.yaml` at start
+  ([Editing](spec/editing.md)). The integration's setup writes the main model there too, as `main` with its key in
+  the secrets file ([The main model in mira.yaml](spec/main-in-file.md)). The one exception: Home Assistant's address
+  and token, as the integration's setup sent them, are kept in the database and laid over `mira.yaml` at start
   ([Database](database.md), The key-value table).
 - A task lives as an automation in Home Assistant; Mira keeps only which automations are her own (`own_automations`)
   and the log of a task's assessments (`assessments`).

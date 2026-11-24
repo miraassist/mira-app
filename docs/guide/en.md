@@ -1555,7 +1555,7 @@ agents:
 - **Which part takes what:** without an entry under `agents` every part takes `main`. The parts are: `conversation.voice` (voice), `conversation.telegram` (Telegram), `delegate` (the strongest model: hard questions in the skill Nachdenken, writing rules of your own), `skill.task` (skill schedules, briefing), `notify.compose` (announcements), `tasks.assess`, `tasks.decide`, `tasks.plan` (tasks), `mail.read`, `mail.match` (mails), `inbox.read` (Mira's inbox), `profile.compact` (memory profile).
 - **`privacy: local`** on a part means: it runs only on a local model, with no fallback to the cloud either. A skill can ask the same (`privacy: local` under `metadata.mira`); then Mira checks every part it uses when it starts. If something does not fit, it does not start, and Home Assistant shows under **Repairs** what to change.
 
-What the integration sets up as the model applies to `main` before what `mira.yaml` says.
+The model you choose when setting up the integration is written into `mira.yaml` as `main`. You can change it there, on Mira's page under **Models**, or in the integration under **Configure** → **AI model (LLM)**; all three change the same entry.
 
 ### Answers that start early
 
@@ -1617,7 +1617,7 @@ The `mira` program has a few commands. In the container you call them with `dock
 |---|---|
 | `mira run` | starts Mira (that runs in the container anyway) |
 | `mira check` | checks the settings and whether the models, Home Assistant and the MCP servers can be reached |
-| `mira reset` | deletes Mira's data (memory, messages, settings from Home Assistant, the AI model) at the next start; `mira.yaml` stays. Then Mira pairs like a new one, without a code |
+| `mira reset` | deletes Mira's data (memory, messages, settings from Home Assistant) at the next start; `mira.yaml` stays, and with it the AI model. Then Mira pairs like a new one, without a code |
 | `mira skill NAME` | runs one of the skill's scheduled jobs right away and shows what Mira would say; if the skill has several, a number after it picks one (from 0) |
 | `mira chat "…"` | one conversation turn in the terminal, without Home Assistant as the interface; `-channel voice` or `telegram`, `-session` for another turn in the same conversation |
 | `mira profile` | rebuilds the memory profile from the remembered facts |
@@ -1692,12 +1692,12 @@ Otherwise:
 - **The dialog asks for a pairing code?** This Mira was paired with another Home Assistant. Mira writes the code into its log as soon as the integration is removed there: `docker logs mira`, for the Home Assistant app under **Settings → Apps → Mira → Log**. It looks like this: `ABCD-EFGH-JKMN`.
   - Removing the integration and adding it again in the same Home Assistant needs no code.
   - No code, because the old Home Assistant is gone: reset Mira's data, with `docker exec mira /app/mira reset` and a restart (`docker restart mira`); for the HA app with the option **Reset data** on the **Configuration** tab and a restart of the app. Memory and messages are gone then, `mira.yaml` stays.
-- **Another model?** Settings → Devices & services → Mira → **Configure** → **AI model (LLM)**.
+- **Another model?** On Mira's page under **Models**, or Settings → Devices & services → Mira → **Configure** → **AI model (LLM)**.
 - **Repair "Mira has no access any more"?** Mira's token was revoked, or its user is no longer an administrator. Until you give her a new one, what Home Assistant refuses fails, such as new tasks and timers. Open the repair under **Settings → System → Repairs** and paste a new token, as when setting up.
 
 **Security while setting up:** A new Mira pairs with the first Home Assistant that completes pairing, without a code. So set it up in your own home network, not in a guest or shared network. Had someone beaten you to it, you would notice at once: your dialog would ask for a code. Reset Mira's data then (see above) and set it up anew.
 
-For advanced setups (several models, more MCP servers, skills with settings) there is the file `mira.yaml`; see [mira.example.yaml](https://github.com/miraassist/mira-app/blob/main/mira.example.yaml). What you set in the integration wins over the file.
+For advanced setups (several models, more MCP servers, skills with settings) there is the file `mira.yaml`; see [mira.example.yaml](https://github.com/miraassist/mira-app/blob/main/mira.example.yaml). The AI model from the setup is in it as `main`.
 
 ### Updating Mira
 

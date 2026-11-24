@@ -6,8 +6,9 @@
 # - server.token: the file's, if it has one (pairing then asks for it);
 # - ha.url and ha.token: the integration's Home Assistant access;
 # - the "ha" MCP server: the file's, if it names one; otherwise Mira adds it;
-# - models.main: the integration's model (endpoint, model, token, privacy and
-#   what follows from it); main's other settings here stay.
+# - models.main: the setup (and Configure → AI model) writes the integration's
+#   model here (endpoint, model, token as ${MIRA_MODEL_MAIN_TOKEN}, privacy and
+#   what follows from it); main's other settings here stay. Mira's page edits it.
 # Copy to mira.yaml and adjust.
 # Secrets are never written here: ${NAME} is read from the environment.
 # Check a config and all dependencies with:  mira -config mira.yaml check

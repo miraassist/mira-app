@@ -1579,7 +1579,7 @@ agents:
 - **Wer was nimmt:** Ohne Eintrag unter `agents` nimmt jeder Teil `main`. Die Teile heißen: `conversation.voice` (Sprache), `conversation.telegram` (Telegram), `delegate` (das stärkste Modell: schwierige Fragen im Skill Nachdenken, eigene Regeln schreiben), `skill.task` (Zeitpläne der Skills, Briefing), `notify.compose` (Ansagen), `tasks.assess`, `tasks.decide`, `tasks.plan` (Aufgaben), `mail.read`, `mail.match` (Mails), `inbox.read` (Miras Postfach), `profile.compact` (Gedächtnis-Profil).
 - **`privacy: local`** bei einem Teil heißt: Er läuft nur auf einem lokalen Modell, auch kein Fallback in die Cloud. Ein Skill kann das ebenso verlangen (`privacy: local` unter `metadata.mira`); dann prüft Mira beim Start alle Teile, die er nutzt. Passt etwas nicht, startet er nicht, und Home Assistant zeigt unter **Reparaturen**, was zu ändern ist.
 
-Was die Integration als Modell einrichtet, gilt für `main` vor dem, was in `mira.yaml` steht.
+Das Modell, das du beim Einrichten der Integration wählst, schreibt Mira als `main` in die `mira.yaml`. Ändern kannst du es dort, auf Miras Seite unter **Modelle** oder in der Integration unter **Konfigurieren** → **KI-Modell (LLM)**; alle drei ändern denselben Eintrag.
 
 ### Antworten, die früh beginnen
 
@@ -1641,7 +1641,7 @@ Das Programm `mira` hat ein paar Befehle. Im Container rufst du sie mit `docker 
 |---|---|
 | `mira run` | startet Mira (das läuft im Container ohnehin) |
 | `mira check` | prüft die Einstellungen und ob die Modelle, Home Assistant und die MCP-Server erreichbar sind |
-| `mira reset` | löscht beim nächsten Start Miras Daten (Gedächtnis, Nachrichten, Einstellungen aus Home Assistant, das KI-Modell); die `mira.yaml` bleibt. Danach koppelt Mira wie neu, ohne Code |
+| `mira reset` | löscht beim nächsten Start Miras Daten (Gedächtnis, Nachrichten, Einstellungen aus Home Assistant); die `mira.yaml` bleibt und mit ihr das KI-Modell. Danach koppelt Mira wie neu, ohne Code |
 | `mira skill NAME` | führt einen geplanten Auftrag des Skills sofort aus und zeigt, was Mira sagen würde; hat der Skill mehrere, wählt eine Zahl dahinter einen (ab 0) |
 | `mira chat "…"` | ein Gesprächszug im Terminal, ohne Home Assistant als Oberfläche; `-channel voice` oder `telegram`, `-session` für einen weiteren Zug im selben Gespräch |
 | `mira profile` | baut das Gedächtnis-Profil neu aus den gemerkten Fakten |
@@ -1716,12 +1716,12 @@ Und sonst:
 - **Der Dialog fragt nach einem Kopplungscode?** Diese Mira war schon mit einem anderen Home Assistant gekoppelt. Den Code schreibt Mira in ihr Protokoll, sobald dort die Integration entfernt wird: `docker logs mira`, bei der Home-Assistant-App unter **Einstellungen → Apps → Mira → Protokoll**. Er sieht so aus: `ABCD-EFGH-JKMN`.
   - Entfernst du die Integration und fügst sie im selben Home Assistant wieder hinzu, brauchst du keinen Code.
   - Gibt es keinen Code, weil das alte Home Assistant nicht mehr existiert: Setze Miras Daten zurück, mit `docker exec mira /app/mira reset` und einem Neustart (`docker restart mira`), bei der HA-App mit der Option **Daten zurücksetzen** im Tab **Konfiguration** und einem Neustart der App. Gedächtnis und Nachrichten sind dann weg, die `mira.yaml` bleibt.
-- **Anderes Modell?** Einstellungen → Geräte & Dienste → Mira → **Konfigurieren** → **KI-Modell (LLM)**.
+- **Anderes Modell?** Auf Miras Seite unter **Modelle**, oder Einstellungen → Geräte & Dienste → Mira → **Konfigurieren** → **KI-Modell (LLM)**.
 - **Reparatur „Mira hat keinen Zugang mehr“?** Miras Token wurde widerrufen, oder sein Benutzer ist kein Administrator mehr. Bis du ihr ein neues gibst, klappt nicht, was Home Assistant ablehnt, zum Beispiel neue Aufgaben und Timer. Öffne die Reparatur unter **Einstellungen → System → Reparaturen** und füge ein neues Token ein, wie beim Einrichten.
 
 **Sicherheit beim Einrichten:** Eine neue Mira koppelt sich mit dem ersten Home Assistant, der das Koppeln abschließt, ohne Code. Richte sie deshalb im eigenen Heimnetz ein, nicht in einem Gästenetz oder geteilten Netz. Hätte dir jemand zuvorgekommen, merkst du es sofort: Dein Dialog fragt dann nach einem Code. Setze Miras Daten dann zurück (siehe oben) und richte sie neu ein.
 
-Für Fortgeschrittenes (mehrere Modelle, weitere MCP-Server, Skills mit Einstellungen) gibt es die Datei `mira.yaml`, siehe [mira.example.yaml](https://github.com/miraassist/mira-app/blob/main/mira.example.yaml). Was du in der Integration einstellst, gilt vor der Datei.
+Für Fortgeschrittenes (mehrere Modelle, weitere MCP-Server, Skills mit Einstellungen) gibt es die Datei `mira.yaml`, siehe [mira.example.yaml](https://github.com/miraassist/mira-app/blob/main/mira.example.yaml). Das KI-Modell aus der Einrichtung steht dort als `main`.
 
 ### Mira aktualisieren
 

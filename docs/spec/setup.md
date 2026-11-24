@@ -49,7 +49,7 @@ After that, the service's config contains nothing about HA anymore (`ha.url`, `h
   - `mira pair` and its six-digit code of 15 minutes are gone: a code exists only after an unpair.
 - **Reset** (since 0.11.0): without a code, because the Home Assistant that had the service is gone without removing it, the way back is a reset on the service's machine, never over the network (anyone in it could otherwise wipe the household's memory and take the service):
   - `mira reset` (`docker exec mira /app/mira reset`) leaves a mark next to the database; the next start (`docker restart mira`) deletes the database and keeps `mira.yaml` and the secrets file. As a Home Assistant app, the option `reset_data` does the same at the app's next start, once until it is turned off and on again.
-  - The database holds the memory, messages, task logs and what the integration set up, the model and its key included; afterwards the service is like a new one and pairs without a code. Voices enrolled for speaker recognition live in the speaker-id service and stay.
+  - The database holds the memory, messages, task logs and what the integration set up (the model is in `mira.yaml` since 2026-11-24 and stays); afterwards the service is like a new one and pairs without a code. Voices enrolled for speaker recognition live in the speaker-id service and stay.
 - **A new address:** A service announces itself by mDNS with its id. If the entry's address no longer answers and the service shows up at another, the integration follows it, without asking the user. Since the id is readable by anyone, the service must first show it holds the entry's token (hardened 2026-10-27):
   - The integration sends a random nonce to `POST /v1/prove` at the new address. The service answers with HMAC-SHA256 under its token (`setup.Proof`); the integration computes the same and moves only on a match. The token itself never goes to the new address before that.
   - A service before 0.11.0 has no such route and is not followed: anyone could answer as it does. After updating the service, it moves again by itself.
@@ -64,14 +64,15 @@ After that, the service's config contains nothing about HA anymore (`ha.url`, `h
   - **Own server:** address (as seen from the service) and optionally a key. A category "local" with LM Studio, Ollama, llama.cpp deliberately does not exist, and the service does not scan the network.
   - The model is chosen from the list the service queries at this address (`/v1/models`).
   - **Trial run:** Before saving, the service sends a real small request with a tool. It must be answered and call the tool. Errors come back with a reason and appear understandably in the form: not reachable, key rejected, model unknown or not loaded, model without tools. A local model gets loaded right away in the process.
-  - It can be changed later under Configure → AI model (LLM).
+  - It can be changed later under Configure → AI model (LLM), or on Mira's page under Models: since 2026-11-24 the
+    setup writes it into `mira.yaml` as `main` ([The main model in mira.yaml](main-in-file.md)).
 - **Defaults for everything else:**
   - port 8787 on all interfaces;
   - mDNS on;
   - the database in the data folder;
   - the bundled skills;
   - language and persons from HA.
-- **`mira.yaml` stays optional,** for advanced things: further models and which agent takes which (docs/spec/models.md), further MCP servers, skills with settings, finer points of the notifier. What the integration sets (HA access, language model) applies before the file; the rest of the file applies as before.
+- **`mira.yaml` stays optional,** for advanced things: further models and which agent takes which (docs/spec/models.md), further MCP servers, skills with settings, finer points of the notifier. What the integration sets for HA access applies before the file; the language model it writes into the file as `main`; the rest of the file applies as before.
 
 ## 4. Mira as conversation agent
 

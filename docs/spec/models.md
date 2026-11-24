@@ -11,7 +11,7 @@ place, from the setup form's kind in another, and from "main is the local one" i
 
 - **A model is a named entry** with an endpoint, a model, a token and a **privacy** qualifier (`local` or `cloud`).
   How many requests it takes at once is its own setting.
-- **`main` always exists.** An agent without a model takes `main`. It is in mira.yaml or comes from the integration's setup; a file with other models but no `main` takes it from the setup, and without that Mira waits for the setup (MO-02, changed 2026-10-24 for the page's editing).
+- **`main` always exists.** An agent without a model takes `main`. It is in mira.yaml or comes from the integration's setup; a file with other models but no `main` takes it from the setup, and without that Mira waits for the setup (MO-02, changed 2026-10-24 for the page's editing). Since 2026-11-24 the setup writes it into mira.yaml ([The main model in mira.yaml](main-in-file.md)).
 - **Every agent names its model**, Mira's own ones too; `routing` goes.
 - **A fallback** is configured by name, never implied.
 - **Privacy is a rule:** an agent or a skill can require a local model.
@@ -182,8 +182,9 @@ the model form on Mira's page. A new provider is one line there; no integration 
 The integration's setup is unchanged: it picks one model (a provider or an own server; "from Home Assistant" went in
 0.18, [HACS default catalog](hacs-default.md)) and
 sends it to the service. The service keeps it as **`main`**, the setup form's kind giving `privacy` (provider → `cloud`,
-own server → `local`). What the integration sets wins over `mira.yaml` for
-`main`, as today for `llm`. Further models come from `mira.yaml`.
+own server → `local`). Since 2026-11-24 the service writes it into `mira.yaml` as `main` (its key in the secrets
+file), where the page edits it; before, it was kept in the database and won over `mira.yaml`
+([The main model in mira.yaml](main-in-file.md)). Further models come from `mira.yaml`.
 
 ## Documentation
 
@@ -223,6 +224,6 @@ names its model, fallback, and a section "Commands" with Mira's command line (`r
 4. `llm:` is a hard switch: an old config is refused with what to write instead.
 5. Privacy is a rule: agents and skills can require a local model; a local requirement never falls back to the cloud.
 6. A fallback is taken when the model fails (error, time up), not when it is busy; chains yes, circles no.
-7. The integration's model becomes `main`.
+7. The integration's model becomes `main` (written into mira.yaml since 2026-11-24, [The main model in mira.yaml](main-in-file.md)).
 8. A model that fails for its key or its address is said in the turn and shown as a repair (2026-11-07).
 9. A local model is warmed up by a switch on the page "Models", not by itself (2026-11-08).

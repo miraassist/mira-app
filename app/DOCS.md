@@ -32,7 +32,7 @@ consistent copy.
 - Another Home Assistant needs the **pairing code**: it is in this app's **Log**, written when the integration was
   removed.
 - **Reset data** (Configuration tab): turn it on and restart the app. Mira deletes its data (memory, messages,
-  settings from Home Assistant, the AI model) and keeps `mira.yaml`; then it pairs again without a code, like a
+  settings from Home Assistant) and keeps `mira.yaml`, with the AI model; then it pairs again without a code, like a
   new install. It resets once; turn the option off again afterwards.
 
 ## Access to the Supervisor
