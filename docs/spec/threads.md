@@ -180,7 +180,7 @@ Building blocks to start with:
 | `tasks.automation` | finish with work step | Draft an automation from the request and the fields, have HA check it and announce the proposal. On the yes it is saved. |
 | `memory.save` | finish | Save the fact in the house memory. |
 | `message.send` | finish | Say the field `message` to the thread's owner as it is, as the thread's message (a remote agent's overview, [Remote agents](remote-agents.md), decision 53). |
-| `tool: <skill>__<tool>` | finish (decided and built 2026-11-24; [Inbox](inbox.md), section 9) | Call that tool of the target's skill (its MCP server's or a Starlark tool) with the thread's fields as its arguments, by their names; the tool's answer is the thread's message; a tool error is the thread's error. The tool keeps its own `confirm`: the thread's yes is that confirmation (no second question). |
+| `tool: <skill>__<tool>` | finish (decided and built 2026-11-24; [Inbox](inbox.md), section 9) | Call that tool of the target's skill (its MCP server's or a Starlark tool) with the thread's fields as its arguments, by their names; the tool's answer is the thread's message; a tool error is the thread's error. The tool keeps its own `confirm`: the thread's yes is that confirmation (no second question). Its call carries `io.mira-assist/thread` with the thread's id in its `_meta` (2026-11-24, [Private choices](private-choices.md), decision 15), which a model's call never does, so a server can let a step happen only as a thread's finish. |
 
 Plans (long processes) are described in the section [Plans](#plans-long-processes-step-by-step).
 

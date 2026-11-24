@@ -3,6 +3,7 @@ package threads
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/miraassist/mira-app/internal/i18n"
 	"github.com/miraassist/mira-app/internal/skills"
 	"github.com/miraassist/mira-app/internal/store"
+	"github.com/miraassist/mira-app/internal/testsupport/logcap"
 )
 
 // docs/spec/inbox.md, section 9, and docs/spec/threads.md, finishes: a
@@ -34,7 +36,7 @@ func toolEnv(t *testing.T, answer string, isError bool) (*env, *[]ranTool) {
 	e := setup(t)
 	var ran []ranTool
 	e.m = New(Options{Lang: i18n.DE, Store: e.st, Targets: []skills.Skill{replySkill()}, Clock: e.clk,
-		RunTool: func(_ context.Context, name string, args json.RawMessage, thirdParty bool) (string, bool, error) {
+		RunTool: func(_ context.Context, name string, args json.RawMessage, thirdParty bool, _ string) (string, bool, error) {
 			var a map[string]any
 			_ = json.Unmarshal(args, &a)
 			ran = append(ran, ranTool{name, a, thirdParty})
@@ -122,7 +124,7 @@ func TestAChosenProposalFillsTheFieldAndFinishes(t *testing.T) {
 		Finish: skills.Finish{Name: skills.FinishTool, Tool: "antwort__send"},
 	}}
 	e.m = New(Options{Lang: i18n.DE, Store: e.st, Targets: []skills.Skill{sk}, Clock: e.clk,
-		RunTool: func(_ context.Context, name string, args json.RawMessage, thirdParty bool) (string, bool, error) {
+		RunTool: func(_ context.Context, name string, args json.RawMessage, thirdParty bool, _ string) (string, bool, error) {
 			var a map[string]any
 			_ = json.Unmarshal(args, &a)
 			ran = append(ran, ranTool{name, a, thirdParty})
@@ -142,5 +144,72 @@ func TestAChosenProposalFillsTheFieldAndFinishes(t *testing.T) {
 	}
 	if got, _ := e.st.GetThread(context.Background(), th.ID); got.State != store.ThreadDone {
 		t.Errorf("state %s", got.State)
+	}
+}
+
+// privateEnv is a thread target that asks privately, and what it sent.
+func privateEnv(t *testing.T, askErr error) (*env, *[]string, interface{ String() string }) {
+	t.Helper()
+	e := setup(t)
+	log, lines := logcap.Logger()
+	var asked []string
+	sk := skills.Skill{Name: "antwort", Description: "Antwortet", Target: &skills.Target{
+		Fields:  []skills.TargetField{{Name: "to"}, {Name: "subject"}, {Name: "body"}},
+		Private: true, Confirm: true,
+		Finish: skills.Finish{Name: skills.FinishTool, Tool: "antwort__send"},
+	}}
+	e.m = New(Options{Lang: i18n.DE, Store: e.st, Targets: []skills.Skill{sk}, Clock: e.clk, Logger: log,
+		RunTool: func(context.Context, string, json.RawMessage, bool, string) (string, bool, error) {
+			return "ok", false, nil
+		},
+		AskPrivately: func(_ context.Context, th store.Thread, text string) error {
+			if askErr != nil {
+				return askErr
+			}
+			asked = append(asked, th.Person+": "+text)
+			return nil
+		}})
+	return e, &asked, lines
+}
+
+// PC-09 A thread of a target that asks privately proposes over the private channel
+func TestPC09_AThreadOfATargetThatAsksPrivatelyProposesOverThePrivateChannel(t *testing.T) {
+	e, asked, _ := privateEnv(t, nil)
+	ctx := context.Background()
+	inv := e.annasTurn(t)
+	// Given a target with private true and Anna's thread of it complete
+	if _, err := e.m.Start(ctx, inv, "antwort", "Mail an den Handwerker"); err != nil {
+		t.Fatal(err)
+	}
+	out, err := e.m.Fill(ctx, inv, map[string]string{"to": "h@example.org", "subject": "Termin",
+		"body": "Hallo,\nDonnerstag passt uns gut.\nViele Grüße"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Then its proposal goes to Anna as a private message of the thread, with the request and the fields
+	if len(*asked) != 1 || !strings.Contains((*asked)[0], "anna: Mail an den Handwerker\nto: h@example.org\nsubject: Termin\n\nHallo,") {
+		t.Fatalf("asked %q", *asked)
+	}
+	// And the turn is told that the question went privately, not the proposal
+	if !strings.Contains(out, "privat") || strings.Contains(out, "Donnerstag") {
+		t.Errorf("the turn got %q", out)
+	}
+}
+
+// PC-10 Without a person the proposal is said in the turn
+func TestPC10_WithoutAPersonTheProposalIsSaidInTheTurn(t *testing.T) {
+	e, _, logs := privateEnv(t, errors.New("anna has no private channel"))
+	ctx := context.Background()
+	inv := e.annasTurn(t)
+	if _, err := e.m.Start(ctx, inv, "antwort", "Mail"); err != nil {
+		t.Fatal(err)
+	}
+	out, err := e.m.Fill(ctx, inv, map[string]string{"to": "h@example.org", "subject": "Termin", "body": "Donnerstag passt."})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Then its proposal is said in the turn as for any thread, and the log names why
+	if !strings.Contains(out, "Donnerstag passt.") || !strings.Contains(logs.String(), "a private thread proposes in the turn") {
+		t.Errorf("out %q\nlog:\n%s", out, logs.String())
 	}
 }

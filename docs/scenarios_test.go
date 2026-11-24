@@ -31,7 +31,7 @@ var builtSteps = map[string][]int{
 	"EN": {1},                              // docs/spec/endings.md
 	"BO": {1, 2},                           // docs/spec/boerse.md
 	"MF": {1},                              // docs/spec/main-in-file.md
-	"PC": {2, 3},                           // docs/spec/private-choices.md; step 1 was the check on the test HA
+	"PC": {2, 3, 5},                        // docs/spec/private-choices.md; step 1 was the check on the test HA
 	"PA": {1},                              // docs/spec/parsing.md; step 4 is tested in pytest
 	"SP": {3},                              // docs/spec/speaker-id.md
 	"BK": {1},                              // docs/spec/backup.md; steps 2 and 3 are tested in pytest

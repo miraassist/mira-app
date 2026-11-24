@@ -160,6 +160,10 @@ type Target struct {
 	// proposals are the lines of the field proposals
 	// (docs/spec/private-choices.md, step 3).
 	Chosen string `yaml:"chosen"`
+	// Private: the thread's proposal goes to its person as a private
+	// message with buttons, not into the turn
+	// (docs/spec/private-choices.md, decision 13).
+	Private bool `yaml:"private"`
 	// Confirm asks the user for a yes before an action finish runs; the
 	// building blocks decide that themselves.
 	Confirm bool `yaml:"confirm"`

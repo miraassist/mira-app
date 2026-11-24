@@ -841,8 +841,8 @@ func build(ctx context.Context, cfg config.Config, opts buildOptions) (*app, err
 	a.setProblems(problems)
 	a.threads = threads.New(threads.Options{
 		Lang: a.lang, Store: a.store, Targets: targets, Checks: checks, Finishers: finishers, Actions: haActions{a},
-		RunTool: a.runThreadTool,
-		Hooks:   a.actionDecision, Persons: a.persons, Logger: a.log,
+		RunTool: a.runThreadTool, AskPrivately: a.askThreadPrivately,
+		Hooks: a.actionDecision, Persons: a.persons, Logger: a.log,
 		Deliver: func(ctx context.Context, n store.Message, area string) error {
 			a.proactiveMu.Lock()
 			nf := a.notifier
@@ -2267,10 +2267,12 @@ func (a *app) companionModels() map[string]companions.Model {
 // as Mira's own call with the thread's yes as its confirmation; thirdParty
 // marks the call as after third-party text (docs/spec/skill-mcp.md,
 // decision 8; docs/spec/inbox.md, decision 41).
-func (a *app) runThreadTool(ctx context.Context, name string, args json.RawMessage, thirdParty bool) (string, bool, error) {
+func (a *app) runThreadTool(ctx context.Context, name string, args json.RawMessage, thirdParty bool, thread string) (string, bool, error) {
 	reg := a.reader.reg.Load()
 	if reg == nil {
 		return "", true, fmt.Errorf("Mira's tools are not ready yet for %s", name)
 	}
-	return reg.Execute(mcp.WithThirdParty(ctx, thirdParty), tools.Invocation{Name: name, Args: args})
+	// The thread's id tells the server this is a thread's finish, after the
+	// person's yes (docs/spec/private-choices.md, decision 15).
+	return reg.Execute(mcp.WithThread(mcp.WithThirdParty(ctx, thirdParty), thread), tools.Invocation{Name: name, Args: args})
 }

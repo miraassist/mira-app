@@ -1,8 +1,8 @@
 # Choices in a private question (buttons) – Spec
 
 Status 2026-11-24: decided (decision 1 by the maintainer, 2 to 12 taken while writing); the state table checked on
-the test HA (2026-11-24, the test HA's Telegram bot and the maintainer's phone); steps 2 and 3 built, step 4 not. Scenarios: [private-choices.feature](private-choices.feature) (PC-01 to
-PC-08).
+the test HA (2026-11-24, the test HA's Telegram bot and the maintainer's phone); steps 2, 3 and 5 built; step 4 withdrawn. Scenarios: [private-choices.feature](private-choices.feature) (PC-01 to
+PC-10; PC-07 and PC-08 withdrawn).
 
 ## Goal
 
@@ -39,10 +39,13 @@ New is only the tap: buttons on the private message, and the tap as the answer.
 | 5 | Tying a tap to its question | `<id>`, a short id of the question Mira keeps (12 characters), and `<choice>`, `yes`, `no` or `1` to `3`. In Telegram the data is `/mira <id> <choice>` (decision 3: it must begin with "/"; it comes back as `command` `/mira` and `args`); in the app the action is `mira:<id>:<choice>`. Telegram allows 64 bytes of data (its Bot API); the companion app's docs advise an id in the action, since actions are shared across notifications |
 | 6 | Who may answer | Only the person asked: in Telegram the chat the question went to, in the app a tap whose event's `context.user_id` is the person's Home Assistant user. Another tap: refused, a log line |
 | 7 | What a tap does | Code, no model: "Ja" confirms the thread (`thread_confirm`'s path); a proposal fills the thread's field with it and confirms; "Nein" ends the thread as declined. The same as the person's typed "ja", "nein" or "den zweiten", only without a turn |
-| 8 | A tap on a pending confirmation | When the private question is a pending confirmation (a tool under `confirm`), the tap is its yes, wherever the call was parked: the pending confirmation carries the question's id and is found by it, not only by the session. The question over the private channel is the confirmation itself, never one before a second |
+| 8 | ~~A tap on a pending confirmation~~ | Withdrawn 2026-11-24 (the maintainer, C): a held thing (a mail to a new recipient) is a thread, not a pending confirmation; `confirm` stays the guard for one call in a turn (a lock). Instead: decision 13 |
 | 9 | After the tap | Telegram: the callback is answered at once ("Erledigt.", "Abgelehnt."; before the thread's work, which may take longer) and the buttons removed, so a second tap cannot come; the app: the notification stays until the person clears it (removing it is not in the app's docs read) |
 | 10 | A tap that comes late | The thread or the pending confirmation is gone (ended, expired): the tap does nothing; Telegram's callback answer says "Das ist schon erledigt."; a log line with the id |
 | 11 | How Mira hears taps | Push: a subscription to the Telegram bots' event entities' state changes (filtered to them) and to the event `mobile_app_notification_action`; the handler only passes the tap on (the subscription rule) |
+| 13 | A thread that asks privately (2026-11-24, the maintainer, C and A) | A target may say `private: true`: when its thread proposes (waits for a yes), the proposal is not said in the turn but goes to the thread's person as a private message of the thread, with its buttons; the turn gets "asked privately" and says only that. Its text: the request and the fields, one per line, the long ones last |
+| 15 | A server tells a thread's finish from a model's call | The finish `tool` puts `io.mira-assist/thread` (the thread's id) into its call's `_meta`; calls of a turn never carry it. A server may then do a step (send to a new recipient) only on a thread's finish, after the person's yes |
+| 14 | Such a thread without a known person, or the person without a private channel | Taken while writing: the proposal is said in the turn as for any thread, with a log line naming the thread and why; the person may still answer by voice |
 | 12 | A typed answer | Unchanged: the Telegram message or the app's Assist is a turn of the person and finds the thread; the app's "Antworten" text (`reply_text`) is taken as such a turn |
 
 ## The state table
@@ -81,4 +84,6 @@ with the number of questions but the ids of the open ones.
    app as a turn. PC-01, PC-03, PC-05, PC-06. Built 2026-11-24 (`internal/choices`, the notifier's `sendTo`).
 3. **Proposals as buttons** (decisions 1a, 2, 7): `chosen` in a target, the numbered proposals in the message, a
    tap fills the field and confirms (`threads.ChooseThread`). PC-02, PC-04. Built 2026-11-24.
-4. **A tap on a pending confirmation** (decision 8). PC-07, PC-08.
+4. ~~A tap on a pending confirmation~~ (decision 8, withdrawn): PC-07 and PC-08 withdrawn.
+5. **A thread that asks privately** (decisions 13 to 15): `private: true` on a target; the thread's id in its
+   finish tool's `_meta`. PC-09, PC-10, PC-11. Built 2026-11-24.

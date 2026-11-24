@@ -35,13 +35,21 @@ Feature: PC Choices in a private question
     When she taps Ja
     Then nothing happens and Telegram's callback answer says it is done already
 
-  @step4
-  Scenario: PC-07 A tap is the yes of a pending confirmation, whatever session parked it
-    Given a call under confirm was parked in a voice turn and its question went to Anna's Telegram chat
-    When Anna taps Ja there
-    Then the parked call runs once and is not asked for a second time
+  # PC-07 and PC-08 (a tap on a pending confirmation) withdrawn 2026-11-24: a held thing is a thread (decision 8).
 
-  @step4
-  Scenario: PC-08 A tap on Nein drops the pending confirmation
-    When Anna taps Nein on such a question
-    Then the parked call does not run
+  @step5
+  Scenario: PC-09 A thread of a target that asks privately proposes over the private channel
+    Given a target with private true and Anna's thread of it complete
+    Then its proposal goes to Anna as a private message of the thread, with the request and the fields
+    And the turn is told that the question went privately, not the proposal
+
+  @step5
+  Scenario: PC-10 Without a person the proposal is said in the turn
+    Given such a thread without a known person
+    Then its proposal is said in the turn as for any thread, and the log names why
+
+  @step5
+  Scenario: PC-11 A thread's finish tool says the thread, a model's call does not
+    When a thread finishes with its skill's tool
+    Then the call's _meta has io.mira-assist/thread with the thread's id
+    And a call of a turn has no such field

@@ -246,3 +246,30 @@ func TestMX06_ACallThatStartsWhileALostSessionIsReplacedWaitsForIt(t *testing.T)
 		t.Errorf("dialled %d times, want the start and one replacement", n)
 	}
 }
+
+// PC-11 A thread's finish tool says the thread, a model's call does not
+// (docs/spec/private-choices.md, decision 15).
+func TestPC11_AThreadsFinishToolSaysTheThreadAModelsCallDoesNot(t *testing.T) {
+	g := newGated(t)
+	h, _ := gatedHost(t, g)
+	// When a thread finishes with its skill's tool
+	if _, err := h.Call(WithThread(WithThirdParty(context.Background(), true), "th1"), "ha__GetLiveContext", nil); err != nil {
+		t.Fatal(err)
+	}
+	// And a call of a turn (third-party mark only)
+	if _, err := h.Call(WithThirdParty(context.Background(), false), "ha__GetLiveContext", nil); err != nil {
+		t.Fatal(err)
+	}
+	calls := g.Calls()
+	if len(calls) != 2 {
+		t.Fatalf("calls %+v", calls)
+	}
+	// Then the call's _meta has io.mira-assist/thread with the thread's id
+	if calls[0].Meta["io.mira-assist/thread"] != "th1" || calls[0].Meta["io.mira-assist/third_party_text"] != true {
+		t.Errorf("the finish's meta %v", calls[0].Meta)
+	}
+	// And a call of a turn has no such field
+	if _, ok := calls[1].Meta["io.mira-assist/thread"]; ok {
+		t.Errorf("a turn's call has the thread: %v", calls[1].Meta)
+	}
+}

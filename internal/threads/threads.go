@@ -78,7 +78,12 @@ type Options struct {
 	// thread's fields, for the finish tool (docs/spec/threads.md); thirdParty
 	// says whether its call counts as after third-party text. Its text and
 	// whether it is an error. Without it such targets cannot finish.
-	RunTool func(ctx context.Context, name string, args json.RawMessage, thirdParty bool) (string, bool, error)
+	RunTool func(ctx context.Context, name string, args json.RawMessage, thirdParty bool, thread string) (string, bool, error)
+	// AskPrivately sends a thread's proposal to its person as a private
+	// message of the thread, for a target with private
+	// (docs/spec/private-choices.md, decision 13); an error (no person, no
+	// private channel) leaves the proposal in the turn (decision 14).
+	AskPrivately func(ctx context.Context, th store.Thread, text string) error
 	// Hooks decide on a skill's action before it is called, as a call of
 	// its own (docs/spec/hooks.md, Skill actions); without them nothing is
 	// checked.
@@ -905,10 +910,57 @@ func (m *Manager) apply(ctx context.Context, th store.Thread, res Result, tell b
 		case store.ThreadWaiting:
 			return fmt.Sprintf(t.askUser, say)
 		case store.ThreadProposed:
+			if m.askPrivately(ctx, th) {
+				return t.askedPrivately
+			}
 			return fmt.Sprintf(t.proposeUser, say)
 		}
 	}
 	return say
+}
+
+// askPrivately sends the proposal of a thread whose target asks privately
+// to its person (docs/spec/private-choices.md, decisions 13, 14): the
+// request and the fields, one per line, the long ones last. False when it
+// is no such target or it could not, and the proposal stays in the turn.
+func (m *Manager) askPrivately(ctx context.Context, th store.Thread) bool {
+	sk := m.targets[th.Target]
+	if sk.Target == nil || !sk.Target.Private {
+		return false
+	}
+	if m.opts.AskPrivately == nil || th.Person == "" {
+		m.log.Info("a private thread proposes in the turn: no person known", "thread", th.ID, "target", th.Target)
+		return false
+	}
+	if err := m.opts.AskPrivately(ctx, th, privateText(sk, th)); err != nil {
+		m.log.Info("a private thread proposes in the turn", "thread", th.ID, "person", th.Person, "error", err)
+		return false
+	}
+	m.log.Info("a thread asked privately", "thread", th.ID, "person", th.Person)
+	return true
+}
+
+// privateText is a private proposal: the request, then the fields in the
+// target's order, short ones first.
+func privateText(sk skills.Skill, th store.Thread) string {
+	var short, long []string
+	for _, f := range sk.Target.Fields {
+		v := strings.TrimSpace(th.Fields[f.Name])
+		if v == "" || notNeeded(v) || f.Name == "proposals" {
+			continue
+		}
+		if strings.Contains(v, "\n") || len(v) > 80 {
+			long = append(long, v)
+			continue
+		}
+		short = append(short, f.Name+": "+v)
+	}
+	parts := append([]string{strings.TrimSpace(th.Request)}, short...)
+	text := strings.Join(parts, "\n")
+	if len(long) > 0 {
+		text += "\n\n" + strings.Join(long, "\n\n")
+	}
+	return text
 }
 
 // spoken is what a finish's result says to the user.

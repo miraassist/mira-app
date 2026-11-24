@@ -180,6 +180,25 @@ func WithThirdParty(ctx context.Context, read bool) context.Context {
 	return context.WithValue(ctx, thirdPartyKey{}, read)
 }
 
+// threadMeta is the key a thread's finish tool call carries its thread in
+// (docs/spec/private-choices.md, decision 15); a model's call never has it.
+const threadMeta = "io.mira-assist/thread"
+
+type threadKey struct{}
+
+// WithThread marks the calls made with ctx as a thread's finish.
+func WithThread(ctx context.Context, id string) context.Context {
+	if id == "" {
+		return ctx
+	}
+	return context.WithValue(ctx, threadKey{}, id)
+}
+
+func threadOf(ctx context.Context) string {
+	id, _ := ctx.Value(threadKey{}).(string)
+	return id
+}
+
 func thirdPartyOf(ctx context.Context) (read, ok bool) {
 	read, ok = ctx.Value(thirdPartyKey{}).(bool)
 	return read, ok
@@ -629,6 +648,12 @@ func (h *Host) callOn(ctx context.Context, s *server, qualified, toolName string
 			params.Meta = sdk.Meta{}
 		}
 		params.Meta[thirdPartyMeta] = read
+	}
+	if thread := threadOf(ctx); thread != "" {
+		if params.Meta == nil {
+			params.Meta = sdk.Meta{}
+		}
+		params.Meta[threadMeta] = thread
 	}
 	call := func(session *sdk.ClientSession) (*sdk.CallToolResult, error) {
 		// real time: a bound of a call to an MCP server or of its process ending; no test waits for it

@@ -89,3 +89,18 @@ func (a *app) choiceTurn(ctx context.Context, person, haUser, text string) error
 	}
 	return a.tellPrivately(ctx, person, resp.Text)
 }
+
+// askThreadPrivately sends a thread's proposal to its person as a private
+// message of the thread, which the notifier delivers with its buttons
+// (docs/spec/private-choices.md, decision 13): an error when the person has
+// no private channel, and the proposal stays in the turn (decision 14).
+func (a *app) askThreadPrivately(ctx context.Context, th store.Thread, text string) error {
+	p, ok := a.persons()[th.Person]
+	if !ok || len(p.Channels) == 0 {
+		return fmt.Errorf("%s has no private channel", th.Person)
+	}
+	_, _, err := a.store.PutMessage(ctx, store.Message{ID: ulid.Make().String(), Kind: store.KindPrivate,
+		Source: store.SourceTask, DedupeKey: "ask:" + th.ID, Importance: 1, Receiver: th.Person, Spoken: text,
+		ThreadID: th.ID, ExpiresAt: th.ExpiresAt})
+	return err
+}

@@ -81,7 +81,7 @@ func (f toolFinish) call(ctx context.Context, th store.Thread, c toolCall) (stri
 	if err != nil {
 		return "", err
 	}
-	text, isError, err := f.m.opts.RunTool(ctx, c.Tool, args, th.Source != "")
+	text, isError, err := f.m.opts.RunTool(ctx, c.Tool, args, th.Source != "", th.ID)
 	keys := slices.Sorted(maps.Keys(c.Args))
 	switch {
 	case err != nil:
