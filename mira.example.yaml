@@ -114,6 +114,7 @@ mcp_servers:
     web_content: true
     # tools: [search]          # only these tools of the server; without it, all
     # confirm: [delete]        # these tools run only after the user's yes
+    # read_only_tools: [get]   # without read_only: these tools only read, the others write
     # conversation: false      # its tools only for agents and scheduled jobs, not the conversation
   # A server Mira starts herself as a program (stdio). It gets only the bare
   # minimum of Mira's environment, none of her credentials: what it needs

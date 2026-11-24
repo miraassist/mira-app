@@ -744,7 +744,7 @@ metadata:
         # … description, instructions und weitere Felder wie unter „Eigene Agenten“
 ```
 
-Die Werkzeuge heißen für die Agenten `<skill>__<werkzeug>`. So kommen die Dokumente nie ins Gespräch, nur das Ergebnis des Agenten. `read_only: true` sagt, dass der Server nur liest; nur dann dürfen auch Mira-Aufgaben im Hintergrund seine Werkzeuge nutzen.
+Die Werkzeuge heißen für die Agenten `<skill>__<werkzeug>`. So kommen die Dokumente nie ins Gespräch, nur das Ergebnis des Agenten. `read_only: true` sagt, dass der Server nur liest; nur dann dürfen auch Mira-Aufgaben im Hintergrund seine Werkzeuge nutzen. Liest und schreibt ein Server, ohne seine Werkzeuge selbst zu kennzeichnen, nennt `read_only_tools` die, die nur lesen (`read_only_tools: [get_state]`); die übrigen gelten als schreibend.
 
 `tools` ist die Kontrolle: Wer den Skill schreibt, entscheidet, was Mira mit dem Server darf. Ist der Server nicht erreichbar, startet Mira trotzdem; der Skill ist da, nur ohne seine Werkzeuge, und Home Assistant zeigt es unter **Reparaturen**. Mit einem lokalen Modell rechnet der erste Zug nach dem Öffnen des Skills den Prompt neu, weil Werkzeuge dazukommen; das dauert dann einmal länger.
 
@@ -837,6 +837,8 @@ def suche(thema, tage = 7):
 
 - **Der Docstring:** Der Text vor `Args:` ist die Beschreibung, die das Modell liest. Unter `Args:` steht jede Angabe mit ihrem Typ: `str`, `int`, `float`, `bool` oder `list` (eine Liste von Texten). Eine Angabe mit Standardwert ist freiwillig. Mira prüft die Angaben des Modells, bevor die Funktion läuft.
 - **Was eine Funktion kann:** `api.get(adresse, params = {...})` holt etwas vom Dienst, nur an die Adressen unter `api`, bei einem Skill mit Anmeldung mit dem Token der Verbindung; jede Anfrage nennt sich `Mira/<Version>`; Mira setzt die Werte richtig in die Adresse, `None` lässt sie weg, eine Zeit wird ISO-Zeit. Die Antwort hat `status`, `ok`, `text` und `json`. Dazu gibt es `json`, `time`, `math`, die Einstellungen des Skills als `settings` (nur die nicht geheimen), `fail("…")` für eine Meldung an das Modell und `print(…)` fürs Log. Sonst nichts: keine Dateien, kein anderes Netz.
+- **Nur rechnen:** Ein Werkzeug, das nur rechnet, braucht keinen Abschnitt `api`; es erreicht dann keine Adresse.
+- **Miras Werkzeuge lesen:** `mira.tool(name, args)` ruft eines von Miras Werkzeugen auf, etwa eines MCP-Servers, mit seinem vollen Namen (`<server>__<werkzeug>`). Erlaubt sind nur Werkzeuge, die nur lesen und keinen fremden Text liefern, und nur die, die der Skill unter `tools:` → `reads:` nennt. Die Antwort hat `ok`, `text`, `json` und `error`; ein Werkzeug, das es gerade nicht gibt, ist `ok = False`, kein Abbruch. So trägt das Modell keine Daten von einem Werkzeug zum anderen, und gerechnet wird im Werkzeug.
 - **Schreiben:** `api.post`, `api.put`, `api.patch` und `api.delete` dürfen nur Werkzeuge, die der Skill unter `tools:` → `writes:` nennt; ein schreibendes Werkzeug fragt nach, wenn vorher fremder Text im Spiel war, eins unter `confirm:` fragt immer.
 - **Grenzen:** Ein Werkzeug darf höchstens 60 Sekunden laufen, jede Anfrage 20. Braucht ein Aufruf mehr als 256 MB Speicher, endet er; eine Antwort des Werkzeugs über 1 MB wird abgewiesen.
 - **Alles im Einzelnen** steht in der „Referenz: Werkzeuge in Starlark“ gleich danach.
@@ -878,6 +880,7 @@ def suche(thema, tage = 7, sprachen = ["de"]):
 | Name | Was es ist |
 |---|---|
 | `api.get(adresse, params = {})` | eine Anfrage an den Dienst, bei einem Skill mit Anmeldung mit dem Token der Verbindung |
+| `mira.tool(name, args = {})` | eines von Miras lesenden Werkzeugen unter `tools:` → `reads:`; Antwort mit `ok`, `text`, `json`, `error` |
 | `api.delete(adresse, params = {})` | ebenso, löschen; nur für Werkzeuge unter `writes` |
 | `api.post`, `api.put`, `api.patch` `(adresse, params = {}, body = …)` | schreiben, `body` geht als JSON mit; nur für Werkzeuge unter `writes` |
 | `json.encode`, `json.decode`, `json.indent` | JSON |
@@ -1781,6 +1784,7 @@ Mit einem eigenen Token sieht ein anderes Programm, wie es Mira geht, etwa eines
 
 ## Gut zu wissen
 
+- Lässt sich die `mira.yaml` nicht lesen (etwa nach einem Tippfehler), startet Mira trotzdem, aber eingeschränkt: Home Assistant erreicht sie, auf jede Frage antwortet sie, dass sie ihre Einstellungen gerade nicht lesen kann, und unter Einstellungen → System → **Reparaturen** stehen die Datei, die Zeile und der Fehler. Sobald du die korrigierte Datei speicherst, startet Mira neu.
 - Mira erfindet keine Werte: Fehlt ihr etwas, sagt sie es oder fragt nach.
 - Nach einer Websuche führt Mira keine kritischen Aktionen aus, bis du den Befehl noch einmal direkt gibst. Etwas zu merken, eine Nachricht zu schicken oder eine Aufgabe anzulegen macht sie dann erst nach deinem Ja. So kann eine Webseite ihr nichts unterschieben, was sie dauerhaft behält oder weitergibt.
 - Bei Spracherkennungsfehlern hilft es, deutlich und in einem Satz zu sprechen.

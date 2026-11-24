@@ -1,7 +1,23 @@
 # Changelog
 
 The app has the version of Mira's release; what changed is in the release notes:
-<https://github.com/miraassist/mira/releases>
+<https://github.com/miraassist/mira-app/releases>
+
+## 0.40.0
+
+- **The app moved to its own repository: <https://github.com/miraassist/mira-app>.** Home Assistant's new
+  Marketplace checks repositories more strictly than HACS did: a repository may hold only one thing, and none with an
+  app. So the integration stays at `https://github.com/miraassist/mira`, and the app is now here. To Home Assistant
+  this is a new app: add `https://github.com/miraassist/mira-app` under Settings → Apps → App store → Repositories,
+  install Mira from there, copy `mira.yaml` from the old app's config folder into the new one, then remove the old app
+  and the old repository. Mira's memory, messages and other data stay with the old app; the new one starts without
+  them. The integration needs nothing: update it as always.
+- **Share prices** (skill `boerse`): "Wie steht die SAP-Aktie?", "Wo steht der DAX?"
+- **A `mira.yaml` that cannot be read** starts Mira limited, with a repair naming the file, the line and the error.
+- **For skill authors:** Starlark tools that only compute, tools that read Mira's own tools (`mira.tool`), a web API
+  without a sign-in, and `read_only_tools` for a skill's MCP server.
+- Many fixes of the inner workings: remote agents and MCP servers are reconnected and their calls never run twice,
+  a running task is no longer cut off by a change of the settings or by another one finishing.
 
 ## 0.30.1
 

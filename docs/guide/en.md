@@ -739,7 +739,7 @@ metadata:
         # … description, instructions and more fields as under "Your own agents"
 ```
 
-For the agents the tools are called `<skill>__<tool>`. That way the documents never enter the conversation, only the agent's result. `read_only: true` says the server only reads; only then may Mira's tasks in the background use its tools too.
+For the agents the tools are called `<skill>__<tool>`. That way the documents never enter the conversation, only the agent's result. `read_only: true` says the server only reads; only then may Mira's tasks in the background use its tools too. If a server reads and writes without marking its tools itself, `read_only_tools` names those that only read (`read_only_tools: [get_state]`); the others count as writing.
 
 `tools` is the control: whoever writes the skill decides what Mira may do with the server. If the server cannot be reached, Mira starts all the same; the skill is there, only without its tools, and Home Assistant shows it under **Repairs**. With a local model, the first turn after opening the skill computes the prompt anew because tools come in; that one turn takes longer.
 
@@ -832,6 +832,8 @@ def suche(thema, tage = 7):
 
 - **The docstring:** the text before `Args:` is the description the model reads. Under `Args:` each value with its type: `str`, `int`, `float`, `bool` or `list` (a list of texts). A value with a default is optional. Mira checks the model's values before the function runs.
 - **What a function can do:** `api.get(address, params = {...})` fetches from the service, only to the addresses under `api`, for a skill with a sign-in with the connection's token; every request names itself `Mira/<version>`; Mira puts the values into the address correctly, leaves out `None`, makes a time an ISO time. The answer has `status`, `ok`, `text` and `json`. Besides there are `json`, `time`, `math`, the skill's settings as `settings` (only those that are not secret), `fail("…")` for a message to the model and `print(…)` for the log. Nothing else: no files, no other network.
+- **Only computing:** a tool that only computes needs no `api` section; it then reaches no address.
+- **Reading Mira's tools:** `mira.tool(name, args)` calls one of Mira's tools, such as an MCP server's, by its full name (`<server>__<tool>`). Only tools that only read and return no third-party text, and only those the skill names under `tools:` → `reads:`. The answer has `ok`, `text`, `json` and `error`; a tool that is not there right now is `ok = False`, not an abort. So the model carries no data from one tool to another, and the tool does the computing.
 - **Writing:** `api.post`, `api.put`, `api.patch` and `api.delete` are only for tools the skill names under `tools:` → `writes:`; a writing tool asks first when third-party text came before, one under `confirm:` always asks.
 - **Limits:** a tool may run at most 60 seconds, each request 20. A call that needs more than 256 MB of memory ends; a tool's answer above 1 MB is refused.
 - **All the details** are in the "Reference: tools in Starlark" right after.
@@ -873,6 +875,7 @@ def suche(thema, tage = 7, sprachen = ["de"]):
 | Name | What it is |
 |---|---|
 | `api.get(address, params = {})` | a request to the service, for a skill with a sign-in with the connection's token |
+| `mira.tool(name, args = {})` | one of Mira's reading tools under `tools:` → `reads:`; answer with `ok`, `text`, `json`, `error` |
 | `api.delete(address, params = {})` | the same, deleting; only for tools under `writes` |
 | `api.post`, `api.put`, `api.patch` `(address, params = {}, body = …)` | writing, `body` goes along as JSON; only for tools under `writes` |
 | `json.encode`, `json.decode`, `json.indent` | JSON |
@@ -1757,6 +1760,7 @@ With a token of its own, another program sees how Mira is doing, one a company u
 
 ## Good to know
 
+- If `mira.yaml` cannot be read (after a typo, say), Mira starts anyway, but limited: Home Assistant reaches her, she answers every question that she cannot read her settings right now, and Settings → System → **Repairs** shows the file, the line and the error. Once you save the corrected file, Mira starts anew.
 - Mira does not make up values: if something is missing, she says so or asks.
 - After a web search Mira performs no critical actions until you give the command again directly. Remembering something, sending a message or creating a task then only happens after your yes. So a web page cannot slip her anything she keeps or passes on.
 - If speech recognition gets you wrong, speak clearly and in one sentence.
