@@ -52,9 +52,11 @@ func TestBS13_ACompanionsRegistrationWakesItsMCPServers(t *testing.T) {
 	if len(woken) != 2 || !h.byName["mail"].connected() || !h.byName["musiklicht"].connected() || h.byName["else"].connected() {
 		t.Fatalf("woken %v, else connected %v", woken, h.byName["else"].connected())
 	}
-	// And a server under that address that is connected keeps its session
+	// And a server under that address that counts as connected is connected anew: its session is of the companion's
+	// last run, its end perhaps not noticed yet (the order seen on the test HA)
 	before := current(h.byName["mail"])
-	if again := h.WakeUnder(context.Background(), "http://pro:8792"); len(again) != 0 || current(h.byName["mail"]) != before {
+	if again := h.WakeUnder(context.Background(), "http://pro:8792"); len(again) != 2 || current(h.byName["mail"]) == before ||
+		!h.byName["mail"].connected() {
 		t.Errorf("woken again %v", again)
 	}
 	// An address that only begins like it is not under it.

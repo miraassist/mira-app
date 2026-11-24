@@ -944,19 +944,20 @@ func (h *Host) Wake(ctx context.Context, name string) {
 	h.rebuild()
 }
 
-// WakeUnder wakes the servers whose address lies under base (base/…) and
-// that are not connected: a companion registered, so it is up again
-// (docs/spec/companions.md, decision 21). A connected one keeps its
-// session; a failed connect is the retry loop's again. It answers the
-// servers it connected.
+// WakeUnder connects the servers whose address lies under base (base/…)
+// anew: a companion registered, so it is up again, and a session Mira
+// still holds is of its last run, its end perhaps not noticed yet
+// (docs/spec/companions.md, decision 21). The old session is retired, so
+// calls on it finish; a failed connect is the retry loop's again. It
+// answers the servers it connected.
 func (h *Host) WakeUnder(ctx context.Context, base string) []string {
 	base = strings.TrimRight(base, "/") + "/"
 	var woken []string
 	for _, s := range h.servers {
-		if !strings.HasPrefix(s.cfg.URL, base) || s.connected() {
+		if !strings.HasPrefix(s.cfg.URL, base) {
 			continue
 		}
-		if err := s.connectNow(ctx, true, false); err != nil {
+		if err := s.connectNow(ctx, true, true); err != nil {
 			continue // fatal, or kept and logged by failedConnect
 		}
 		h.log.Info("mcp server reconnected", "server", s.cfg.Name, "reason", "companion registered", "companion", base)

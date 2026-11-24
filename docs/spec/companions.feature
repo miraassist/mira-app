@@ -78,4 +78,4 @@ Feature: BS Companion services
     Given a skill's MCP server at http://pro:8792/mcp/mail is not connected, and another one elsewhere neither
     When the companion pro registers with the address http://pro:8792
     Then Mira connects the server under that address at once, and leaves the other one to its retry loop
-    And a server under that address that is connected keeps its session
+    And a server under that address that counts as connected is connected anew: its session is of the companion's last run

@@ -87,7 +87,7 @@ companion registers at every start (`PUT /v1/companions/{name}`): that is the si
 
 | # | Question | Decision |
 |---|---|---|
-| 21 | What a registration does to MCP | After it is kept, Mira wakes every MCP server whose address lies under the companion's (`<url>/…`, a skill's `mcp.url`) and that is not connected: connected at once, its waits start anew (`mcp.Host.Wake`, as Home Assistant's connection does). A server connected already keeps its session. A connect that fails is the retry loop's again, with its log line. The answer to the registration does not wait for it. Left: a call between the companion's start and its registration (seconds) still fails; a call on a dropped connection is not retried (Mira's private TODO) |
+| 21 | What a registration does to MCP | After it is kept, Mira connects every MCP server whose address lies under the companion's (`<url>/…`, a skill's `mcp.url`) anew, at once, its waits started anew; also one that counts as connected: its session is of the companion's last run, and Mira may not have noticed its end yet (seen on the test HA 2026-11-24: the end noticed 0.5 s after the registration). The old session is retired, not closed: calls on it finish ([MCP connections](mcp-connections.md), decision 8). A connect that fails is the retry loop's again, with its log line. The answer to the registration does not wait for it. Left: a call between the companion's start and its registration (seconds) still fails; a call on a dropped connection is not retried (Mira's private TODO) |
 
 ### Step by step
 
