@@ -56,6 +56,11 @@ const (
 	KindSourceURL   = "sourceurl"
 	KindSourceSkill = "sourceskill"
 	KindSourceTwice = "sourcetwice"
+	// A companion as a skill source (docs/spec/companions.md, decision 25):
+	// the problem's skill is the companion's title.
+	KindCompanionDown = "companiondown"
+	KindCompanionKey  = "companionkey"
+	KindCompanionNot  = "companionnot"
 	// Skill blueprints and skill automations (docs/spec/skill-files.md,
 	// Errors): the skill runs, without them.
 	KindBlueprintUnusable = "blueprintunusable"
@@ -201,6 +206,9 @@ var problemTexts = map[i18n.Lang]problemTable{
 		"sourceurl":           "Die Adresse der Skill-Quelle „%s“ muss mit https:// beginnen (http:// nur für diesen Rechner selbst).",
 		"sourceskill":         "Die Skill-Quelle %[1]s liefert den Skill „%[2]s“ so, dass Mira ihn nicht nimmt: %[3]s.",
 		"sourcetwice":         "Den Skill „%[1]s“ gibt es im Ordner %[2]s und im Abo (%[3]s). Mira nimmt den aus dem Ordner; benenne einen der beiden um, um den aus dem Abo zu nutzen.",
+		"companiondown":       "Die Skills von %[1]s konnten nicht geladen werden (%[2]s: %[3]s); Mira versucht es beim nächsten Start wieder.",
+		"companionkey":        "%[1]s lehnt Miras Token ab (%[2]s antwortet %[3]s); es meldet sich bei seinem nächsten Start neu an.",
+		"companionnot":        "%[1]s liefert unter %[2]s keine Skills, die Mira lesen kann (%[3]s).",
 		"blueprintunusable":   "Der Blueprint %s des Skills lässt sich nicht verwenden (%s). Der Skill läuft, aber ohne ihn und ohne die Automationen daraus.",
 		"blueprintlist":       "Home Assistant konnte nicht nach seinen Blueprints gefragt werden (%s). Die Blueprints und Automationen des Skills kommen beim nächsten Start.",
 		"blueprintsave":       "Der Blueprint %s konnte nicht in Home Assistant gespeichert werden (%s). Der Skill läuft; Mira versucht es beim nächsten Start wieder.",
@@ -327,6 +335,9 @@ var problemTexts = map[i18n.Lang]problemTable{
 		"sourceurl":           "The skill source's address \"%s\" must begin with https:// (http:// only for this machine itself).",
 		"sourceskill":         "The skill source %[1]s delivers the skill \"%[2]s\" in a way Mira does not take: %[3]s.",
 		"sourcetwice":         "The skill \"%[1]s\" is in the folder %[2]s and in the subscription (%[3]s). Mira takes the folder's; rename one of them to use the subscription's.",
+		"companiondown":       "The skills of %[1]s could not be loaded (%[2]s: %[3]s); Mira tries again at the next start.",
+		"companionkey":        "%[1]s refuses Mira's token (%[2]s answers %[3]s); it registers anew at its next start.",
+		"companionnot":        "%[1]s delivers no skills Mira can read at %[2]s (%[3]s).",
 		"blueprintunusable":   "The skill's blueprint %s cannot be used (%s). The skill runs, but without it and the automations made from it.",
 		"blueprintlist":       "Home Assistant could not be asked for its blueprints (%s). The skill's blueprints and automations come at the next start.",
 		"blueprintsave":       "The blueprint %s could not be saved in Home Assistant (%s). The skill runs; Mira tries again at the next start.",

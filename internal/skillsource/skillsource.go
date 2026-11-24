@@ -19,6 +19,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"testing/fstest"
 	"time"
 
@@ -53,16 +54,73 @@ type Options struct {
 // problems are the source's (a repair each) and those of single skills of
 // the answer; each is logged here.
 func Load(ctx context.Context, o Options) (*skills.Root, []skills.Problem) {
+	log := logger(o)
+	addr := strings.TrimRight(o.Source.URL, "/")
+	if !allowed(addr) {
+		log.Error("the skill source's address is not https and not on this machine; it is not asked", "url", addr)
+		return nil, []skills.Problem{skills.NewProblem(host(addr), skills.KindSourceURL, addr)}
+	}
+	return load(ctx, o, log, addr, o.Source.Key, nil)
+}
+
+// Companion is a registered companion as a skill source of its own
+// (docs/spec/companions.md, decisions 22 to 25): its address and the token
+// it registered with. The skill source's rule on https (decision 14 there)
+// does not hold: a companion's address is the one it registered, often in
+// the house's own network.
+type Companion struct {
+	Name, Title, URL, Token string
+}
+
+// LoadCompanions asks every companion side by side (decision 25) and gives
+// their skills as roots in the companions' order; a companion without
+// skills, or one that cannot be asked, gives none. Each problem is logged.
+func LoadCompanions(ctx context.Context, cs []Companion, o Options) ([]skills.Root, []skills.Problem) {
+	log := logger(o)
+	roots := make([]*skills.Root, len(cs))
+	problems := make([][]skills.Problem, len(cs))
+	var wg sync.WaitGroup
+	for i, c := range cs {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			roots[i], problems[i] = load(ctx, o, log.With("companion", c.Name), strings.TrimRight(c.URL, "/"), c.Token, &c)
+		}()
+	}
+	wg.Wait()
+	var out []skills.Root
+	var all []skills.Problem
+	for i := range cs {
+		if roots[i] != nil {
+			out = append(out, *roots[i])
+		}
+		all = append(all, problems[i]...)
+	}
+	return out, all
+}
+
+func logger(o Options) *slog.Logger {
 	log := o.Logger
 	if log == nil {
 		log = slog.Default()
 	}
-	log = log.With("component", "skillsource")
-	addr := strings.TrimRight(o.Source.URL, "/")
+	return log.With("component", "skillsource")
+}
+
+// load asks one source, the subscription's or a companion's (c not nil).
+func load(ctx context.Context, o Options, log *slog.Logger, addr, key string, c *Companion) (*skills.Root, []skills.Problem) {
 	name := host(addr)
-	if !allowed(addr) {
-		log.Error("the skill source's address is not https and not on this machine; it is not asked", "url", addr)
-		return nil, []skills.Problem{skills.NewProblem(name, skills.KindSourceURL, addr)}
+	what := "the skills of the subscription"
+	kindDown, kindKey, kindNot := skills.KindSourceDown, skills.KindSourceKey, skills.KindSourceNot
+	whole := func(kind string, args ...any) []skills.Problem {
+		return []skills.Problem{skills.NewProblem(name, kind, append([]any{addr}, args...)...)}
+	}
+	if c != nil {
+		what = "the skills of the companion " + c.Name
+		kindDown, kindKey, kindNot = skills.KindCompanionDown, skills.KindCompanionKey, skills.KindCompanionNot
+		whole = func(kind string, args ...any) []skills.Problem {
+			return []skills.Problem{skills.NewProblem(c.Title, kind, append([]any{c.Title, addr}, args...)...)}
+		}
 	}
 	p := Policy
 	if o.Policy != nil {
@@ -75,21 +133,25 @@ func Load(ctx context.Context, o Options) (*skills.Root, []skills.Problem) {
 	var raw []byte
 	err := retry.Do(ctx, p, func(ctx context.Context) error {
 		var err error
-		raw, err = fetch(ctx, client, addr, o.Source.Key, o.Version)
+		raw, err = fetch(ctx, client, addr, key, o.Version)
 		return err
-	}, retry.Warn(log, "loading the skills of the subscription", p, "url", addr))
+	}, retry.Warn(log, "loading "+what, p, "url", addr))
 	if err != nil {
 		var st *statusError
 		switch {
+		case c != nil && errors.As(err, &st) && st.code == http.StatusNotFound:
+			// A companion that brings no skills, or one older than this (decision 24).
+			log.Info("the companion brings no skills", "url", addr)
+			return nil, nil
 		case errors.As(err, &st) && (st.code == http.StatusUnauthorized || st.code == http.StatusForbidden):
-			log.Error("the skill source refused the subscription key; mira starts without its skills", "url", addr, "status", st.code)
-			return nil, []skills.Problem{skills.NewProblem(name, skills.KindSourceKey, addr, st.code)}
+			log.Error("the skill source refused the key; mira starts without its skills", "what", what, "url", addr, "status", st.code)
+			return nil, whole(kindKey, st.code)
 		case errors.As(err, &st) && !retry.Retryable(st):
-			log.Error("the address is not a skill source; mira starts without its skills", "url", addr, "status", st.code, "answer", st.answer)
-			return nil, []skills.Problem{skills.NewProblem(name, skills.KindSourceNot, addr, st.code)}
+			log.Error("the address is not a skill source; mira starts without its skills", "what", what, "url", addr, "status", st.code, "answer", st.answer)
+			return nil, whole(kindNot, st.code)
 		}
-		log.Error("could not load the skills of the subscription; mira starts without them and tries again at the next start", "url", addr, "error", err)
-		return nil, []skills.Problem{skills.NewProblem(name, skills.KindSourceDown, addr, err)}
+		log.Error("could not load "+what+"; mira starts without them and tries again at the next start", "url", addr, "error", err)
+		return nil, whole(kindDown, err)
 	}
 	// Each skill on its own: one whose entry cannot be read is left out with
 	// its problem, the others load (docs/spec/parsing.md, PA-04). Its version
@@ -98,8 +160,8 @@ func Load(ctx context.Context, o Options) (*skills.Root, []skills.Problem) {
 		Skills []json.RawMessage `json:"skills"`
 	}
 	if err := json.Unmarshal(raw, &answer); err != nil {
-		log.Error("the skill source's answer is not the expected JSON; mira starts without its skills", "url", addr, "error", err, "answer", excerpt.Bytes(raw))
-		return nil, []skills.Problem{skills.NewProblem(name, skills.KindSourceNot, addr, "the answer is not the expected JSON")}
+		log.Error("the skill source's answer is not the expected JSON; mira starts without its skills", "what", what, "url", addr, "error", err, "answer", excerpt.Bytes(raw))
+		return nil, whole(kindNot, "the answer is not the expected JSON")
 	}
 	mem := fstest.MapFS{}
 	var problems []skills.Problem
@@ -132,7 +194,7 @@ func Load(ctx context.Context, o Options) (*skills.Root, []skills.Problem) {
 		loaded++
 		log.Info("skill loaded from the source", "url", addr, "skill", sk.Name, "version", sk.Version, "files", len(sk.Files))
 	}
-	log.Info("skills of the subscription loaded", "url", addr, "skills", loaded)
+	log.Info(what+" loaded", "url", addr, "skills", loaded)
 	return &skills.Root{Name: addr, FS: mem, Source: true}, problems
 }
 

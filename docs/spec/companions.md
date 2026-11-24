@@ -3,7 +3,7 @@
 Status 2026-11-23: decisions 1 to 4 by the maintainer (in the companion's own repository, 2026-11-23: its settings on
 Mira's page, no second panel in Home Assistant, a path convention, the companion registers itself); 5 to 12 taken while
 writing, to be confirmed. Not built. Decisions 22 to 27 by the maintainer 2026-11-24 (a companion's skills from the
-companion, its address checked at registration), not built. Scenarios: [companions.feature](companions.feature) (`BS-…`).
+companion, its address checked at registration), built the same day (steps 8, 9). Scenarios: [companions.feature](companions.feature) (`BS-…`).
 
 ## Goal
 
@@ -123,7 +123,7 @@ companion registers at every start (`PUT /v1/companions/{name}`): that is the si
 ## A companion's skills from the companion, and its address checked (decided 2026-11-24, the maintainer)
 
 Proposed 2026-11-24 for the companion mira-pro (its repository's `docs/spec/setup.md`), in general terms; decisions 22
-to 27 confirmed by the maintainer the same day as proposed. Not built.
+to 27 confirmed by the maintainer the same day as proposed. Built the same day (steps 8, 9).
 
 Seen 2026-11-24 while setting up mira-pro beside a test Mira: a companion's skills reach Mira only through a folder
 both share (`skills.dirs` on her side, a folder of the companion's on the other), and a companion learns only from its
@@ -221,7 +221,7 @@ Departures, each with its reason:
 8. **A companion's skills from the companion** (decisions 22 to 25, 27): decided 2026-11-24. BS-14 to BS-17.
 9. **The check at registration** (decision 26): decided 2026-11-24. BS-18, BS-19.
 
-Built: steps 1 to 4. BS-07 (a non-admin through the integration) has no coded test yet.
+Built: steps 1 to 4, 8 and 9 (2026-11-24). BS-07 (a non-admin through the integration) has no coded test yet.
 
 **The run on the test HA (2026-11-24)** with mira-pro as the companion `pro`: it registered with its partner token
 (again 5 s later when Mira restarted under it); the tab Pro is in Setup in the panel; its page loads through

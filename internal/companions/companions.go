@@ -28,6 +28,8 @@ const (
 	maxTitle = 32
 	maxBody  = 1 << 20
 	timeout  = 10 * time.Second
+	// pingTimeout bounds the call back at a registration (decision 26).
+	pingTimeout = 5 * time.Second
 )
 
 var nameRE = regexp.MustCompile(`^[a-z][a-z0-9-]{0,31}$`)
@@ -89,7 +91,7 @@ func (h *Handler) Register(mux *api.Mux) {
 	const tag = api.TagAccess
 	mux.Handle(api.Route{Method: http.MethodPut, Path: "/v1/companions/{name}", Tag: tag,
 		Summary: "A companion service registers itself (with its partner token)", Request: Registration{},
-		Status: http.StatusNoContent, Errors: []int{400, 403, 409, 500}}, h.put)
+		Status: http.StatusNoContent, Errors: []int{400, 403, 409, 422, 500}}, h.put)
 	mux.Handle(api.Route{Method: http.MethodDelete, Path: "/v1/companions/{name}", Tag: tag,
 		Summary: "A companion service removes its registration", Status: http.StatusNoContent,
 		Errors: []int{403, 404, 500}}, h.delete)
@@ -133,7 +135,15 @@ func (h *Handler) put(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, Errors{Errors: errs})
 		return
 	}
-	err := h.Store.PutCompanion(r.Context(), store.Companion{Name: name, Title: reg.Title, URL: strings.TrimRight(reg.URL, "/"),
+	addr := strings.TrimRight(reg.URL, "/")
+	// Kept only when Mira reaches it: the companion can show its owner what
+	// Mira saw (decision 26). Not retried here: the companion registers again.
+	if err := h.ping(r.Context(), addr, reg.Token); err != nil {
+		h.Log.Warn("companion not reached", "name", name, "url", addr, "error", err)
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": "Mira cannot reach " + addr + ": " + err.Error()})
+		return
+	}
+	err := h.Store.PutCompanion(r.Context(), store.Companion{Name: name, Title: reg.Title, URL: addr,
 		Token: reg.Token, TokenID: c.TokenID})
 	switch {
 	case errors.Is(err, store.ErrCompanionTaken):
@@ -151,6 +161,28 @@ func (h *Handler) put(w http.ResponseWriter, r *http.Request) {
 			go h.Wake(context.WithoutCancel(r.Context()), strings.TrimRight(reg.URL, "/"))
 		}
 	}
+}
+
+// ping calls the companion back at its address with its token (decision 26): nil on a 2xx.
+func (h *Handler) ping(ctx context.Context, addr, token string) error {
+	// real time: a bound of one call to the companion; no test waits for it
+	ctx, cancel := context.WithTimeout(ctx, pingTimeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, addr+"/v1/ping", nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	resp, err := h.client().Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4<<10))
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return fmt.Errorf("%s/v1/ping answered %d", addr, resp.StatusCode)
+	}
+	return nil
 }
 
 func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {

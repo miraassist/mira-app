@@ -45,7 +45,7 @@ func newFixture(t *testing.T) *fixture {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f.h = &Handler{Store: st, Log: log, Restart: func() { f.restarted <- struct{}{} }}
+	f.h = &Handler{Store: st, Log: log, Restart: func() { f.restarted <- struct{}{} }, Client: &http.Client{Transport: pingOK{}}}
 	mux := api.NewMux()
 	f.h.Register(mux)
 	// The page's routes as internal/ui mounts them (its admin check is the page's own).
@@ -57,6 +57,17 @@ func newFixture(t *testing.T) *fixture {
 	}))
 	f.srv = f.k.Check(mux)
 	return f
+}
+
+// pingOK answers Mira's call back at a registration (decision 26) for the made-up companions of these tests
+// (mira-pro:8792, a:1, b:2); every other call goes out as it is.
+type pingOK struct{}
+
+func (pingOK) RoundTrip(r *http.Request) (*http.Response, error) {
+	if r.URL.Path == "/v1/ping" && (r.URL.Host == "mira-pro:8792" || r.URL.Host == "a:1" || r.URL.Host == "b:2") {
+		return &http.Response{StatusCode: http.StatusNoContent, Body: http.NoBody, Request: r}, nil
+	}
+	return http.DefaultTransport.RoundTrip(r)
 }
 
 func (f *fixture) partner(name string) string {
@@ -140,6 +151,8 @@ func TestBS05_TheCompanionsPageAndDataArePassedOn(t *testing.T) {
 	var gotAuth string
 	comp := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
+		case "/v1/ping":
+			w.WriteHeader(http.StatusNoContent)
 		case "/ui/":
 			w.Header().Set("Content-Type", "text/html")
 			w.Write([]byte("<title>Pro</title>"))
@@ -170,9 +183,12 @@ func TestBS05_TheCompanionsPageAndDataArePassedOn(t *testing.T) {
 
 func TestBS06_AnUnreachableCompanionIsSaid(t *testing.T) {
 	f := newFixture(t)
-	gone := httptest.NewServer(http.NotFoundHandler())
+	// Reached when it registers (decision 26), gone when its page is used.
+	gone := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusNoContent) }))
+	if rec := f.call("PUT", "/v1/companions/pro", f.partner("Pro"), Registration{Title: "Pro", URL: gone.URL, Token: "x"}); rec.Code != http.StatusNoContent {
+		t.Fatalf("registration %d %s", rec.Code, rec.Body)
+	}
 	gone.Close()
-	f.call("PUT", "/v1/companions/pro", f.partner("Pro"), Registration{Title: "Pro", URL: gone.URL, Token: "x"})
 	rec := f.call("GET", "/v1/ui/companion/pro/state", integration, nil)
 	if rec.Code != http.StatusBadGateway || !strings.Contains(rec.Body.String(), "companion pro cannot be reached") {
 		t.Errorf("answer %d %s", rec.Code, rec.Body)
@@ -324,5 +340,60 @@ func TestBS13_ARegistrationWakesTheCompanionsServers(t *testing.T) {
 	case got := <-woken:
 		t.Errorf("a refused registration woke %q", got)
 	default:
+	}
+}
+
+func TestBS18_ARegistrationIsKeptOnlyWhenMiraReachesTheCompanion(t *testing.T) {
+	f := newFixture(t)
+	pinged := make(chan string, 1)
+	comp := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/ping" || r.Method != http.MethodGet {
+			http.NotFound(w, r)
+			return
+		}
+		pinged <- r.Header.Get("Authorization")
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	t.Cleanup(comp.Close)
+	rec := f.call("PUT", "/v1/companions/pro", f.partner("Pro"), Registration{Title: "Pro", URL: comp.URL + "/", Token: "companion-secret"})
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("answer %d %s", rec.Code, rec.Body)
+	}
+	select {
+	case auth := <-pinged:
+		if auth != "Bearer companion-secret" {
+			t.Errorf("the call back carried %q, not the companion's token", auth)
+		}
+	default:
+		t.Fatal("Mira kept the registration without calling the companion back")
+	}
+	if list, _ := f.h.List(context.Background()); len(list) != 1 {
+		t.Errorf("list %+v", list)
+	}
+}
+
+func TestBS19_ACompanionMiraCannotReachIsRefusedWithHerError(t *testing.T) {
+	f := newFixture(t)
+	gone := httptest.NewServer(http.NotFoundHandler())
+	gone.Close()
+	refusing := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusUnauthorized) }))
+	t.Cleanup(refusing.Close)
+	tok := f.partner("Pro")
+	for _, c := range []struct{ url, says string }{{gone.URL, "refused"}, {refusing.URL, "answered 401"}} {
+		rec := f.call("PUT", "/v1/companions/pro", tok, Registration{Title: "Pro", URL: c.url, Token: "companion-secret"})
+		var body map[string]string
+		json.NewDecoder(rec.Body).Decode(&body)
+		if rec.Code != http.StatusUnprocessableEntity || !strings.HasPrefix(body["error"], "Mira cannot reach "+c.url+": ") ||
+			!strings.Contains(body["error"], c.says) {
+			t.Errorf("%s: answer %d %v", c.url, rec.Code, body)
+		}
+	}
+	if list, _ := f.h.List(context.Background()); len(list) != 0 {
+		t.Errorf("kept %+v", list)
+	}
+	logs := f.logs.String()
+	if !strings.Contains(logs, "companion not reached") || !strings.Contains(logs, "name=pro") || !strings.Contains(logs, gone.URL) ||
+		strings.Contains(logs, "companion-secret") {
+		t.Errorf("log %s", logs)
 	}
 }

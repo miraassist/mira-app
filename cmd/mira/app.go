@@ -330,6 +330,19 @@ func build(ctx context.Context, cfg config.Config, opts buildOptions) (*app, err
 			a.skillRoots = append(a.skillRoots, *root)
 		}
 	}
+	// Every registered companion is a skill source of its own, asked side by
+	// side (docs/spec/companions.md, decisions 22 to 25).
+	if list, err := a.store.Companions(ctx); err != nil {
+		a.log.Error("the companions could not be read; mira starts without their skills", "error", err)
+	} else if len(list) > 0 {
+		cs := make([]skillsource.Companion, len(list))
+		for i, c := range list {
+			cs[i] = skillsource.Companion{Name: c.Name, Title: c.Title, URL: c.URL, Token: c.Token}
+		}
+		roots, problems := skillsource.LoadCompanions(ctx, cs, skillsource.Options{Version: version, Logger: a.log})
+		a.skillRoots = append(a.skillRoots, roots...)
+		sourceProblems = append(sourceProblems, problems...)
+	}
 	for _, name := range alwaysOn() {
 		if _, ok := enabled[name]; !ok && !cfg.Skills.Off[name] && skills.Exists(cfg.Skills.Dirs, name) {
 			enabled[name] = nil

@@ -1,8 +1,10 @@
 package skillsource
 
 import (
+	"bytes"
 	"context"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -250,4 +252,134 @@ func TestPA04_ASkillOfTheSubscriptionThatCannotBeReadIsLeftOut(t *testing.T) {
 	if _, err := fs.ReadFile(root.FS, "beispiel/SKILL.md"); err != nil {
 		t.Errorf("the other skill did not load: %v", err)
 	}
+}
+
+// companionAt answers like a companion at a made-up address in the house's network (http, not this machine):
+// the skill source's rule on https does not hold for a companion (docs/spec/companions.md, decision 22).
+type companionAt struct {
+	host   string
+	status int
+	file   string
+	t      *testing.T
+	auth   atomic.Value
+	calls  atomic.Int32
+}
+
+func (c *companionAt) RoundTrip(r *http.Request) (*http.Response, error) {
+	rec := httptest.NewRecorder()
+	if r.URL.Host != c.host || r.URL.Path != "/v1/skills" {
+		rec.WriteHeader(http.StatusNotFound)
+		return rec.Result(), nil
+	}
+	c.calls.Add(1)
+	c.auth.Store(r.Header.Get("Authorization"))
+	answer(c.t, c.status, c.file)(rec)
+	return rec.Result(), nil
+}
+
+func companionOptions(rt http.RoundTripper, logs *bytes.Buffer) Options {
+	return Options{Version: "0.41.0", Policy: noWait, Client: &http.Client{Transport: rt},
+		Logger: slog.New(slog.NewTextHandler(logs, nil))}
+}
+
+func TestBS14_ARegisteredCompanionsSkillsComeFromIt(t *testing.T) {
+	pro := &companionAt{host: "mira-pro:8792", status: 200, file: "200-skills.json", t: t}
+	var logs bytes.Buffer
+	roots, problems := LoadCompanions(context.Background(),
+		[]Companion{{Name: "pro", Title: "Pro", URL: "http://mira-pro:8792/", Token: "pro-token"}}, companionOptions(pro, &logs))
+	if len(roots) != 1 || len(problems) > 0 {
+		t.Fatalf("roots %v, problems %v", roots, problems)
+	}
+	if pro.calls.Load() != 1 || pro.auth.Load() != "Bearer pro-token" {
+		t.Errorf("calls %d, auth %v", pro.calls.Load(), pro.auth.Load())
+	}
+	if !roots[0].Source {
+		t.Error("a companion's skills are not kept as a source's (in memory only, not shown)")
+	}
+	got, problems := skills.LoadFrom(roots, map[string]map[string]any{"beispiel": nil})
+	if len(got) != 1 || len(problems) > 0 || got[0].Name != "beispiel" || got[0].Source != "http://mira-pro:8792" {
+		t.Fatalf("loaded %+v, problems %v", got, problems)
+	}
+	if avail := skills.AvailableIn(roots, nil); len(avail) != 1 || avail[0].Name != "beispiel" {
+		t.Errorf("available %+v", avail)
+	}
+	if strings.Contains(logs.String(), "pro-token") {
+		t.Errorf("the token is in the log: %s", logs.String())
+	}
+}
+
+func TestBS15_ACompanionWithoutSkills(t *testing.T) {
+	both := roundTrips{
+		"pro:8792": &companionAt{host: "pro:8792", status: 200, file: "200-empty.json", t: t},
+		"old:8792": &companionAt{host: "old:8792", status: 404, file: "404.json", t: t},
+	}
+	var logs bytes.Buffer
+	roots, problems := LoadCompanions(context.Background(), []Companion{
+		{Name: "pro", Title: "Pro", URL: "http://pro:8792", Token: "a"},
+		{Name: "old", Title: "Old", URL: "http://old:8792", Token: "b"},
+	}, companionOptions(both, &logs))
+	if len(problems) > 0 {
+		t.Errorf("problems %v", problems)
+	}
+	if got, _ := skills.LoadFrom(roots, nil); len(got) != 0 {
+		t.Errorf("skills %v", got)
+	}
+	if n := strings.Count(logs.String(), "the companion brings no skills"); n != 1 || !strings.Contains(logs.String(), "companion=old") {
+		t.Errorf("want one line for old, log %s", logs.String())
+	}
+}
+
+func TestBS16_ACompanionThatCannotBeAsked(t *testing.T) {
+	down := &companionAt{host: "pro:8792", status: 503, file: "404.json", t: t}
+	refusing := &companionAt{host: "other:8792", status: 401, file: "401.json", t: t}
+	var logs bytes.Buffer
+	roots, problems := LoadCompanions(context.Background(), []Companion{
+		{Name: "pro", Title: "Pro", URL: "http://pro:8792", Token: "a"},
+		{Name: "other", Title: "Other", URL: "http://other:8792", Token: "b"},
+	}, companionOptions(roundTrips{"pro:8792": down, "other:8792": refusing}, &logs))
+	if len(roots) != 0 || len(problems) != 2 {
+		t.Fatalf("roots %v, problems %v", roots, problems)
+	}
+	if down.calls.Load() != 3 || refusing.calls.Load() != 1 {
+		t.Errorf("tries: pro %d (want 3), other %d (want 1)", down.calls.Load(), refusing.calls.Load())
+	}
+	texts := problems[0].Text(i18n.DE) + " | " + problems[1].Text(i18n.DE)
+	if problems[0].Skill != "Pro" || !strings.Contains(texts, "Die Skills von Pro konnten nicht geladen werden") ||
+		problems[1].Skill != "Other" || !strings.Contains(texts, "Other lehnt Miras Token ab") {
+		t.Errorf("problems %q (%s, %s)", texts, problems[0].Skill, problems[1].Skill)
+	}
+}
+
+func TestBS17_TheOwnersSkillWinsANameTakenTwice(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, "beispiel"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "beispiel", "SKILL.md"), []byte("---\nname: beispiel\ndescription: Meins.\n---\nMein Text.\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	pro := &companionAt{host: "mira-pro:8792", status: 200, file: "200-skills.json", t: t}
+	var logs bytes.Buffer
+	roots, _ := LoadCompanions(context.Background(),
+		[]Companion{{Name: "pro", Title: "Pro", URL: "http://mira-pro:8792", Token: "t"}}, companionOptions(pro, &logs))
+	got, problems := skills.LoadFrom(append(skills.Roots([]string{dir}), roots...), map[string]map[string]any{"beispiel": nil})
+	if len(got) != 1 || got[0].Source != "" || got[0].Body != "Mein Text." {
+		t.Fatalf("loaded %+v", got)
+	}
+	p := kindOf(t, problems, dir)
+	if text := p.Text(i18n.DE); !strings.Contains(text, "http://mira-pro:8792") || !strings.Contains(text, "beispiel") {
+		t.Errorf("problem %q does not name both", text)
+	}
+}
+
+// roundTrips sends each call to the companion of its host.
+type roundTrips map[string]*companionAt
+
+func (m roundTrips) RoundTrip(r *http.Request) (*http.Response, error) {
+	if c, ok := m[r.URL.Host]; ok {
+		return c.RoundTrip(r)
+	}
+	rec := httptest.NewRecorder()
+	rec.WriteHeader(http.StatusNotFound)
+	return rec.Result(), nil
 }
