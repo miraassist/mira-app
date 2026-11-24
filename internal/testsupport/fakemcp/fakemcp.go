@@ -23,6 +23,8 @@ type Call struct {
 	Args map[string]any
 	// Device is the satellite the call named in its metadata ("" for none).
 	Device string
+	// Meta is the call's whole metadata.
+	Meta map[string]any
 }
 
 // deviceMeta is where Home Assistant's MCP server reads the satellite from.
@@ -122,7 +124,7 @@ func (s *Server) AddTool(name, description, schema string, readOnly bool, h Hand
 		}
 		device, _ := req.Params.Meta[deviceMeta].(string)
 		s.mu.Lock()
-		s.calls = append(s.calls, Call{Tool: name, Args: args, Device: device})
+		s.calls = append(s.calls, Call{Tool: name, Args: args, Device: device, Meta: req.Params.Meta})
 		s.mu.Unlock()
 		text, isErr := h(args)
 		return &sdk.CallToolResult{Content: []sdk.Content{&sdk.TextContent{Text: text}}, IsError: isErr}, nil

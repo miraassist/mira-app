@@ -167,6 +167,24 @@ func deviceOf(ctx context.Context) string {
 	return id
 }
 
+// thirdPartyMeta is the key a tool call of a turn says in whether the turn
+// read third-party text before it (docs/spec/skill-mcp.md, decision 8).
+const thirdPartyMeta = "io.mira-assist/third_party_text"
+
+type thirdPartyKey struct{}
+
+// WithThirdParty marks the calls made with ctx as calls of a turn that read
+// third-party text before (true) or not (false). A call without the mark
+// (Mira's own code, no turn) carries no such field.
+func WithThirdParty(ctx context.Context, read bool) context.Context {
+	return context.WithValue(ctx, thirdPartyKey{}, read)
+}
+
+func thirdPartyOf(ctx context.Context) (read, ok bool) {
+	read, ok = ctx.Value(thirdPartyKey{}).(bool)
+	return read, ok
+}
+
 // Host owns the server connections.
 type Host struct {
 	log          *slog.Logger
@@ -605,6 +623,12 @@ func (h *Host) callOn(ctx context.Context, s *server, qualified, toolName string
 	params := &sdk.CallToolParams{Name: toolName, Arguments: arguments}
 	if device := deviceOf(ctx); device != "" && s.cfg.WantsDevice() {
 		params.Meta = sdk.Meta{deviceMeta: device}
+	}
+	if read, ok := thirdPartyOf(ctx); ok {
+		if params.Meta == nil {
+			params.Meta = sdk.Meta{}
+		}
+		params.Meta[thirdPartyMeta] = read
 	}
 	call := func(session *sdk.ClientSession) (*sdk.CallToolResult, error) {
 		// real time: a bound of a call to an MCP server or of its process ending; no test waits for it

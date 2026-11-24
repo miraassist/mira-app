@@ -52,6 +52,7 @@ type harness struct {
 	llm    *fakellm.Server
 	ha     *fakemcp.Server
 	search *fakemcp.Server
+	host   *mcp.Host
 	store  *store.Store
 	clock  *clock
 	// logs holds the engine's log at info level.
@@ -152,6 +153,7 @@ func newHarnessTools(t *testing.T, mutate func(*config.Config), extra []tools.In
 		t.Fatal(err)
 	}
 	t.Cleanup(host.Close)
+	h.host = host
 
 	registry := tools.NewRegistry(host, append(tools.Internal(i18n.DE, h.store), extra...)...)
 	h.engine = conversation.New(conversation.Options{

@@ -377,7 +377,13 @@ func (r *Registry) Execute(ctx context.Context, inv Invocation) (text string, is
 	if r.mcp == nil {
 		return "", true, fmt.Errorf("%w: %s", ErrUnknownTool, inv.Name)
 	}
-	res, err := r.mcp.Call(mcp.WithDevice(ctx, inv.DeviceID), inv.Name, inv.Args)
+	callCtx := mcp.WithDevice(ctx, inv.DeviceID)
+	if TurnOf(ctx) != nil {
+		// A call of a turn says whether third-party text came before it
+		// (docs/spec/skill-mcp.md, decision 8).
+		callCtx = mcp.WithThirdParty(callCtx, inv.Foreign)
+	}
+	res, err := r.mcp.Call(callCtx, inv.Name, inv.Args)
 	if errors.Is(err, mcp.ErrUnknownTool) {
 		return "", true, fmt.Errorf("%w: %s", ErrUnknownTool, inv.Name)
 	}

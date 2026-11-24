@@ -1,6 +1,6 @@
 # MCP servers in skills
 
-Status: built; step 3 (read-only per tool, decision 7) built 2026-11-24. Scenarios: [skill-mcp.feature](skill-mcp.feature).
+Status: built; step 3 (read-only per tool, decision 7) built 2026-11-24; step 4 (third-party text in a call's `_meta`, decision 8) built 2026-11-24. Scenarios: [skill-mcp.feature](skill-mcp.feature).
 
 ## Goal
 
@@ -102,6 +102,8 @@ skills:
 - `web_content: true` makes what the server returns third-party text, as for any MCP server: after it, Mira asks
   before keeping or passing anything on, and critical actions are locked.
 - `read_only` decides, as for any MCP server, whether background work may use the tools at all.
+- **Third-party text before a call** (decision 8): the call's `_meta` says it (`io.mira-assist/third_party_text`), so
+  the server can judge the call with it.
 - **`read_only_tools`** (decision 7) names the server's tools that only read, for a server that reads and writes and
   does not mark its tools itself: those count as read-only, the others do not. `read_only: true`
   still makes all of them read-only. A name the server does not have changes nothing.
@@ -122,3 +124,10 @@ skills:
    does not, only the skill's agents and schedules.
 7. **Read-only per tool** (2026-11-24, the maintainer, 3C): `read_only_tools`
    in the `mcp` section, also in an entry under `mcp_servers`. Built as step 3 (SM-15).
+8. **The server learns whether third-party text came before** (2026-11-24, the maintainer, A; step 4, built):
+   a tool call of a turn carries `io.mira-assist/third_party_text` in its `_meta`, `true` when the turn read
+   third-party text before the call (a web page, a mail, a tool marked `web_content`), else `false`. Every MCP server
+   gets it, a skill's and one under `mcp_servers`; a server that does not know the key ignores it (MCP's `_meta`).
+   Calls of Mira's own code without a turn (`CallServer`, the inbox) carry none. So a server can be stricter with
+   what it does after third-party text (judge it, refuse it, ask), on top of Mira's own lock. Cost: one field per
+   call.

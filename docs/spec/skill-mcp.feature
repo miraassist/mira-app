@@ -97,3 +97,10 @@ Feature: SM MCP servers in skills
     And its mcp section names its reading tools under read_only_tools
     Then those count as read-only: an agent with the right to read the house may use them
     And a tool not named there does not
+
+  @step4
+  Scenario: SM-16 A tool call says whether third-party text came before
+    Given a turn that read third-party text (a web page, a server marked web_content) before it calls a tool of an MCP server
+    Then the call's _meta has io.mira-assist/third_party_text true
+    And a call of a turn without third-party text has it false
+    And a call of Mira's own code without a turn has none

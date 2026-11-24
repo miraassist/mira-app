@@ -335,3 +335,35 @@ func TestSM15_AServersToolsNamedUnderReadOnlyToolsOnlyRead(t *testing.T) {
 		}
 	}
 }
+
+// SM-16 A tool call says whether third-party text came before
+// (docs/spec/skill-mcp.md, decision 8). The skill paperless's server
+// returns third-party text (web_content), so a call after its answer comes
+// after third-party text.
+func TestSM16_AToolCallSaysWhetherThirdPartyTextCameBefore(t *testing.T) {
+	p := newPaperless(t, openSkill("o1"),
+		fakellm.Step{ToolCalls: []llm.ToolCall{fakellm.ToolCall("q1", "paperless__query_documents", `{"query":"Rechnung"}`)}},
+		fakellm.Step{ToolCalls: []llm.ToolCall{fakellm.ToolCall("w1", "search__web_search", `{"query":"Schornsteinfeger"}`)}},
+		fakellm.Step{Content: "Gefunden."})
+	p.say(t, config.ChannelTelegram, "1", "Such die Rechnung und schau im Netz nach.")
+	docs, web := p.server.Calls(), p.search.Calls()
+	if len(docs) != 1 || len(web) != 1 {
+		t.Fatalf("calls: %+v %+v", docs, web)
+	}
+	// A call of a turn without third-party text before it has it false
+	if v, ok := docs[0].Meta["io.mira-assist/third_party_text"]; !ok || v != false {
+		t.Errorf("the first call: %v %v", v, ok)
+	}
+	// Given a turn that read third-party text before it calls a tool of an MCP server
+	// Then the call's _meta has io.mira-assist/third_party_text true
+	if v := web[0].Meta["io.mira-assist/third_party_text"]; v != true {
+		t.Errorf("the call after the documents: %v", v)
+	}
+	// And a call of Mira's own code without a turn has none
+	if _, err := p.host.CallServer(context.Background(), "paperless", "get_document_content", json.RawMessage(`{"id":7}`)); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := p.server.Calls()[1].Meta["io.mira-assist/third_party_text"]; ok {
+		t.Errorf("a call without a turn has the field: %v", p.server.Calls()[1].Meta)
+	}
+}
