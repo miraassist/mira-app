@@ -15,6 +15,7 @@ import (
 	"github.com/miraassist/mira-app/internal/clock"
 	"github.com/miraassist/mira-app/internal/config"
 	"github.com/miraassist/mira-app/internal/conversation"
+	"github.com/miraassist/mira-app/internal/ha/updates"
 	"github.com/miraassist/mira-app/internal/store"
 	"github.com/miraassist/mira-app/internal/store/storetest"
 	"github.com/miraassist/mira-app/internal/tasks"
@@ -381,5 +382,18 @@ func TestCheckRoute(t *testing.T) {
 	ft.err = errors.New("home assistant rejected render_template: boom (template_error)")
 	if code, body := do(t, srv, "POST", "/v1/check", "secret", `{}`); code != 502 || !strings.Contains(fmt.Sprint(body["error"]), "boom") {
 		t.Errorf("%d %v", code, body)
+	}
+}
+
+// VE-07 The service names its minimum: /v1/status and /v1/health carry
+// min_integration (docs/spec/versions.md, Minimum versions instead of one
+// version, step 1).
+func TestVE07_TheServiceNamesItsMinimum(t *testing.T) {
+	srv, _, _ := setup(t)
+	for _, path := range []string{"/v1/health", "/v1/status"} {
+		code, body := do(t, srv, "GET", path, "secret", "")
+		if code != 200 || body["min_integration"] != updates.MinIntegration {
+			t.Errorf("%s: %d min_integration %v", path, code, body["min_integration"])
+		}
 	}
 }

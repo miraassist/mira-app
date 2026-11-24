@@ -1,7 +1,8 @@
 # Integration and service in different versions
 
-Status 2026-10-26: built (the rule for the interface, the repair, the first places that follow it). See also
-[HA connection](ha-integration.md).
+Status 2026-10-26: built (the rule for the interface, the repair, the first places that follow it). 2026-11-24:
+"Minimum versions instead of one version" decided (the maintainer), not built; it replaces the repair below and the
+one version for both. See also [HA connection](ha-integration.md).
 
 ## Why
 
@@ -39,7 +40,97 @@ leniently, before it becomes part of the file.
 - **The answers** the integration reads (`/v1/health`, `/v1/status`, …) are read with defaults (`.get`), except
   fields every service has sent from the start (`id`, a problem's `name`).
 
-## The repair: which one to update
+## Minimum versions instead of one version (decided 2026-11-24, not built)
+
+### Why
+
+Since the integration and the service live in two repositories ([Two repositories](repositories.md)), one version for
+both means an integration release for every minor release of the service, though the integration changes far less
+often: the user updates it and restarts Home Assistant for nothing (0.40.0). The rule for the interface above already
+keeps an older partner working; what is missing is a clear line where it no longer does.
+
+### Decisions (2026-11-24, the maintainer)
+
+| # | Question | Decision |
+|---|---|---|
+| 1 | Who names a minimum | Both (1B): the service names the oldest integration it works with, the integration the oldest service |
+| 2 | Version numbers | Each side its own (2A): the integration is released only when it changes and keeps its number until then (0.40.0 → its next release), the service counts on |
+| 3 | The repair "versions differ" | Replaced (3A) by the two minimums; being apart is no longer a problem in itself |
+
+### Taken while writing (2026-11-24)
+
+| # | Question | Decision |
+|---|---|---|
+| 4 | Where the service's minimum is | A constant in the service (`MinIntegration`), sent as the new optional field `min_integration` in `/v1/status` (read every minute) and `/v1/health` (the setup) |
+| 5 | Where the integration's minimum is | A constant in the integration (`MIN_SERVICE`, `const.py`); the integration compares it with the service's `version` it already reads |
+| 6 | Who shows the repairs | The integration, both: repairs are Home Assistant's |
+| 7 | When a minimum is raised | When one side needs something of the other that an older one does not have, and the rule for the interface cannot cover it (an older partner would fail, not only miss a feature). New fields stay optional both ways; a minimum is the exception, named in the release notes |
+| 8 | The start values | Both minimums 0.40.0: the versions released together last |
+| 9 | Comparing | `x.y.z` numbers, all three parts; a version that is not one (`dev`, a build without a version) is never below a minimum |
+
+### What it does, step by step
+
+1. **The service** answers `/v1/status` and `/v1/health` with `min_integration` (`MinIntegration`). An older service
+   sends none: then the integration shows no "update the integration" repair.
+2. **The integration**, at every poll of `/v1/status` (and at the setup with `/v1/health`):
+   - its own version below `min_integration` → the repair `integration_too_old`: "Mira needs at least version X of
+     the Mira integration. Update it under Settings → Marketplace (before Home Assistant 2026.11: in HACS), then
+     restart Home Assistant.";
+   - the service's `version` below `MIN_SERVICE` → the repair `service_too_old`, worded as today's "service older"
+     repair: on Home Assistant OS "Update the Mira app to at least X under Settings → Updates", else "Update the
+     Mira service: set its container's image to at least X and start it again" (VE-06's rule);
+   - both fine → neither repair; one that was there goes away by itself at the next poll.
+   - The old repair `version_mismatch` is deleted at the integration's start, if Home Assistant still has it.
+3. **Asking for the update** (the section "Both updates offered together", steps 2 and 3): the service asks the
+   Marketplace to look again when the integration (its `X-Mira-Integration`) is below `MinIntegration`, no longer
+   when it is only older; the integration asks the Supervisor to reload the store when the service is below
+   `MIN_SERVICE`. Once per version, as today.
+4. **Releasing**: each repository releases on its own with its own tag. The integration's release keeps its check
+   that the tag, `manifest.json` and `const.py` agree. A release that raises a minimum says so in its notes, first.
+5. **Checked locally** ([Two repositories](repositories.md), decision 5): with both checkouts side by side,
+   `scripts/check.sh` checks that the service's `MinIntegration` is not above the integration's version and the
+   integration's `MIN_SERVICE` not above the service's; the test that both versions are equal goes.
+
+### Fails
+
+| Step | Failure | Who learns of it |
+|---|---|---|
+| 2 | `min_integration` or `version` is no `x.y.z` | no repair (decision 9); a debug line of the integration with the value, once per value |
+| 2 | the service is not reached | as today: the coordinator's error; no version repair |
+| 3 | the Marketplace or the Supervisor refuses | as today: the log lines of "Both updates offered together" |
+| 5 | a minimum above the other side's version | `scripts/check.sh` fails and names both versions |
+
+**Cost:** one more field in two answers; no call, no wait.
+
+### What changes for users
+
+The texts "both share one version: update them together" go: in the guide (both languages), both READMEs, the app's
+`DOCS.md`, `CLAUDE.md` (Releasing), the release workflows' comments. They say instead: the integration and the
+service are updated on their own; Mira says under Repairs when one is too old for the other.
+
+### Steps
+
+1. **The service**: `MinIntegration`, the field in `/v1/status` and `/v1/health`, the Marketplace's refresh below
+   the minimum. VE-07, VE-08.
+2. **The integration**: `MIN_SERVICE`, the two repairs (de, en), the old one deleted, the store reload below the
+   minimum. VE-09 to VE-12.
+3. **Releasing and checking**: the check across both checkouts, the version test gone, the texts above. VE-13.
+
+### Scenarios
+
+- **VE-07** The service names its minimum: `/v1/status` and `/v1/health` carry `min_integration`.
+- **VE-08** The Marketplace is asked only below the minimum: an integration older than the service but not below
+  `MinIntegration` is not asked for; one below it is, once per version.
+- **VE-09** An integration below the service's minimum gets the repair `integration_too_old` with the minimum; at or
+  above it none; a service without `min_integration` none.
+- **VE-10** A service below the integration's minimum gets the repair `service_too_old`, worded for Home Assistant OS
+  or a container; at or above it none.
+- **VE-11** Being apart is no problem: an integration 0.40.0 with a service 0.45.0 (minimum 0.40.0) has no repair,
+  and the old `version_mismatch` is gone.
+- **VE-12** A version that is no `x.y.z` (`dev`) makes no repair.
+- **VE-13** `scripts/check.sh` fails when a minimum is above the other checkout's version.
+
+## The repair: which one to update (replaced by the minimums above, once built)
 
 The integration compares its own version with the service's, by major and minor (0.7 against 0.9); a patch apart is
 fine.

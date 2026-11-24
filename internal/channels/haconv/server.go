@@ -23,6 +23,7 @@ import (
 	"github.com/miraassist/mira-app/internal/config"
 	"github.com/miraassist/mira-app/internal/conversation"
 	"github.com/miraassist/mira-app/internal/excerpt"
+	"github.com/miraassist/mira-app/internal/ha/updates"
 	"github.com/miraassist/mira-app/internal/mailcal"
 	"github.com/miraassist/mira-app/internal/store"
 	"github.com/miraassist/mira-app/internal/tasks"
@@ -205,8 +206,11 @@ type Health struct {
 	Checks   map[string]string `json:"checks"`
 	HAUserID string            `json:"ha_user_id,omitempty"`
 	ID       string            `json:"id"`
-	Status   string            `json:"status"`
-	Version  string            `json:"version"`
+	// MinIntegration is the oldest integration the service works with
+	// (docs/spec/versions.md, decision 4); an older service sends none.
+	MinIntegration string `json:"min_integration"`
+	Status         string `json:"status"`
+	Version        string `json:"version"`
 }
 
 func (s *Server) health(w http.ResponseWriter, r *http.Request) {
@@ -223,7 +227,7 @@ func (s *Server) health(w http.ResponseWriter, r *http.Request) {
 			checks[name] = "ok"
 		}
 	}
-	out := Health{Status: status, Version: s.opts.Version, ID: s.opts.InstanceID, Checks: checks}
+	out := Health{Status: status, Version: s.opts.Version, MinIntegration: updates.MinIntegration, ID: s.opts.InstanceID, Checks: checks}
 	if s.opts.HAUser != nil {
 		out.HAUserID = s.opts.HAUser(ctx)
 	}
@@ -506,7 +510,10 @@ type Status struct {
 	PendingMessages int       `json:"pending_messages"`
 	Problems        []Problem `json:"problems"`
 	QuietMode       bool      `json:"quiet_mode"`
-	Version         string    `json:"version"`
+	// MinIntegration is the oldest integration the service works with
+	// (docs/spec/versions.md, decision 4); an older service sends none.
+	MinIntegration string `json:"min_integration"`
+	Version        string `json:"version"`
 }
 
 func (s *Server) status(w http.ResponseWriter, r *http.Request) {
@@ -527,6 +534,7 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 	// version lets the integration say when it and the service do not match
 	// (docs/spec/versions.md).
 	status := Status{PendingMessages: pending, QuietMode: quiet, Problems: problems, Version: s.opts.Version,
+		MinIntegration: updates.MinIntegration,
 		HATokenRefused: s.opts.HATokenRepair && s.haRefused.Load()}
 	if s.opts.ExposedHash != nil {
 		hash := s.opts.ExposedHash(r.Context())

@@ -16,6 +16,7 @@ import (
 	"github.com/miraassist/mira-app/internal/channels/haconv"
 	"github.com/miraassist/mira-app/internal/clock"
 	"github.com/miraassist/mira-app/internal/config"
+	"github.com/miraassist/mira-app/internal/ha/updates"
 	"github.com/miraassist/mira-app/internal/i18n"
 	"github.com/miraassist/mira-app/internal/setup"
 	"github.com/miraassist/mira-app/internal/store"
@@ -87,7 +88,7 @@ func limitedMux(st *store.Store, p prepared, id, file string, cause error) http.
 			http.Error(w, "missing or wrong bearer token", http.StatusUnauthorized)
 			return
 		}
-		writeLimitedJSON(w, haconv.Status{Version: version, InboxApps: []string{}, MailApps: []string{},
+		writeLimitedJSON(w, haconv.Status{Version: version, MinIntegration: updates.MinIntegration, InboxApps: []string{}, MailApps: []string{},
 			Problems: []haconv.Problem{problem}})
 	})
 	mux.Handle(api.Route{Method: http.MethodPost, Path: "/v1/conversation", Tag: api.TagIntegration,

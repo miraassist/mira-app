@@ -1,6 +1,7 @@
 // Package updates asks Home Assistant to look for the integration's update
-// at once when the integration is older than the Mira service
-// (docs/spec/versions.md, Both updates offered together): the marketplace
+// at once when the integration is below the oldest one the Mira service works
+// with (docs/spec/versions.md, Minimum versions instead of one version; Both
+// updates offered together): the marketplace
 // (Home Assistant 2026.11) or HACS check installed repositories only every
 // 48 hours and at a start of Home Assistant, so after the service's update the
 // integration's would be offered late.
@@ -22,6 +23,13 @@ import (
 // Repository is Mira's repository at GitHub, as the marketplace lists it.
 const Repository = "miraassist/mira"
 
+// MinIntegration is the oldest integration this service works with
+// (docs/spec/versions.md, decisions 4, 7 and 8): raised only when an older
+// integration would fail, not when it only misses a feature; the release
+// that raises it says so first in its notes. The service sends it as
+// min_integration in /v1/status and /v1/health.
+const MinIntegration = "0.40.0"
+
 // HA is the part of Home Assistant's client used.
 type HA interface {
 	Call(ctx context.Context, command map[string]any) (json.RawMessage, error)
@@ -31,8 +39,10 @@ type HA interface {
 // version of the service.
 type Watcher struct {
 	Version string // the service's
-	HA      HA
-	Log     *slog.Logger
+	// Min is the integration's minimum; MinIntegration when empty.
+	Min string
+	HA  HA
+	Log *slog.Logger
 
 	mu    sync.Mutex
 	asked bool
@@ -72,10 +82,11 @@ func Older(a, b string) bool {
 }
 
 // Seen is called with the integration's version from a request
-// (X-Mira-Integration); "" (an older integration) does nothing. It returns
-// at once: the asking runs on its own.
+// (X-Mira-Integration); "" (an older integration) does nothing. Only an
+// integration below MinIntegration is asked for, once per version of the
+// service. It returns at once: the asking runs on its own.
 func (w *Watcher) Seen(ctx context.Context, integration string) {
-	if w == nil || integration == "" || w.HA == nil || !Older(integration, w.Version) {
+	if w == nil || integration == "" || w.HA == nil || !Older(integration, w.min()) {
 		return
 	}
 	w.mu.Lock()
@@ -86,6 +97,14 @@ func (w *Watcher) Seen(ctx context.Context, integration string) {
 	w.asked = true
 	w.mu.Unlock()
 	go w.ask(context.WithoutCancel(ctx), integration)
+}
+
+// min is the minimum the watcher asks below: MinIntegration, or Min for tests.
+func (w *Watcher) min() string {
+	if w.Min != "" {
+		return w.Min
+	}
+	return MinIntegration
 }
 
 func (w *Watcher) ask(ctx context.Context, integration string) {

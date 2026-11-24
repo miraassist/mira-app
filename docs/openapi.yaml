@@ -1064,6 +1064,8 @@ paths:
                     type: string
                   id:
                     type: string
+                  min_integration:
+                    type: string
                   status:
                     type: string
                   version:
@@ -1071,6 +1073,7 @@ paths:
                 required:
                   - checks
                   - id
+                  - min_integration
                   - status
                   - version
         "401":
@@ -2128,6 +2131,8 @@ paths:
                         - text
                   quiet_mode:
                     type: boolean
+                  min_integration:
+                    type: string
                   version:
                     type: string
                 required:
@@ -2136,6 +2141,7 @@ paths:
                   - pending_messages
                   - problems
                   - quiet_mode
+                  - min_integration
                   - version
         "401":
           description: Unauthorized

@@ -48,7 +48,7 @@ func (f *fakeHA) got() []string {
 func TestAnOlderIntegrationMakesTheMarketplaceLookOnce(t *testing.T) {
 	ha := &fakeHA{known: "marketplace"}
 	log, logs := logcap.Logger()
-	w := &Watcher{Version: "0.21.0", HA: ha, Log: log}
+	w := &Watcher{Version: "0.21.0", Min: "0.21.0", HA: ha, Log: log}
 	w.Seen(context.Background(), "0.20.0")
 	w.Seen(context.Background(), "0.20.0")
 	<-logs.Await("asked for the integration's update")
@@ -61,7 +61,7 @@ func TestAnOlderIntegrationMakesTheMarketplaceLookOnce(t *testing.T) {
 func TestAPatchBehindAsksToo(t *testing.T) {
 	ha := &fakeHA{known: "marketplace"}
 	log, logs := logcap.Logger()
-	w := &Watcher{Version: "0.22.1", HA: ha, Log: log}
+	w := &Watcher{Version: "0.22.1", Min: "0.22.1", HA: ha, Log: log}
 	w.Seen(context.Background(), "0.22.0")
 	<-logs.Await("asked for the integration's update")
 }
@@ -69,7 +69,7 @@ func TestAPatchBehindAsksToo(t *testing.T) {
 func TestBefore202611HACSIsAsked(t *testing.T) {
 	ha := &fakeHA{known: "hacs"}
 	log, logs := logcap.Logger()
-	w := &Watcher{Version: "0.21.0", HA: ha, Log: log}
+	w := &Watcher{Version: "0.21.0", Min: "0.21.0", HA: ha, Log: log}
 	w.Seen(context.Background(), "v0.20.1")
 	<-logs.Await("via=hacs")
 	if got := ha.got(); got[len(got)-1] != "hacs/repository/refresh 1421679440" {
@@ -80,18 +80,44 @@ func TestBefore202611HACSIsAsked(t *testing.T) {
 func TestNeitherCommandIsLogged(t *testing.T) {
 	ha := &fakeHA{}
 	log, logs := logcap.Logger()
-	w := &Watcher{Version: "0.21.0", HA: ha, Log: log}
+	w := &Watcher{Version: "0.21.0", Min: "0.21.0", HA: ha, Log: log}
 	w.Seen(context.Background(), "0.20.0")
 	<-logs.Await("could not ask for the integration's update")
 }
 
 func TestTheSameOrANewerOrNoIntegrationAsksNothing(t *testing.T) {
 	ha := &fakeHA{known: "marketplace"}
-	w := &Watcher{Version: "0.21.0", HA: ha, Log: slog.Default()}
+	w := &Watcher{Version: "0.21.0", Min: "0.21.0", HA: ha, Log: slog.Default()}
 	for _, v := range []string{"", "0.21.3", "v0.21.0", "0.21", "0.22.0", "garbage"} {
 		w.Seen(context.Background(), v) // nothing to ask is decided before anything runs
 	}
 	if got := ha.got(); len(got) != 0 {
 		t.Errorf("commands = %v", got)
+	}
+}
+
+// VE-08 The Marketplace is asked only below the minimum
+// (docs/spec/versions.md, Minimum versions instead of one version, step 3).
+func TestVE08_TheMarketplaceIsAskedOnlyBelowTheMinimum(t *testing.T) {
+	ha := &fakeHA{known: "marketplace"}
+	log, logs := logcap.Logger()
+	w := &Watcher{Version: "0.45.0", Min: "0.41.0", HA: ha, Log: log}
+	// An integration older than the service but not below the minimum is not asked for.
+	for _, v := range []string{"0.41.0", "0.44.2", "0.45.0"} {
+		w.Seen(context.Background(), v) // decided before anything runs
+	}
+	if got := ha.got(); len(got) != 0 {
+		t.Fatalf("asked for an integration at or above the minimum: %v", got)
+	}
+	// One below it is, once per version of the service.
+	w.Seen(context.Background(), "0.40.0")
+	w.Seen(context.Background(), "0.39.1")
+	<-logs.Await("asked for the integration's update")
+	if got := ha.got(); len(got) != 2 {
+		t.Errorf("commands = %v", got)
+	}
+	// Without Min, the service's own minimum applies.
+	if (&Watcher{}).min() != MinIntegration {
+		t.Error("an empty Min is not MinIntegration")
 	}
 }
