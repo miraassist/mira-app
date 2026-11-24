@@ -8,6 +8,8 @@ import (
 	"sync/atomic"
 	"testing"
 
+	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+
 	"github.com/miraassist/mira-app/internal/config"
 	"github.com/miraassist/mira-app/internal/mcp/transport"
 	"github.com/miraassist/mira-app/internal/testsupport/fakemcp"
@@ -190,5 +192,57 @@ func TestMX05_AChangeOfTheServersConnectionLetsRunningCallsFinish(t *testing.T) 
 	before := fresh.Uses()
 	if _, err := h.Call(context.Background(), "ha__GetLiveContext", nil); err != nil || fresh.Uses() != before {
 		t.Errorf("the next call: %v", err)
+	}
+}
+
+// MX-06 A call that starts while a lost session is replaced waits for it
+// (decision 6): the order MX-03 met by chance in CI, forced here.
+func TestMX06_ACallThatStartsWhileALostSessionIsReplacedWaitsForIt(t *testing.T) {
+	g := newGated(t)
+	connecting, hold := make(chan struct{}, 4), make(chan struct{})
+	var dials atomic.Int32
+	h := New(Options{Logger: slog.New(slog.DiscardHandler), Servers: []config.MCPServer{
+		{Name: "ha", Transport: config.TransportHTTP, URL: g.Endpoint()},
+	}, Connector: func(ctx context.Context, client *sdk.Client, cfg config.MCPServer) (*sdk.ClientSession, error) {
+		if dials.Add(1) > 1 {
+			connecting <- struct{}{}
+			<-hold
+		}
+		return DialTransport(ctx, client, cfg)
+	}})
+	if err := h.Start(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(h.Close)
+	s := h.byName["ha"]
+	waiting := make(chan struct{})
+	s.onWait = func() { close(waiting) }
+	// Given a call failed on a lost session and the loop is connecting anew
+	g.ForgetSessions()
+	done := make(chan callResult, 2)
+	call := func() {
+		res, err := h.Call(context.Background(), "ha__GetLiveContext", nil)
+		done <- callResult{res, err}
+	}
+	go call()
+	<-connecting
+	// When a second call starts before the new connection is there
+	go call()
+	select {
+	case <-waiting:
+	case r := <-done:
+		close(hold)
+		t.Fatalf("the second call did not wait for the new connection: %+v %v", r.res, r.err)
+	}
+	close(hold)
+	// Then it waits for the new connection and runs on it
+	for range 2 {
+		if r := <-done; r.err != nil || r.res.Text != "Küche: Licht an" {
+			t.Fatalf("a call: %+v %v", r.res, r.err)
+		}
+	}
+	// And Mira connected once
+	if n := dials.Load(); n != 2 {
+		t.Errorf("dialled %d times, want the start and one replacement", n)
 	}
 }

@@ -29,8 +29,13 @@ type server struct {
 	stopping, stopped chan struct{}
 
 	// Only the loop writes these; readers take mu.
-	mu      sync.Mutex
-	conn    *transport.Conn
+	mu   sync.Mutex
+	conn *transport.Conn
+	// replacing: the loop is replacing a connection whose session was lost;
+	// a call that finds no connection meanwhile waits for it (decision 6).
+	replacing bool
+	// onWait, for tests: a call begins to wait for a replacement.
+	onWait  func()
 	tools   []Tool // last known, kept while disconnected
 	lastErr error
 	// failed counts the failed connects since it last worked; next is when
@@ -89,6 +94,9 @@ type (
 		cause  error
 		reply  chan *transport.Conn
 	}
+	// currentIn asks for the current connection, after what the loop does
+	// before it (a replacement): nil when there is none.
+	currentIn struct{ reply chan *transport.Conn }
 	// endedIn: a connection ended (the server dropped it).
 	endedIn struct{ conn *transport.Conn }
 	// refreshIn lists the tools again; reply may be nil.
@@ -130,6 +138,10 @@ func (s *server) step(v any) bool {
 		v.reply <- s.connectStep(v)
 	case replaceIn:
 		v.reply <- s.replace(v)
+	case currentIn:
+		s.mu.Lock()
+		v.reply <- s.conn
+		s.mu.Unlock()
 	case endedIn:
 		s.mu.Lock()
 		current := s.conn == v.conn
@@ -197,8 +209,13 @@ func (s *server) replace(v replaceIn) *transport.Conn {
 		s.mu.Unlock()
 		return current
 	}
-	s.conn = nil
+	s.conn, s.replacing = nil, true
 	s.mu.Unlock()
+	defer func() {
+		s.mu.Lock()
+		s.replacing = false
+		s.mu.Unlock()
+	}()
 	if current != nil {
 		current.Retire()
 	}
@@ -333,6 +350,31 @@ func (s *server) connected() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.conn != nil
+}
+
+// connectedOrReplacing: it has a connection, or the loop is replacing one
+// (decision 6).
+func (s *server) connectedOrReplacing() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.conn != nil || s.replacing
+}
+
+// awaitReplacement gives a call that found no connection while the loop
+// replaces one the new connection, once the loop is done; nil when it ended
+// without one or no replacement runs.
+func (s *server) awaitReplacement() *transport.Conn {
+	s.mu.Lock()
+	replacing, wait := s.replacing, s.onWait
+	s.mu.Unlock()
+	if !replacing {
+		return nil
+	}
+	if wait != nil {
+		wait()
+	}
+	c, _ := ask(s, func(r chan *transport.Conn) any { return currentIn{reply: r} })
+	return c
 }
 
 // retryable: a call that failed on a lost session, on a connection Mira did

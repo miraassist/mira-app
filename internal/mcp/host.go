@@ -588,7 +588,7 @@ func (h *Host) CallServer(ctx context.Context, serverName, toolName string, args
 
 func (h *Host) callOn(ctx context.Context, s *server, qualified, toolName string, args json.RawMessage) (Result, error) {
 	serverName := s.cfg.Name
-	if !s.connected() {
+	if !s.connectedOrReplacing() {
 		return Result{}, fmt.Errorf("%w: %s", ErrServerDown, serverName)
 	}
 
@@ -632,8 +632,15 @@ func (h *Host) callOn(ctx context.Context, s *server, qualified, toolName string
 func onConn[T any](ctx context.Context, s *server, do func(*sdk.ClientSession) (T, error)) (T, error) {
 	session, release, c, ok := s.use()
 	if !ok {
-		var zero T
-		return zero, fmt.Errorf("%w: %s", ErrServerDown, s.cfg.Name)
+		// A replacement of a lost session runs: wait for its connection
+		// rather than fail (decision 6, MX-03).
+		if c = s.awaitReplacement(); c != nil {
+			session, release, ok = c.Use()
+		}
+		if !ok {
+			var zero T
+			return zero, fmt.Errorf("%w: %s", ErrServerDown, s.cfg.Name)
+		}
 	}
 	res, err := do(session)
 	release()

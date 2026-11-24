@@ -34,3 +34,10 @@ Feature: MX MCP servers: transport and session
     When the server's connection changes (Reconnect)
     Then the call finishes, its tool ran once
     And the next call goes to the new connection
+
+  @step2
+  Scenario: MX-06 A call that starts while a lost session is replaced waits for it
+    Given a call failed on a lost session and the loop is connecting anew
+    When a second call starts before the new connection is there
+    Then it waits for the new connection and runs on it
+    And Mira connected once
