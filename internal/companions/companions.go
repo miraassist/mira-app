@@ -5,7 +5,6 @@ package companions
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -91,7 +90,7 @@ func (h *Handler) Register(mux *api.Mux) {
 	const tag = api.TagAccess
 	mux.Handle(api.Route{Method: http.MethodPut, Path: "/v1/companions/{name}", Tag: tag,
 		Summary: "A companion service registers itself (with its partner token)", Request: Registration{},
-		Status: http.StatusNoContent, Errors: []int{400, 403, 409, 422, 500}}, h.put)
+		Status: http.StatusNoContent, Errors: []int{400, 403, 422, 500}}, h.put)
 	mux.Handle(api.Route{Method: http.MethodDelete, Path: "/v1/companions/{name}", Tag: tag,
 		Summary: "A companion service removes its registration", Status: http.StatusNoContent,
 		Errors: []int{403, 404, 500}}, h.delete)
@@ -143,12 +142,13 @@ func (h *Handler) put(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": "Mira cannot reach " + addr + ": " + err.Error()})
 		return
 	}
-	err := h.Store.PutCompanion(r.Context(), store.Companion{Name: name, Title: reg.Title, URL: addr,
+	takenFrom, err := h.Store.PutCompanion(r.Context(), store.Companion{Name: name, Title: reg.Title, URL: addr,
 		Token: reg.Token, TokenID: c.TokenID})
+	if err == nil && takenFrom != "" {
+		// The newest registration wins (decision 6): a new partner token, made because the old one was lost, works.
+		h.Log.Warn("a companion's name taken over by another token", "name", name, "token", c.Name, "before", takenFrom)
+	}
 	switch {
-	case errors.Is(err, store.ErrCompanionTaken):
-		h.Log.Warn("a companion's name is another token's", "name", name, "token", c.Name)
-		writeJSON(w, http.StatusConflict, map[string]string{"error": "companion " + name + " is registered by another token"})
 	case err != nil:
 		h.Log.Error("a companion could not be kept", "name", name, "error", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "the registration could not be kept"})

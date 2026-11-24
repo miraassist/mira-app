@@ -48,7 +48,7 @@ Departures, each with its reason:
 | # | Question | Decision |
 |---|---|---|
 | 5 | What a partner token may do besides (widens [Access tokens](access-tokens.md), decision 23) | `PUT` and `DELETE /v1/companions/{name}` (its own registration) and `POST /v1/skills/reload`. Every other call stays refused with 403 |
-| 6 | Registering | `PUT /v1/companions/{name}`, body `{"title", "url", "token"}`. A name is `[a-z][a-z0-9-]{0,31}`; the title at most 32 characters; the URL `http` or `https` with a host; the token not empty. Kept in Mira's database (table `companions`), the newest registration of a name wins, with the token that registered it; another token may not overwrite a name (409). `DELETE` removes it. 204 on success, 400 per field otherwise |
+| 6 | Registering | `PUT /v1/companions/{name}`, body `{"title", "url", "token"}`. A name is `[a-z][a-z0-9-]{0,31}`; the title at most 32 characters; the URL `http` or `https` with a host; the token not empty. Kept in Mira's database (table `companions`) with the token that registered it; the newest registration of a name wins, also from another partner token (the maintainer, 2026-11-24: a new token made because the old one was lost must work; any partner token may register a name of its own anyway, so binding a name to its first token guarded little; it had been 409). `DELETE` removes it, only by the token of the registration that holds. 204 on success, 400 per field otherwise |
 | 7 | Passing on | `GET /ui/companion/{name}/{path...}` from `<url>/ui/{path}` (the companion's page files; no token, like Mira's own); `/v1/ui/companion/{name}/{path...}` from `<url>/api/{path}` for admins only (as Mira's page's other routes), with `Authorization: Bearer <the companion's token>` instead of the caller's. Methods GET, PUT, POST, DELETE; bodies up to 1 MiB; 10 s per call. An unknown name: 404. The companion unreachable: 502 `companion <name> cannot be reached` |
 | 8 | The tab | `GET /v1/ui/companions` lists name and title. Each registered companion is a tab after Mira's own in the group "Einrichten" / "Setup", for admins only, holding an iframe of `companion/<name>/` on the page's own origin (the CSP's `default-src 'self'` allows it) |
 | 9 | The integration | `PAGE_FILES` lets `companion/<name>/…` through; the proxy passes `v1/ui/companion/…` for admins only (not on the non-admins' allow-list) |
@@ -195,7 +195,7 @@ Departures, each with its reason:
 | Fails | Who learns of it |
 |---|---|
 | A field of a registration is wrong | 400 with the field and why; a log line with the name |
-| A name taken by another token | 409; a log line with the name and both tokens' names |
+| A name taken over by another token | Kept (decision 6); a log line `a companion's name taken over by another token` with the name, the new token's name and the old token's id |
 | The companion cannot be reached when its page is used | 502 `companion <name> cannot be reached`; a log line with the name, the URL and the error; the tab shows it |
 | The companion answers 401 (Mira's stored token is no longer its) | 502 `companion <name> refuses Mira's token`; a log line; the companion registers anew at its next start |
 | A non-admin calls a companion's path | 403 (Mira's page's rule; the integration does not pass it for non-admins) |

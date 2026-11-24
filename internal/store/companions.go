@@ -17,17 +17,15 @@ type Companion struct {
 	Updated time.Time
 }
 
-// ErrCompanionTaken is a name registered by another access token (decision 6).
-var ErrCompanionTaken = errors.New("companion registered by another token")
-
-// PutCompanion keeps a registration; a name another token registered is ErrCompanionTaken.
-func (s *Store) PutCompanion(ctx context.Context, c Companion) error {
-	return s.withTx(ctx, func(tx *sql.Tx) error {
+// PutCompanion keeps a registration; the newest of a name wins, whichever token made it (decision 6). takenFrom is
+// the token id of a registration it replaced that another token had made; empty otherwise.
+func (s *Store) PutCompanion(ctx context.Context, c Companion) (takenFrom string, err error) {
+	err = s.withTx(ctx, func(tx *sql.Tx) error {
 		var owner string
 		err := tx.QueryRowContext(ctx, `SELECT token_id FROM companions WHERE name = ?`, c.Name).Scan(&owner)
 		switch {
 		case err == nil && owner != c.TokenID:
-			return ErrCompanionTaken
+			takenFrom = owner
 		case err != nil && !errors.Is(err, sql.ErrNoRows):
 			return err
 		}
@@ -38,6 +36,7 @@ ON CONFLICT(name) DO UPDATE SET title = excluded.title, url = excluded.url, toke
 			c.Name, c.Title, c.URL, c.Token, c.TokenID, s.now().Format(timeFormat))
 		return err
 	})
+	return takenFrom, err
 }
 
 // DeleteCompanion removes a registration of that token; false when there was none of it.

@@ -120,19 +120,22 @@ func TestBS02_AWrongRegistrationIsRefusedPerField(t *testing.T) {
 	}
 }
 
-func TestBS03_AnotherTokenMayNotTakeAName(t *testing.T) {
+func TestBS03_AnotherTokenTakesOverAName(t *testing.T) {
 	f := newFixture(t)
 	reg := Registration{Title: "Pro", URL: "http://a:1", Token: "x"}
 	if rec := f.call("PUT", "/v1/companions/pro", f.partner("One"), reg); rec.Code != http.StatusNoContent {
 		t.Fatalf("first %d", rec.Code)
 	}
 	reg.URL = "http://b:2"
-	if rec := f.call("PUT", "/v1/companions/pro", f.partner("Two"), reg); rec.Code != http.StatusConflict {
+	if rec := f.call("PUT", "/v1/companions/pro", f.partner("Two"), reg); rec.Code != http.StatusNoContent {
 		t.Errorf("second %d %s", rec.Code, rec.Body)
 	}
 	all, _ := f.h.Store.Companions(context.Background())
-	if len(all) != 1 || all[0].URL != "http://a:1" {
-		t.Errorf("registration changed %+v", all)
+	if len(all) != 1 || all[0].URL != "http://b:2" {
+		t.Errorf("the newest registration does not hold: %+v", all)
+	}
+	if !strings.Contains(f.logs.String(), "a companion's name taken over by another token") || !strings.Contains(f.logs.String(), "token=Two") {
+		t.Errorf("log %s", f.logs)
 	}
 }
 

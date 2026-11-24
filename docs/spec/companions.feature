@@ -17,10 +17,10 @@ Feature: BS Companion services
     Then the answer is 400 naming the name and the URL
 
   @step1
-  Scenario: BS-03 Another token may not take a name
+  Scenario: BS-03 Another token takes over a name
     Given pro is registered with one partner token
     When another partner token registers pro
-    Then the answer is 409 and the registration is unchanged
+    Then the newest registration holds, and the log says the name was taken over with both tokens
 
   @step1
   Scenario: BS-04 A partner token still reaches nothing else
