@@ -21,6 +21,13 @@ import (
 	"github.com/miraassist/mira-app/internal/store/storetest"
 )
 
+// newFile is an empty mira.yaml with its secrets file in a folder of the test.
+func newFile(t *testing.T) config.File {
+	t.Helper()
+	dir := t.TempDir()
+	return config.File{Path: filepath.Join(dir, "mira.yaml"), Secrets: config.Secrets{Path: filepath.Join(dir, "secrets.json")}}
+}
+
 func newStore(t *testing.T) *store.Store {
 	t.Helper()
 	st, err := store.Open(context.Background(), store.Options{Path: storetest.Path(t), Clock: clock.Real().Now})
@@ -43,14 +50,13 @@ func TestPairing(t *testing.T) {
 	if err != nil || len(s.Token) != 64 || !s.Open {
 		t.Fatalf("token made at the first start, open: %+v %v", s, err)
 	}
-	llm := &LLM{Kind: KindCloud, BaseURL: "u", Model: "m"}
 	pair := func(code string) (string, error) {
-		return Pair(ctx, st, code, "", "http://ha", "ha-token", llm)
+		return Pair(ctx, st, code, "", "http://ha", "ha-token", nil)
 	}
 	rejoin := func(key string) (string, error) {
-		return Pair(ctx, st, "", key, "http://ha", "ha-token", llm)
+		return Pair(ctx, st, "", key, "http://ha", "ha-token", nil)
 	}
-	if _, err := Pair(ctx, st, "", "", "", "", llm); err == nil {
+	if _, err := Pair(ctx, st, "", "", "", "", nil); err == nil {
 		t.Fatal("paired without Home Assistant's access")
 	}
 	if s, _ := Load(ctx, st); !s.Open || s.HAURL != "" {
@@ -60,7 +66,7 @@ func TestPairing(t *testing.T) {
 	if err != nil || token != s.Token {
 		t.Fatalf("first pairing without a code: %q %v", token, err)
 	}
-	if s, _ := Load(ctx, st); s.Open || !s.Paired || s.HAToken != "ha-token" || s.LLM == nil {
+	if s, _ := Load(ctx, st); s.Open || !s.Paired || s.HAToken != "ha-token" {
 		t.Fatalf("paired and set up at once: %+v", s)
 	}
 	if _, err := pair(""); err != ErrBadCode {
@@ -72,7 +78,7 @@ func TestPairing(t *testing.T) {
 		t.Fatalf("unpair makes a code: %q %v", code, err)
 	}
 	after, _ := Load(ctx, st)
-	if after.Open || !after.Rejoin || after.Token == token || after.HAToken != "" || after.LLM == nil {
+	if after.Open || !after.Rejoin || after.Token == token || after.HAToken != "" {
 		t.Errorf("after unpairing: not open, rejoin, new token, no HA, model kept: %+v", after)
 	}
 	if pending, _ := PendingCode(ctx, st); pending != code {
@@ -268,8 +274,9 @@ func TestSetupEndpoint(t *testing.T) {
 	st := newStore(t)
 	var restarted atomic.Bool
 	clk := clock.NewFake(time.Date(2026, 11, 23, 10, 0, 0, 0, time.UTC))
+	file := newFile(t)
 	h := &Handler{Store: st, Token: "tok", ID: "id1", Version: "t", Pairing: true, SetupMode: true,
-		Restart: func() { restarted.Store(true) }, Log: slog.Default(), Clock: clk}
+		Restart: func() { restarted.Store(true) }, Log: slog.Default(), Clock: clk, Config: file}
 	mux := api.NewMux()
 	h.Register(mux)
 	srv := httptest.NewServer(mux)
@@ -318,8 +325,11 @@ func TestSetupEndpoint(t *testing.T) {
 		t.Error("no restart after setup")
 	}
 	s, _ := Load(context.Background(), st)
-	if s.HAURL != "http://ha:8123" || s.LLM == nil || s.LLM.Model != "qwen3" {
+	if s.HAURL != "http://ha:8123" || s.LLM != nil {
 		t.Errorf("kept: %+v", s)
+	}
+	if m := loadFile(t, file).Main(); m.Model != "qwen3" || m.APIKey != "good" {
+		t.Errorf("main in mira.yaml: %+v", m)
 	}
 	resp, _ := http.Get(srv.URL + "/")
 	if resp.StatusCode != 200 {
@@ -345,7 +355,7 @@ func TestPairEndpoint(t *testing.T) {
 	var restarted atomic.Bool
 	clk := clock.NewFake(time.Date(2026, 11, 23, 10, 0, 0, 0, time.UTC))
 	h := &Handler{Store: st, Token: s.Token, ID: "id1", Version: "t", Pairing: true, SetupMode: true,
-		Restart: func() { restarted.Store(true) }, Log: slog.Default(), Clock: clk}
+		Restart: func() { restarted.Store(true) }, Log: slog.Default(), Clock: clk, Config: newFile(t)}
 	mux := api.NewMux()
 	h.Register(mux)
 	srv := httptest.NewServer(mux)

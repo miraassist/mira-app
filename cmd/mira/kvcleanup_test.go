@@ -30,7 +30,7 @@ func coveredLog(t *testing.T, yaml, haURL, haToken string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := setup.Save(ctx, st, haURL, haToken, nil); err != nil {
+	if err := setup.Save(ctx, st, haURL, haToken); err != nil {
 		t.Fatal(err)
 	}
 	st.Close()

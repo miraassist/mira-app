@@ -242,7 +242,9 @@ func TestBE11_AModelBesideTheIntegrationsMain(t *testing.T) {
 	if err := e.SaveModel(ctx, "smart", ui.ModelEdit{Endpoint: "https://e/v1", Model: "f", Privacy: "cloud"}); err == nil {
 		t.Error("a model was added with no main anywhere")
 	}
-	if err := setup.Save(ctx, a.store, "http://ha", "token", &setup.LLM{BaseURL: "https://api/v1", Model: "m", Kind: setup.KindCloud}); err != nil {
+	// main from the database, as the setup kept it before it went into the
+	// file (docs/spec/main-in-file.md, decision 3)
+	if err := a.store.SetKV(ctx, "setup.llm", `{"kind":"cloud","base_url":"https://api/v1","model":"m"}`); err != nil {
 		t.Fatal(err)
 	}
 	if err := e.SaveModel(ctx, "smart", ui.ModelEdit{Endpoint: "https://e/v1", Model: "f", Privacy: "cloud"}); err != nil {

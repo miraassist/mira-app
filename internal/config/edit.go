@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"gopkg.in/yaml.v3"
 )
@@ -89,10 +91,86 @@ func (f File) Read() (*yaml.Node, error) {
 	return &doc, nil
 }
 
+// fileLocks hold one lock per file, so the page, the schedules and the
+// setup never write mira.yaml at the same time (docs/spec/main-in-file.md).
+var fileLocks sync.Map
+
+// LockWaits, when set, is told that a write waits for another one on the
+// same file; only tests set it, to force an order by a signal.
+var LockWaits func(path string)
+
+func (f File) lock() func() {
+	path := filepath.Clean(f.Path)
+	m, _ := fileLocks.LoadOrStore(path, &sync.Mutex{})
+	mu := m.(*sync.Mutex)
+	if !mu.TryLock() {
+		if LockWaits != nil {
+			LockWaits(path)
+		}
+		mu.Lock()
+	}
+	return mu.Unlock
+}
+
 // Edit applies fn to the file's top mapping, checks the result as Mira
 // would load it and writes it. Nothing is written when fn or the check
 // fails; the error says why.
 func (f File) Edit(fn func(top *yaml.Node) error) error {
+	defer f.lock()()
+	return f.edit(fn, nil, true)
+}
+
+// Change writes secrets (when given) and then edits the file; when the edit
+// fails, the secrets go back as they were (docs/spec/editing.md, decision 2).
+// An empty value removes a secret.
+func (f File) Change(secrets map[string]string, fn func(top *yaml.Node) error) error {
+	defer f.lock()()
+	if len(secrets) == 0 {
+		return f.edit(fn, nil, true)
+	}
+	all, err := f.Secrets.Load()
+	if err != nil {
+		return fmt.Errorf("%s: %w", f.Secrets.Path, err)
+	}
+	before := map[string]string{}
+	for k := range secrets {
+		before[k] = all[k]
+	}
+	if err := f.Secrets.Set(secrets); err != nil {
+		return fmt.Errorf("%s: %w", f.Secrets.Path, err)
+	}
+	if err := f.edit(fn, nil, true); err != nil {
+		if err := f.Secrets.Set(before); err != nil {
+			// docs/spec/fallbacks.md, row 31.
+			slog.Error("the change failed and its secrets could not be put back; the secrets file holds the new ones",
+				"file", f.Secrets.Path, "error", err)
+		}
+		return err
+	}
+	return nil
+}
+
+// Check is Change without writing anything: whether both files can be
+// written and the result loads as Mira would read it.
+func (f File) Check(secrets map[string]string, fn func(top *yaml.Node) error) error {
+	defer f.lock()()
+	if len(secrets) > 0 {
+		if _, err := f.Secrets.Load(); err != nil {
+			return fmt.Errorf("%s: %w", f.Secrets.Path, err)
+		}
+		if dir := filepath.Dir(f.Secrets.Path); !dirWritable(dir) {
+			return fmt.Errorf("%s cannot be written: its folder is read-only", f.Secrets.Path)
+		}
+	}
+	return f.edit(fn, secrets, false)
+}
+
+// edit is Edit under the lock; extra are secrets not written yet, for the
+// check of the result; write false only checks.
+func (f File) edit(fn func(top *yaml.Node) error, extra map[string]string, write bool) error {
+	if f.Path == "" {
+		return errors.New("there is no mira.yaml to write")
+	}
 	if err := f.Writable(); err != nil {
 		return err
 	}
@@ -110,8 +188,18 @@ func (f File) Edit(fn func(top *yaml.Node) error) error {
 		return err
 	}
 	enc.Close()
-	if _, err := Parse(buf.Bytes(), f.Secrets.Lookup(OSLookup)); err != nil {
+	base := f.Secrets.Lookup(OSLookup)
+	lookup := func(name string) (string, bool) {
+		if v, ok := extra[name]; ok {
+			return v, v != ""
+		}
+		return base(name)
+	}
+	if _, err := Parse(buf.Bytes(), lookup); err != nil {
 		return err
+	}
+	if !write {
+		return nil
 	}
 	mode := os.FileMode(0o644)
 	if st, err := os.Stat(f.Path); err == nil {

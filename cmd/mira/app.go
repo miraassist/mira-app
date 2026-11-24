@@ -1744,7 +1744,8 @@ func (a *app) httpHandler(runCtx context.Context) http.Handler {
 	// token of their call, not the service's (docs/spec/remote-agents.md, E).
 	mux := routes.Mux(routes.Parts{Integration: api, Page: page,
 		Setup: &setup.Handler{Store: a.store, Token: cfg.Server.Token, ID: a.instanceID(), Version: version,
-			Pairing: a.pairing, Model: cfg.Main().Model, Restart: restart, Log: a.log},
+			Pairing: a.pairing, Model: cfg.Main().Model, Restart: restart, Log: a.log,
+			Config: config.File{Path: a.configPath, Secrets: config.DefaultSecrets()}},
 		Companions: comp,
 		Push:       func(w http.ResponseWriter, r *http.Request) { a.remote.ServePush(w, r) },
 		Version:    version, Log: a.log})

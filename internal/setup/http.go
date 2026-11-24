@@ -20,6 +20,7 @@ import (
 
 	"github.com/miraassist/mira-app/internal/api"
 	"github.com/miraassist/mira-app/internal/clock"
+	"github.com/miraassist/mira-app/internal/config"
 	"github.com/miraassist/mira-app/internal/llm"
 	"github.com/miraassist/mira-app/internal/store"
 )
@@ -60,6 +61,9 @@ type Handler struct {
 	// Model: the model set (in the file or by setup); Home Assistant then
 	// need not ask for one.
 	Model string
+	// Config is the mira.yaml the setup's model goes into, with the secrets
+	// file for its key (docs/spec/main-in-file.md).
+	Config config.File
 	// Restart applies new settings: the service starts anew.
 	Restart func()
 	HTTP    *http.Client
@@ -314,9 +318,23 @@ func (h *Handler) pair(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.contextOf(r.Context(), req.LLM)
-	token, err := Pair(r.Context(), h.Store, req.Code, req.Rejoin, req.HAURL, req.HAToken, req.LLM)
+	if req.LLM != nil && !h.mainFits(w, *req.LLM) {
+		return
+	}
+	var fileErr error
+	token, err := Pair(r.Context(), h.Store, req.Code, req.Rejoin, req.HAURL, req.HAToken, func() error {
+		if req.LLM == nil {
+			return nil
+		}
+		fileErr = h.writeMain(r.Context(), *req.LLM)
+		return fileErr
+	})
 	if errors.Is(err, ErrBadCode) {
 		writeJSON(w, http.StatusForbidden, map[string]string{"error": err.Error()})
+		return
+	}
+	if fileErr != nil {
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": fileErr.Error()})
 		return
 	}
 	if err != nil {
@@ -406,15 +424,51 @@ func (h *Handler) setup(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	h.contextOf(r.Context(), req.LLM)
-	if err := Save(r.Context(), h.Store, req.HAURL, req.HAToken, req.LLM); err != nil {
+	if req.LLM != nil && !h.mainFits(w, *req.LLM) {
+		return
+	}
+	if err := Save(r.Context(), h.Store, req.HAURL, req.HAToken); err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
+	}
+	if req.LLM != nil {
+		if err := h.writeMain(r.Context(), *req.LLM); err != nil {
+			writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": err.Error()})
+			return
+		}
 	}
 	h.Log.Info("set up from Home Assistant; starting anew", "ha", req.HAURL != "", "model", req.LLM != nil)
 	writeJSON(w, http.StatusOK, Done{Status: "restarting"})
 	if h.Restart != nil {
 		clock.Or(h.Clock).AfterFunc(300*time.Millisecond, h.Restart)
 	}
+}
+
+// mainFits says whether the setup's model can go into mira.yaml; when not,
+// the caller gets the file and the cause (422) and nothing is kept
+// (docs/spec/main-in-file.md, decision 6).
+func (h *Handler) mainFits(w http.ResponseWriter, l LLM) bool {
+	if err := CheckMain(h.Config, l); err != nil {
+		h.Log.Warn("the setup's model cannot go into mira.yaml; nothing is kept", "file", h.Config.Path, "error", err)
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": mainFileError(h.Config, err)})
+		return false
+	}
+	return true
+}
+
+// writeMain puts the setup's model into mira.yaml.
+func (h *Handler) writeMain(ctx context.Context, l LLM) error {
+	if err := WriteMain(ctx, h.Store, h.Config, l); err != nil {
+		h.Log.Error("the setup's model could not be written into mira.yaml", "file", h.Config.Path, "error", err)
+		return errors.New(mainFileError(h.Config, err))
+	}
+	h.Log.Info("the setup's model is in mira.yaml as main", "file", h.Config.Path, "model", l.Model)
+	return nil
+}
+
+// mainFileError names the file for the integration's form.
+func mainFileError(f config.File, err error) string {
+	return "Mira cannot write her AI model into " + f.Path + ": " + err.Error()
 }
 
 // providers are the cloud providers the setup offers.

@@ -168,7 +168,8 @@ func runSetupMode(ctx context.Context, p prepared) error {
 	logPairing(log, p)
 	mux := api.NewMux()
 	(&setup.Handler{Store: st, Token: p.cfg.Server.Token, ID: id, Version: version, Pairing: p.pairing,
-		SetupMode: true, Model: p.model(), Restart: restart, Log: log}).Register(mux)
+		SetupMode: true, Model: p.model(), Restart: restart, Log: log,
+		Config: config.File{Path: p.path, Secrets: config.DefaultSecrets()}}).Register(mux)
 	ln, err := net.Listen("tcp", p.cfg.Server.Listen)
 	if err != nil {
 		return err

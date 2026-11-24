@@ -812,27 +812,7 @@ func (e *editor) change(secrets map[string]string, fn func(top *yaml.Node) error
 func (e *editor) write(secrets map[string]string, fn func(top *yaml.Node) error, restart bool) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	var before map[string]string
-	if len(secrets) > 0 {
-		all, err := e.file.Secrets.Load()
-		if err != nil {
-			return err
-		}
-		before = map[string]string{}
-		for k := range secrets {
-			before[k] = all[k]
-		}
-		if err := e.file.Secrets.Set(secrets); err != nil {
-			return err
-		}
-	}
-	if err := e.file.Edit(fn); err != nil {
-		if before != nil {
-			if err := e.file.Secrets.Set(before); err != nil {
-				// docs/spec/fallbacks.md, row 31.
-				e.a.log.Error("the change failed and its secrets could not be put back; the secrets file holds the new ones", "error", err)
-			}
-		}
+	if err := e.file.Change(secrets, fn); err != nil {
 		return err
 	}
 	if restart {

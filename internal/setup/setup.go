@@ -202,22 +202,14 @@ func Ready(cfg config.Config, fileHasLLM bool, s Settings) bool {
 	return cfg.HA.URL != "" && cfg.HA.Token != "" && (fileHasLLM || s.LLM != nil)
 }
 
-// Save keeps what the integration sent; nil parts stay as they were.
-func Save(ctx context.Context, st *store.Store, haURL, haToken string, l *LLM) error {
+// Save keeps Home Assistant's access the integration sent; empty stays as
+// it was. The model goes into mira.yaml (WriteMain), not here.
+func Save(ctx context.Context, st *store.Store, haURL, haToken string) error {
 	if haURL != "" && haToken != "" {
 		if err := st.SetKV(ctx, keyHAURL, strings.TrimRight(haURL, "/")); err != nil {
 			return err
 		}
 		if err := st.SetKV(ctx, keyHAToken, haToken); err != nil {
-			return err
-		}
-	}
-	if l != nil {
-		raw, err := json.Marshal(l)
-		if err != nil {
-			return err
-		}
-		if err := st.SetKV(ctx, keyLLM, string(raw)); err != nil {
 			return err
 		}
 	}
@@ -265,16 +257,18 @@ func PendingCode(ctx context.Context, st *store.Store) (string, error) {
 // ErrBadCode is a wrong or used up code.
 var ErrBadCode = errors.New("wrong or used up code")
 
-// Pair pairs and sets up in one step: Home Assistant's access and maybe a
-// model are kept, and the token is handed out, or nothing happens at all.
-// So no service is left paired but unusable when a setup is broken off.
+// Pair pairs and sets up in one step: Home Assistant's access is kept, and
+// the token is handed out, or nothing happens at all. So no service is left
+// paired but unusable when a setup is broken off. before runs once the code
+// or the rejoin key holds and before anything is kept (the model into
+// mira.yaml, docs/spec/main-in-file.md); when it fails, nothing is kept.
 //
 // A service that was never paired needs no code: whoever pairs first wins,
 // and the owner notices, because their own pairing then asks for a code.
 // Later the code Unpair wrote into the log is needed; a wrong one counts,
 // five spend it. The Home Assistant that let go needs none: it shows the
 // rejoin key (RejoinKey of the token it had) instead.
-func Pair(ctx context.Context, st *store.Store, code, rejoin string, haURL, haToken string, l *LLM) (string, error) {
+func Pair(ctx context.Context, st *store.Store, code, rejoin string, haURL, haToken string, before func() error) (string, error) {
 	if haURL == "" || haToken == "" {
 		return "", errors.New("pairing needs Home Assistant's address and token")
 	}
@@ -287,7 +281,12 @@ func Pair(ctx context.Context, st *store.Store, code, rejoin string, haURL, haTo
 			return "", err
 		}
 	}
-	if err := Save(ctx, st, haURL, haToken, l); err != nil {
+	if before != nil {
+		if err := before(); err != nil {
+			return "", err
+		}
+	}
+	if err := Save(ctx, st, haURL, haToken); err != nil {
 		return "", err
 	}
 	for _, k := range []string{keyCode, keyRejoin} {

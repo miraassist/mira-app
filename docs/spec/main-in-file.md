@@ -1,6 +1,6 @@
 # The main model in mira.yaml – Spec
 
-Status 2026-11-24: specified, nothing built. Scenarios: [main-in-file.feature](main-in-file.feature).
+Status 2026-11-24: step 1 built (not released): the setup writes `main` into mira.yaml, the page edits it; a model the database still holds from before stays laid over and locked until step 2 moves it. Scenarios: [main-in-file.feature](main-in-file.feature).
 
 ## Goal
 
