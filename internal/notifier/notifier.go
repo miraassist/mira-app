@@ -15,6 +15,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/miraassist/mira-app/internal/choices"
 	"github.com/miraassist/mira-app/internal/clock"
 	"log/slog"
 	"sort"
@@ -83,6 +84,10 @@ type Options struct {
 	// recorded in the chat's history (docs/spec/telegram-history.md). Nil
 	// records nothing.
 	Record func(ctx context.Context, key, record, ack string) error
+	// Asks says whether a thread waits for its person's yes: its private
+	// message then gets the buttons "Ja" and "Nein"
+	// (docs/spec/private-choices.md, decision 2). Nil: no buttons.
+	Asks func(ctx context.Context, thread string) bool
 }
 
 // PhoneNews is what is new at the FRITZ!Box: messages not heard, missed
@@ -104,6 +109,7 @@ type Notifier struct {
 	indicatorOn map[string]string
 	phone       func(ctx context.Context) (PhoneNews, error)
 	record      func(ctx context.Context, key, record, ack string) error
+	asks        func(ctx context.Context, thread string) bool
 	// phoneShown is what each screen's phone hint last showed.
 	phoneShown map[string]PhoneNews
 	// phoneHeld are the areas playing messages of the answering machine:
@@ -184,6 +190,7 @@ func New(opts Options) *Notifier {
 		indicatorOn:   map[string]string{},
 		phone:         opts.Phone,
 		record:        opts.Record,
+		asks:          opts.Asks,
 		phoneShown:    map[string]PhoneNews{},
 		phoneHeld:     map[string]bool{},
 		awaitingIdle:  map[string]bool{},
@@ -903,9 +910,17 @@ func (n *Notifier) sendPrivate(ctx context.Context, nt store.Message) error {
 	if len(recipients) == 0 {
 		return retry.Fatal(errors.New("no private channel: no person has one"))
 	}
+	// A message of one thread that waits for a yes asks with buttons; to
+	// the house (several persons) never (private-choices.md, decision 2).
+	question := ""
+	if n.asks != nil && nt.Receiver != store.ReceiverHouse {
+		if th := threadOf(nt); th != "" && n.asks(ctx, th) {
+			question = th
+		}
+	}
 	var errs []error
 	for _, id := range recipients {
-		via, err := n.sendTo(ctx, id, text)
+		via, err := n.sendTo(ctx, id, text, question)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("%s: %w", id, err))
 			continue
@@ -948,10 +963,25 @@ func (n *Notifier) recordDelivery(ctx context.Context, nt store.Message, person,
 	}
 }
 
+// threadOf is the thread a message is about: its own, or that of its one
+// entry; "" for a message of several.
+func threadOf(nt store.Message) string {
+	if nt.ThreadID != "" {
+		return nt.ThreadID
+	}
+	if len(nt.Entries) == 1 {
+		return nt.Entries[0].ThreadID
+	}
+	return ""
+}
+
 // sendTo sends text to the first of the person's channels that works
 // (docs/spec/channels.md): a notify entity (notify.send_message), or a
-// legacy notify service such as notify.mobile_app_anna.
-func (n *Notifier) sendTo(ctx context.Context, personID, text string) (string, error) {
+// legacy notify service such as notify.mobile_app_anna. With question (a
+// thread waiting for a yes), a Telegram chat gets the buttons as an inline
+// keyboard and the companion app as actions (docs/spec/private-choices.md);
+// another channel gets the text alone.
+func (n *Notifier) sendTo(ctx context.Context, personID, text, question string) (string, error) {
 	p, ok := n.persons[personID]
 	if !ok {
 		return "", retry.Fatal(fmt.Errorf("unknown person"))
@@ -969,13 +999,28 @@ func (n *Notifier) sendTo(ctx context.Context, personID, text string) (string, e
 			}
 		}
 	}
+	var labels choices.Labels
+	if question != "" {
+		lang := n.langOf(ctx)
+		if n.langs != nil {
+			lang = n.langs.ForPerson(ctx, personID)
+		}
+		labels = choices.LabelsFor(lang)
+	}
 	var errs []error
 	for _, ch := range p.Channels {
 		var err error
-		if entities[ch] {
+		switch {
+		case entities[ch] && question != "" && n.platform(ctx, ch) == "telegram_bot":
+			err = n.ha.CallService(ctx, "telegram_bot", "send_message", map[string]any{"entity_id": ch, "title": "Mira",
+				"message": TelegramMarkdown(text), "inline_keyboard": choices.TelegramKeyboard(question, labels)}, nil)
+		case entities[ch]:
 			err = n.ha.CallService(ctx, "notify", "send_message", map[string]any{"title": "Mira", "message": n.forChannel(ctx, ch, text)},
 				&haws.Target{EntityID: []string{ch}})
-		} else {
+		case question != "" && strings.HasPrefix(ch, "notify.mobile_app_"):
+			err = n.ha.CallService(ctx, "notify", strings.TrimPrefix(ch, "notify."), map[string]any{"title": "Mira", "message": text,
+				"data": map[string]any{"tag": choices.AppTag(question), "actions": choices.AppActions(question, labels)}}, nil)
+		default:
 			err = n.ha.CallService(ctx, "notify", strings.TrimPrefix(ch, "notify."), map[string]any{"title": "Mira", "message": text}, nil)
 		}
 		if err != nil {
@@ -990,6 +1035,16 @@ func (n *Notifier) sendTo(ctx context.Context, personID, text string) (string, e
 		return ch, nil
 	}
 	return "", retry.Join(errs...)
+}
+
+// platform is a channel's integration, "" when it cannot be read.
+func (n *Notifier) platform(ctx context.Context, channel string) string {
+	e, err := n.ha.EntityEntry(ctx, channel)
+	if err != nil {
+		n.log.Warn("could not read the channel's platform; it gets no buttons", "channel", channel, "error", err)
+		return ""
+	}
+	return e.Platform
 }
 
 // forChannel is the text as a channel takes it: for a Telegram chat its

@@ -1377,9 +1377,10 @@ func (a *app) startProactive(parent context.Context) {
 	n := notifier.New(notifier.Options{
 		Shared: a.notifyShared, Config: cfg, Store: a.store, HA: a.ha, Logger: a.log, Telemetry: a.tel, Structure: a.structure.Snapshot,
 		Composer: a.notifyCompose, Instruction: a.kindInstruction, Screens: a.screens(ctx, cfg), Languages: a.langs,
-		Phone: a.phoneNews(), Record: a.record,
+		Phone: a.phoneNews(), Record: a.record, Asks: a.threadAsks,
 	})
 	a.notifier = n
+	a.startChoices(ctx)
 	if a.voicemailOn() {
 		a.goProactive(ctx, "voicemail-watch", func(ctx context.Context) error { a.watchPhone(ctx, n); return nil })
 	}
@@ -1443,7 +1444,7 @@ func (a *app) messageNotifier() *notifier.Notifier {
 	if a.notifier == nil {
 		a.notifier = notifier.New(notifier.Options{Config: a.cfg, Store: a.store, HA: a.ha, Logger: a.log, Telemetry: a.tel,
 			Structure: a.structure.Snapshot, Composer: a.notifyCompose, Instruction: a.kindInstruction, Languages: a.langs,
-			Record: a.record})
+			Record: a.record, Asks: a.threadAsks})
 	}
 	return a.notifier
 }

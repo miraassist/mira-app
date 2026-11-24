@@ -172,6 +172,14 @@ func (f *fakeHA) CallService(_ context.Context, domain, service string, data map
 			return err
 		}
 		f.private.add(channel, data["message"].(string))
+		if extra, ok := data["data"].(map[string]any); ok {
+			f.private.mu.Lock()
+			if f.private.data == nil {
+				f.private.data = map[string][]map[string]any{}
+			}
+			f.private.data[channel] = append(f.private.data[channel], extra)
+			f.private.mu.Unlock()
+		}
 		return nil
 	}
 	f.calls = append(f.calls, call{domain, service, data, target})
@@ -281,6 +289,8 @@ func (f *fakeHA) servicesCalled() []string {
 type fakePrivate struct {
 	mu   sync.Mutex
 	sent map[string][]string
+	// data is each send's data besides the message (the app's actions).
+	data map[string][]map[string]any
 	// fail, when it holds a channel, is that channel's error; tries counts
 	// the attempts on it.
 	fail  map[string]error

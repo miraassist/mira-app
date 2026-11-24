@@ -2,6 +2,7 @@ package notifier
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"testing"
 
@@ -156,5 +157,63 @@ func TestTelegramMarkdown(t *testing.T) {
 		if got := TelegramMarkdown(in); got != want {
 			t.Errorf("%q: got %q, want %q", in, got, want)
 		}
+	}
+}
+
+// PC-01 A thread waiting for a yes asks privately with buttons
+// (docs/spec/private-choices.md, decisions 2 to 5).
+func TestPC01_AThreadWaitingForAYesAsksPrivatelyWithButtons(t *testing.T) {
+	// Given a thread of Anna waiting for her yes is asked over her Telegram chat
+	e := newEnv(t, func(c *config.Config) {
+		c.Persons = map[string]config.Person{"anna": {Entity: "person.anna", Channels: []string{"notify.telegram_anna"}}}
+	})
+	e.ha.set("notify.telegram_anna", "unknown", nil)
+	e.ha.mu.Lock()
+	if e.ha.platforms == nil {
+		e.ha.platforms = map[string]string{}
+	}
+	e.ha.platforms["notify.telegram_anna"] = "telegram_bot"
+	e.ha.mu.Unlock()
+	e.n.asks = func(_ context.Context, id string) bool { return id == "th1" }
+	e.message("q", 1, func(m *store.Message) { private("anna")(m); m.ThreadID = "th1" })
+	e.clk.Set(at("08:00"))
+	e.tick()
+	// Then the message has the buttons Ja and Nein, their data /mira <id> yes and /mira <id> no
+	var sent *call
+	for i, c := range e.ha.calls {
+		if c.Domain == "telegram_bot" && c.Service == "send_message" {
+			sent = &e.ha.calls[i]
+		}
+	}
+	if sent == nil || sent.Data["entity_id"] != "notify.telegram_anna" ||
+		!slices.Equal(sent.Data["inline_keyboard"].([]string), []string{"Ja:/mira th1 yes,Nein:/mira th1 no"}) {
+		t.Fatalf("calls %+v, private %v", e.ha.calls, e.tg.sent)
+	}
+	// Over the companion app: the actions, with a typed answer as the third.
+	e2 := newEnv(t, func(c *config.Config) {
+		c.Persons = map[string]config.Person{"anna": {Entity: "person.anna", Channels: []string{"notify.mobile_app_annas_phone"}}}
+	})
+	e2.n.asks = func(_ context.Context, id string) bool { return id == "th1" }
+	e2.message("q", 1, func(m *store.Message) { private("anna")(m); m.ThreadID = "th1" })
+	e2.clk.Set(at("08:00"))
+	e2.tick()
+	data := e2.tg.data["notify.mobile_app_annas_phone"]
+	if len(data) != 1 || data[0]["tag"] != "mira-th1" {
+		t.Fatalf("data %+v", data)
+	}
+	acts := data[0]["actions"].([]map[string]any)
+	if len(acts) != 3 || acts[0]["action"] != "mira:th1:yes" || acts[1]["title"] != "Nein" || acts[2]["behavior"] != "textInput" {
+		t.Errorf("actions %+v", acts)
+	}
+	// A message of a thread that waits for no yes gets none.
+	e3 := newEnv(t, func(c *config.Config) {
+		c.Persons = map[string]config.Person{"anna": {Entity: "person.anna", Channels: []string{"notify.mobile_app_annas_phone"}}}
+	})
+	e3.n.asks = func(context.Context, string) bool { return false }
+	e3.message("q", 1, func(m *store.Message) { private("anna")(m); m.ThreadID = "th1" })
+	e3.clk.Set(at("08:00"))
+	e3.tick()
+	if len(e3.tg.data) != 0 || len(e3.tg.sent["notify.mobile_app_annas_phone"]) != 1 {
+		t.Errorf("without a question: data %+v sent %v", e3.tg.data, e3.tg.sent)
 	}
 }
