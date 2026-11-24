@@ -348,6 +348,9 @@ func build(ctx context.Context, cfg config.Config, opts buildOptions) (*app, err
 			enabled[name] = nil
 		}
 	}
+	// A companion's skills (a tier) are on whenever they are loaded
+	// (docs/spec/companions.md, decision 28).
+	addTiered(enabled, a.skillRoots, cfg.Skills.Off, a.log)
 	// A skill that cannot start is left out and reported (log, and the
 	// integration shows it as a repair); the service starts all the same.
 	// A skill's program and its own folder live beside mira.yaml
@@ -1722,6 +1725,11 @@ func (a *app) httpHandler(runCtx context.Context) http.Handler {
 			if a.mcp != nil {
 				a.mcp.WakeUnder(ctx, url)
 			}
+		},
+		// Mira's Home Assistant for the companion, in the answer to its registration (decision 31).
+		HomeAssistant: func() (string, string) {
+			ha := a.liveConfig().HA
+			return ha.URL, ha.Token
 		}}
 	uiOpts := ui.Options{
 		Companions: comp,

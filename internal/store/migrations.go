@@ -585,6 +585,12 @@ CREATE TABLE companions (
     updated_at TEXT NOT NULL
 );`,
 	},
+	{
+		// A companion's skills page (docs/spec/companions.md, decision 29):
+		// a path under its page; empty for none.
+		name: "0037_companion_skills_page",
+		stmt: `ALTER TABLE companions ADD COLUMN skills_page TEXT NOT NULL DEFAULT '';`,
+	},
 }
 
 func (s *Store) migrate(ctx context.Context) error {

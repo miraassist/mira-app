@@ -117,6 +117,10 @@ type SkillInfo struct {
 	Chapters map[string]string `json:"chapters,omitempty"`
 	// Phonebook is the skill telefon's phone book.
 	Phonebook *PhonebookInfo `json:"phonebook,omitempty"`
+	// Category is the group the tab lists the skill under
+	// (metadata.mira.category, docs/spec/companions.md, decision 30); empty
+	// for none ("Weitere").
+	Category string `json:"category,omitempty"`
 }
 
 // PhonebookInfo is what the page shows of the phone book: the box to open,

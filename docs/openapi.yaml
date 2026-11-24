@@ -2646,6 +2646,8 @@ paths:
                               type: string
                           required:
                             - link
+                        category:
+                          type: string
                       required:
                         - name
                         - state
@@ -3032,6 +3034,8 @@ paths:
                         name:
                           type: string
                         title:
+                          type: string
+                        skills_page:
                           type: string
                       required:
                         - name

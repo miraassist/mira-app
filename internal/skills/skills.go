@@ -128,6 +128,14 @@ type Skill struct {
 	// skill begins (metadata.mira.chapter, "## Kochen und Backen"), in the
 	// skill's language; Mira's page links it. Empty for none.
 	Chapter string
+	// Tier (metadata.mira.tier, any value) makes the skill a companion's:
+	// on whenever it is loaded, set on its companion's own skills page, not
+	// on Mira's tab "Skills" (docs/spec/companions.md, decision 28). Empty
+	// for Mira's and the owner's skills.
+	Tier string
+	// Category (metadata.mira.category) is the group the tab "Skills" lists
+	// the skill under, as it is written (decision 30); empty for none.
+	Category string
 }
 
 // Mail is a skill's part in the mail calendar: how to read its mails. The
@@ -440,6 +448,8 @@ type frontmatter struct {
 			Tools     *toolsSection          `yaml:"tools"`
 			Language  string                 `yaml:"language"`
 			Chapter   string                 `yaml:"chapter"`
+			Tier      string                 `yaml:"tier"`
+			Category  string                 `yaml:"category"`
 			Random    yaml.Node              `yaml:"random"`
 			// Automations are kept as written: their inputs are filled
 			// with the settings' values as mira.yaml has them.
@@ -593,7 +603,7 @@ func load(root Root, name string, values map[string]any, opts Options) (Skill, *
 	}
 	m := meta.Metadata.Mira
 	s := Skill{Name: meta.Name, Description: strings.TrimSpace(meta.Description), Files: files,
-		Settings: m.Settings, Privacy: m.Privacy}
+		Settings: m.Settings, Privacy: m.Privacy, Tier: strings.TrimSpace(m.Tier), Category: strings.TrimSpace(m.Category)}
 	if root.Source {
 		s.Source = root.Name
 	} else {
@@ -1127,6 +1137,10 @@ type Info struct {
 	Name        string
 	Description string
 	Chapters    map[string]string
+	// Tier and Category as Skill's (docs/spec/companions.md, decisions 28,
+	// 30).
+	Tier     string
+	Category string
 }
 
 // Available are the skills in dirs that are not enabled, by name: what a
@@ -1170,6 +1184,8 @@ func AvailableIn(roots []Root, enabled map[string]map[string]any) []Info {
 				var fm frontmatter
 				if yaml.Unmarshal(front, &fm) == nil {
 					info.Description = strings.TrimSpace(fm.Description)
+					info.Tier = strings.TrimSpace(fm.Metadata.Mira.Tier)
+					info.Category = strings.TrimSpace(fm.Metadata.Mira.Category)
 					if sub, err := fs.Sub(r.FS, name); err == nil {
 						info.Chapters = availableChapters(sub, fm.Metadata.Mira.Language, fm.Metadata.Mira.Chapter)
 					}
@@ -1179,6 +1195,20 @@ func AvailableIn(roots []Root, enabled map[string]map[string]any) []Info {
 		}
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+	return out
+}
+
+// Tiered are the names of the skills in roots that name a tier
+// (metadata.mira.tier): a companion's skills, on whenever they are loaded,
+// without an entry under skills in mira.yaml (docs/spec/companions.md,
+// decision 28). The first root of a name wins, as for Load.
+func Tiered(roots []Root) []string {
+	var out []string
+	for _, info := range AvailableIn(roots, nil) {
+		if info.Tier != "" {
+			out = append(out, info.Name)
+		}
+	}
 	return out
 }
 

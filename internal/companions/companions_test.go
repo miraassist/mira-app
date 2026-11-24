@@ -97,7 +97,7 @@ func TestBS01_ACompanionRegistersWithItsPartnerToken(t *testing.T) {
 	f := newFixture(t)
 	tok := f.partner("Pro")
 	rec := f.call("PUT", "/v1/companions/pro", tok, Registration{Title: "Pro", URL: "http://mira-pro:8792", Token: "companion-secret"})
-	if rec.Code != http.StatusNoContent {
+	if rec.Code != http.StatusOK {
 		t.Fatalf("answer %d %s", rec.Code, rec.Body)
 	}
 	list, err := f.h.List(context.Background())
@@ -123,11 +123,11 @@ func TestBS02_AWrongRegistrationIsRefusedPerField(t *testing.T) {
 func TestBS03_AnotherTokenTakesOverAName(t *testing.T) {
 	f := newFixture(t)
 	reg := Registration{Title: "Pro", URL: "http://a:1", Token: "x"}
-	if rec := f.call("PUT", "/v1/companions/pro", f.partner("One"), reg); rec.Code != http.StatusNoContent {
+	if rec := f.call("PUT", "/v1/companions/pro", f.partner("One"), reg); rec.Code != http.StatusOK {
 		t.Fatalf("first %d", rec.Code)
 	}
 	reg.URL = "http://b:2"
-	if rec := f.call("PUT", "/v1/companions/pro", f.partner("Two"), reg); rec.Code != http.StatusNoContent {
+	if rec := f.call("PUT", "/v1/companions/pro", f.partner("Two"), reg); rec.Code != http.StatusOK {
 		t.Errorf("second %d %s", rec.Code, rec.Body)
 	}
 	all, _ := f.h.Store.Companions(context.Background())
@@ -188,7 +188,7 @@ func TestBS06_AnUnreachableCompanionIsSaid(t *testing.T) {
 	f := newFixture(t)
 	// Reached when it registers (decision 26), gone when its page is used.
 	gone := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusNoContent) }))
-	if rec := f.call("PUT", "/v1/companions/pro", f.partner("Pro"), Registration{Title: "Pro", URL: gone.URL, Token: "x"}); rec.Code != http.StatusNoContent {
+	if rec := f.call("PUT", "/v1/companions/pro", f.partner("Pro"), Registration{Title: "Pro", URL: gone.URL, Token: "x"}); rec.Code != http.StatusOK {
 		t.Fatalf("registration %d %s", rec.Code, rec.Body)
 	}
 	gone.Close()
@@ -330,7 +330,7 @@ func TestBS13_ARegistrationWakesTheCompanionsServers(t *testing.T) {
 	woken := make(chan string, 2)
 	f.h.Wake = func(_ context.Context, url string) { woken <- url }
 	tok := f.partner("Pro")
-	if rec := f.call("PUT", "/v1/companions/pro", tok, Registration{Title: "Pro", URL: "http://mira-pro:8792/", Token: "s"}); rec.Code != http.StatusNoContent {
+	if rec := f.call("PUT", "/v1/companions/pro", tok, Registration{Title: "Pro", URL: "http://mira-pro:8792/", Token: "s"}); rec.Code != http.StatusOK {
 		t.Fatalf("answer %d %s", rec.Code, rec.Body)
 	}
 	if got := <-woken; got != "http://mira-pro:8792" {
@@ -359,7 +359,7 @@ func TestBS18_ARegistrationIsKeptOnlyWhenMiraReachesTheCompanion(t *testing.T) {
 	}))
 	t.Cleanup(comp.Close)
 	rec := f.call("PUT", "/v1/companions/pro", f.partner("Pro"), Registration{Title: "Pro", URL: comp.URL + "/", Token: "companion-secret"})
-	if rec.Code != http.StatusNoContent {
+	if rec.Code != http.StatusOK {
 		t.Fatalf("answer %d %s", rec.Code, rec.Body)
 	}
 	select {
@@ -399,4 +399,98 @@ func TestBS19_ACompanionMiraCannotReachIsRefusedWithHerError(t *testing.T) {
 		strings.Contains(logs, "companion-secret") {
 		t.Errorf("log %s", logs)
 	}
+}
+
+func TestBS22_ARegistrationNamesItsSkillsPage(t *testing.T) {
+	f := newFixture(t)
+	var asked string
+	comp := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v1/ping":
+			w.WriteHeader(http.StatusNoContent)
+		default:
+			asked = r.URL.Path
+			w.Header().Set("Content-Type", "text/html")
+			w.Write([]byte("<title>Pro Skills</title>"))
+		}
+	}))
+	t.Cleanup(comp.Close)
+	tok := f.partner("Pro")
+	rec := f.call("PUT", "/v1/companions/pro", tok, Registration{Title: "Pro", URL: comp.URL, Token: "x", SkillsPage: "skills/"})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("answer %d %s", rec.Code, rec.Body)
+	}
+	list, err := f.h.List(context.Background())
+	if err != nil || len(list) != 1 || list[0] != (Companion{Name: "pro", Title: "Pro", SkillsPage: "skills/"}) {
+		t.Errorf("list %+v %v", list, err)
+	}
+	if raw, _ := json.Marshal(list[0]); !strings.Contains(string(raw), `"skills_page":"skills/"`) {
+		t.Errorf("the page reads %s", raw)
+	}
+	// The skills page's files pass on as the first page's (decision 7).
+	page := f.call("GET", "/ui/companion/pro/skills/", "", nil)
+	if page.Code != http.StatusOK || asked != "/ui/skills/" || !strings.Contains(page.Body.String(), "Pro Skills") {
+		t.Errorf("skills page %d %q %s", page.Code, asked, page.Body)
+	}
+	// A registration without one has none: the newest registration wins (decision 6).
+	if rec := f.call("PUT", "/v1/companions/pro", tok, Registration{Title: "Pro", URL: comp.URL, Token: "x"}); rec.Code != http.StatusOK {
+		t.Fatalf("again %d", rec.Code)
+	}
+	if list, _ := f.h.List(context.Background()); len(list) != 1 || list[0].SkillsPage != "" {
+		t.Errorf("list %+v", list)
+	}
+	if raw, _ := json.Marshal(Companion{Name: "pro", Title: "Pro"}); strings.Contains(string(raw), "skills_page") {
+		t.Errorf("without a skills page: %s", raw)
+	}
+}
+
+func TestBS23_AWrongSkillsPageIsRefused(t *testing.T) {
+	f := newFixture(t)
+	tok := f.partner("Pro")
+	for _, p := range []string{"../admin/", "skills/../../x", "/skills/", "http://elsewhere/skills/", "javascript:alert(1)",
+		"//elsewhere/", strings.Repeat("s", 65)} {
+		rec := f.call("PUT", "/v1/companions/pro", tok, Registration{Title: "Pro", URL: "http://mira-pro:8792", Token: "x", SkillsPage: p})
+		var e Errors
+		json.NewDecoder(rec.Body).Decode(&e)
+		if rec.Code != http.StatusBadRequest || e.Errors["skills_page"] == "" || len(e.Errors) != 1 {
+			t.Errorf("%q: answer %d %+v", p, rec.Code, e)
+		}
+	}
+	if list, _ := f.h.List(context.Background()); len(list) != 0 {
+		t.Errorf("kept %+v", list)
+	}
+	for _, p := range []string{"skills/", "skills/index.html", strings.Repeat("s", 64)} {
+		if rec := f.call("PUT", "/v1/companions/pro", tok, Registration{Title: "Pro", URL: "http://mira-pro:8792", Token: "x", SkillsPage: p}); rec.Code != http.StatusOK {
+			t.Errorf("%q: answer %d %s", p, rec.Code, rec.Body)
+		}
+	}
+}
+
+func TestBS27_TheAnswerToARegistrationHandsMirasHomeAssistant(t *testing.T) {
+	f := newFixture(t)
+	f.h.HomeAssistant = func() (string, string) { return "http://homeassistant:8123", "ha-admin-token" }
+	rec := f.call("PUT", "/v1/companions/pro", f.partner("Pro"), Registration{Title: "Pro", URL: "http://mira-pro:8792", Token: "companion-secret"})
+	var got map[string]map[string]string
+	if err := json.NewDecoder(rec.Body).Decode(&got); err != nil || rec.Code != http.StatusOK ||
+		rec.Header().Get("Content-Type") != "application/json" {
+		t.Fatalf("answer %d %v %v", rec.Code, got, err)
+	}
+	if ha := got["home_assistant"]; len(got) != 1 || len(ha) != 2 || ha["url"] != "http://homeassistant:8123" || ha["token"] != "ha-admin-token" {
+		t.Errorf("answer %v", got)
+	}
+	if strings.Contains(f.logs.String(), "ha-admin-token") || !strings.Contains(f.logs.String(), "companion registered") {
+		t.Errorf("log %s", f.logs)
+	}
+	// The interface says so (docs/spec/openapi.md).
+	mux := api.NewMux()
+	f.h.Register(mux)
+	for _, r := range mux.Routes() {
+		if r.Method == http.MethodPut && r.Path == "/v1/companions/{name}" {
+			if _, ok := r.Response.(Registered); !ok || r.Status != http.StatusOK {
+				t.Errorf("route %+v", r)
+			}
+			return
+		}
+	}
+	t.Error("no route PUT /v1/companions/{name}")
 }

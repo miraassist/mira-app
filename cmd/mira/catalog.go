@@ -32,13 +32,23 @@ func (a *app) catalog(ctx context.Context) ui.Catalog {
 		}
 	}
 	active := a.skillsWithAgents()
+	// A companion's skills are listed on its own skills page, not here
+	// (docs/spec/companions.md, decision 28); their problems still go out
+	// as repairs.
+	tiered := map[string]bool{}
+	for _, name := range skills.Tiered(a.skillRoots) {
+		tiered[name] = true
+	}
 	started := map[string]bool{}
 	for _, sk := range active {
 		started[sk.Name] = true
+		if sk.Tier != "" || tiered[sk.Name] {
+			continue
+		}
 		c.Skills = append(c.Skills, a.skillInfo(sk))
 	}
 	for _, name := range sortedNames(a.cfg.Skills.Enabled) {
-		if !started[name] {
+		if !started[name] && !tiered[name] {
 			if text, ok := problems[name]; ok {
 				c.Skills = append(c.Skills, ui.SkillInfo{Name: name, State: "problem", Problem: text})
 			}
@@ -46,9 +56,9 @@ func (a *app) catalog(ctx context.Context) ui.Catalog {
 	}
 	// A skill source's skills among them (docs/spec/skill-source.md, SQ-02).
 	for _, info := range skills.AvailableIn(a.skillRoots, a.cfg.Skills.Enabled) {
-		if _, problem := problems[info.Name]; !problem && !started[info.Name] {
+		if _, problem := problems[info.Name]; !problem && !started[info.Name] && info.Tier == "" {
 			c.Skills = append(c.Skills, ui.SkillInfo{Name: info.Name, Description: info.Description, State: "available",
-				Chapters: info.Chapters})
+				Chapters: info.Chapters, Category: info.Category})
 		}
 	}
 	sort.SliceStable(c.Skills, func(i, j int) bool {
@@ -176,7 +186,7 @@ func stateOrder(s string) int {
 // skillInfo is what the view shows of a started skill.
 func (a *app) skillInfo(sk skills.Skill) ui.SkillInfo {
 	info := ui.SkillInfo{Name: sk.Name, Description: sk.Description, State: "active", Guide: strings.TrimSpace(sk.Body),
-		Chapters: sk.Chapters()}
+		Chapters: sk.Chapters(), Category: sk.Category}
 	values := a.cfg.Skills.Enabled[sk.Name]
 	for _, name := range sortedNames(sk.Settings) {
 		decl := sk.Settings[name]

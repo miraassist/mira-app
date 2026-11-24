@@ -3,7 +3,9 @@
 Status 2026-11-23: decisions 1 to 4 by the maintainer (in the companion's own repository, 2026-11-23: its settings on
 Mira's page, no second panel in Home Assistant, a path convention, the companion registers itself); 5 to 12 taken while
 writing, to be confirmed. Not built. Decisions 22 to 27 by the maintainer 2026-11-24 (a companion's skills from the
-companion, its address checked at registration), built the same day (steps 8, 9). Scenarios: [companions.feature](companions.feature) (`BS-…`).
+companion, its address checked at registration), built the same day (steps 8, 9). Decisions 28 to 31 by the
+maintainer 2026-11-24 (a companion's skills on a tab of its own, groups, Home Assistant for the companion), built the
+same day (steps 10 to 12). Scenarios: [companions.feature](companions.feature) (`BS-…`).
 
 ## Goal
 
@@ -48,7 +50,7 @@ Departures, each with its reason:
 | # | Question | Decision |
 |---|---|---|
 | 5 | What a partner token may do besides (widens [Access tokens](access-tokens.md), decision 23) | `PUT` and `DELETE /v1/companions/{name}` (its own registration) and `POST /v1/skills/reload`. Every other call stays refused with 403 |
-| 6 | Registering | `PUT /v1/companions/{name}`, body `{"title", "url", "token"}`. A name is `[a-z][a-z0-9-]{0,31}`; the title at most 32 characters; the URL `http` or `https` with a host; the token not empty. Kept in Mira's database (table `companions`) with the token that registered it; the newest registration of a name wins, also from another partner token (the maintainer, 2026-11-24: a new token made because the old one was lost must work; any partner token may register a name of its own anyway, so binding a name to its first token guarded little; it had been 409). `DELETE` removes it, only by the token of the registration that holds. 204 on success, 400 per field otherwise |
+| 6 | Registering | `PUT /v1/companions/{name}`, body `{"title", "url", "token"}`. A name is `[a-z][a-z0-9-]{0,31}`; the title at most 32 characters; the URL `http` or `https` with a host; the token not empty. Kept in Mira's database (table `companions`) with the token that registered it; the newest registration of a name wins, also from another partner token (the maintainer, 2026-11-24: a new token made because the old one was lost must work; any partner token may register a name of its own anyway, so binding a name to its first token guarded little; it had been 409). `DELETE` removes it, only by the token of the registration that holds. 204 on success, 400 per field otherwise (a registration's answer is `200` with Mira's Home Assistant since decision 31) |
 | 7 | Passing on | `GET /ui/companion/{name}/{path...}` from `<url>/ui/{path}` (the companion's page files; no token, like Mira's own); `/v1/ui/companion/{name}/{path...}` from `<url>/api/{path}` for admins only (as Mira's page's other routes), with `Authorization: Bearer <the companion's token>` instead of the caller's. Methods GET, PUT, POST, DELETE; bodies up to 1 MiB; 10 s per call. An unknown name: 404. The companion unreachable: 502 `companion <name> cannot be reached` |
 | 8 | The tab | `GET /v1/ui/companions` lists name and title. Each registered companion is a tab after Mira's own in the group "Einrichten" / "Setup", for admins only, holding an iframe of `companion/<name>/` on the page's own origin (the CSP's `default-src 'self'` allows it) |
 | 9 | The integration | `PAGE_FILES` lets `companion/<name>/…` through; the proxy passes `v1/ui/companion/…` for admins only (not on the non-admins' allow-list) |
@@ -179,23 +181,68 @@ Departures, each with its reason:
   cannot be reached).
 - Nothing grows while Mira runs; a companion's skills change only with a reload (a restart).
 
-## A companion's skills on a tab of its own, groups, and Home Assistant for the companion (proposed 2026-11-24)
+## A companion's skills on a tab of its own, groups, and Home Assistant for the companion (decided 2026-11-24, the maintainer)
 
-Proposed 2026-11-24 for the companion mira-pro (its repository's `docs/spec/pro-skills.md`), in general terms. The
+Proposed 2026-11-24 for the companion mira-pro (the spec `pro-skills.md` of its repository), in general terms. The
 maintainer's wish of 2026-11-24: a paid skill is listed and set on its companion's own tab "<title> Skills" in the
 group "Fähigkeiten", exactly as Mira's tab "Skills"; it is on as soon as it is set up; Mira's list gets groups; Mira
-hands her Home Assistant to the companion; the companion serves the skills page and Mira only shows it. The details
-below taken while writing, to be confirmed. Not built.
+hands her Home Assistant to the companion; the companion serves the skills page and Mira only shows it. Decisions 28
+to 31 confirmed by the maintainer the same day as written; built the same day (steps 10 to 12). The details below
+under "Taken while building" are to be confirmed.
 
-| # | Question | Proposed | Why |
+| # | Question | Decision | Why |
 |---|---|---|---|
 | 28 | A companion's skill (`metadata.mira.tier`, any value) | Not listed on the tab "Skills" but on its companion's tab (decision 29); on whenever it is loaded, without an entry under `skills` in `mira.yaml`. When it cannot load, the repair in Home Assistant (Settings → Repairs) still says so, as for every skill | Its companion serves it only when it is set up, so loaded means set up; a second switch in Mira would contradict that |
 | 29 | A companion's skills page | A registration may name a second page (`skills_page`, a path under its page, e.g. `skills/`); Mira's page shows it as a tab "<title> Skills" in the group "Fähigkeiten", an iframe of `companion/<name>/<skills_page>` as its first page in "Einrichten" (decision 8); its calls pass on as the first page's (decision 7). Mira draws nothing of it (the maintainer, 2026-11-24: the companion serves and saves it; independence over a little code repeated) | A companion's skills are set where they are listed, and the companion that uses the settings keeps them; no interface hands settings between the two |
 | 30 | Groups (`metadata.mira.category`) | The tabs of skills group them by their category, shown as it is; skills without one under "Weitere" / "More" | The list is easier to read; a fixed list of categories can follow |
 | 31 | Home Assistant for a companion | The answer to a registration is `200 {"home_assistant": {"url", "token"}}` with Mira's `ha.url` and `ha.token`, instead of `204` | A companion needs Home Assistant with an administrator's token, as Mira does; the owner set it once, in Mira; it registers at every start, so a new token reaches it then |
 
-Steps: **10.** `tier` and the companion's skills page (decisions 28, 29). **11.** `category` (decision 30). **12.** The
-registration's answer (decision 31). Scenarios to be written with the steps.
+### Taken while building (2026-11-24, to be confirmed)
+
+| # | Question | Decision | Why |
+|---|---|---|---|
+| 32 | A skill with a tier that `mira.yaml` switches off (`enabled: false` under `skills`) | Not read for it: the skill is on all the same, and the log says `a companion's skill is on whenever its companion serves it; enabled: false under skills is not read for it` with the skill's name. An entry's settings are kept | Decision 28 says on whenever loaded, and a second switch in Mira would contradict it; the log line leaves the trace of an entry that does nothing |
+| 33 | Which `skills_page` Mira takes | A relative path under the companion's page: not empty only if given; refused with 400 (`skills_page`) when it holds `..`, starts with `/`, has a scheme or a host, or is longer than 64 characters. Kept as written; a registration without it leaves the companion without one (the newest registration wins, decision 6) | Mira's page puts it after `companion/<name>/`: nothing in it may lead out of the companion's page |
+| 34 | The tab's id and place | `companion-<name>:skills` (a name has no `:`), after Mira's own tabs in the group "abilities" ("Fähigkeiten"), for admins only as the first page's tab; its title `<title> Skills` in every language | `companion-skills-<name>` could clash with a companion named `skills-…` |
+| 35 | Headings when no skill names a category | The tab "Skills" shows no headings then, as before; once one skill names a category, every list (active, not started, available) is grouped: categories as written, sorted by name, "Weitere" / "More" last | A single heading "Weitere" over every skill says nothing |
+| 36 | The answer's form | `200` with `{"home_assistant": {"url": "<ha.url>", "token": "<ha.token>"}}`, as `application/json`; the values as Mira runs with them (`ha.url` without a trailing `/`; set by the integration's setup where it set them). Mira's full service runs only with both set (the setup's check), so the answer always carries them | The companion needs both; an empty pair never goes out |
+
+### Steps of this part
+
+**10.** `tier` and the companion's skills page (decisions 28, 29). BS-20 to BS-24. **11.** `category` (decision 30).
+BS-25, BS-26. **12.** The registration's answer (decision 31). BS-27.
+
+### What it does
+
+1. **Loading** (decision 28): before `skills.LoadWith`, every skill of the loaded roots (folders, the skill source,
+   the companions) whose `SKILL.md` names `metadata.mira.tier` is added to the skills switched on (`skills.Tiered`,
+   the first root of a name wins, as for loading). From there it loads, and fails, as every skill.
+2. **The tab "Skills"** (decisions 28, 30): its data (`GET /v1/ui/catalog`) leaves out every skill with a tier, as
+   active, not started or available; each skill carries `category` from `metadata.mira.category` (trimmed, as
+   written). The tab groups each list by it.
+3. **Registering** (decisions 29, 31): `skills_page` is checked with the other fields (decision 33), kept in the table
+   `companions` (column `skills_page`, migration `0037_companion_skills_page`), listed by `GET /v1/ui/companions`
+   (`skills_page`, left out when empty). The answer is `200` with Mira's Home Assistant (decision 36); the log line
+   `companion registered` names the skills page, never a token.
+4. **The skills tab** (decision 29): Mira's page adds, for each companion with a skills page, the tab
+   `<title> Skills` in the group "Fähigkeiten" holding an iframe of `companion/<name>/<skills_page>`; its files and
+   calls pass on as the first page's (decision 7).
+
+### When something fails
+
+| Fails | Who learns of it |
+|---|---|
+| A wrong `skills_page` | the companion: 400 with `skills_page` and why; Mira's log `a companion's registration refused` with the name |
+| A skill with a tier does not load | as every skill's problem: the log and the repair in Home Assistant; not on the tab "Skills" |
+| A skill with a tier switched off in `mira.yaml` | the log, at Mira's start (decision 32); the skill is on |
+| The skills page cannot be reached | as the first page: 502 `companion <name> cannot be reached` in the tab, Mira's log |
+
+### Cost
+
+- Reading which skills have a tier: one more read of each skill folder's `SKILL.md` at Mira's start and per view of
+  the tab "Skills" (the folders and the companions' skills in memory; grows with the number of skills).
+- The skills tab: nothing while it is closed; open, its files and calls as the first page's.
+- The answer to a registration: a few hundred bytes more; nothing grows.
 
 ## What it does
 
@@ -238,8 +285,12 @@ registration's answer (decision 31). Scenarios to be written with the steps.
 7. **A registration wakes the companion's MCP servers** (decision 21). BS-13.
 8. **A companion's skills from the companion** (decisions 22 to 25, 27): decided 2026-11-24. BS-14 to BS-17.
 9. **The check at registration** (decision 26): decided 2026-11-24. BS-18, BS-19.
+10. **A companion's skills on its own tab** (decisions 28, 29, 32 to 34): `tier`, `skills_page`, the tab. BS-20 to
+    BS-24. Built 2026-11-24.
+11. **Groups** (decisions 30, 35): `category` on the tab "Skills". BS-25, BS-26. Built 2026-11-24.
+12. **Home Assistant for the companion** (decisions 31, 36): the registration's answer. BS-27. Built 2026-11-24.
 
-Built: steps 1 to 4, 8 and 9 (2026-11-24). BS-07 (a non-admin through the integration) has no coded test yet.
+Built: steps 1 to 4 and 8 to 12 (2026-11-24). BS-07 (a non-admin through the integration) has no coded test yet.
 
 **The run on the test HA (2026-11-24)** with mira-pro as the companion `pro`: it registered with its partner token
 (again 5 s later when Mira restarted under it); the tab Pro is in Setup in the panel; its page loads through

@@ -8,7 +8,7 @@ Feature: BS Companion services
   Scenario: BS-01 A companion registers with its partner token
     Given a partner token
     When PUT /v1/companions/pro is called with it, a title, a URL and a token
-    Then the answer is 204 and GET /v1/ui/companions lists pro with its title
+    Then the answer is 200 and GET /v1/ui/companions lists pro with its title
     And the log line names pro and its URL, not its token
 
   @step1
@@ -110,7 +110,7 @@ Feature: BS Companion services
   Scenario: BS-18 A registration is kept only when Mira reaches the companion
     Given the companion pro answers /v1/ping with 204
     When it registers with the address http://pro:8792
-    Then Mira calls http://pro:8792/v1/ping with pro's token before she keeps it, and answers 204
+    Then Mira calls http://pro:8792/v1/ping with pro's token before she keeps it, and answers 200
 
   @step9
   Scenario: BS-19 A companion Mira cannot reach is refused with her error
@@ -119,3 +119,57 @@ Feature: BS Companion services
     Then Mira answers 422 "Mira cannot reach http://pro:8792: …" with the error she saw, and keeps nothing
     And her log has "companion not reached" with the name, the URL and the error
 
+  @step10
+  Scenario: BS-20 A companion's skill is on without an entry and not on the tab "Skills"
+    Given the companion pro brings the skill fernwartung with metadata.mira.tier pro, and the skill notiz without a tier
+    And mira.yaml has no entry for either under skills
+    When Mira starts
+    Then fernwartung is on and notiz is not
+    And the tab "Skills" lists fernwartung neither as active nor as available, and notiz as available
+    And an entry of fernwartung keeps its settings, and its enabled: false is not read, with a log line saying so
+
+  @step10
+  Scenario: BS-21 A companion's skill that cannot load is still a repair
+    Given the companion pro brings the skill fernwartung with a tier and a required setting nobody set
+    When Mira starts
+    Then fernwartung is not loaded, its problem goes out as every skill's (a repair in Home Assistant)
+    And the tab "Skills" does not list it
+
+  @step10
+  Scenario: BS-22 A registration names its skills page
+    When the companion pro registers with skills_page "skills/"
+    Then the answer is 200, and GET /v1/ui/companions lists pro with skills_page "skills/"
+    And /ui/companion/pro/skills/ comes from the companion's /ui/skills/
+    And a registration without skills_page leaves pro without one
+
+  @step10
+  Scenario: BS-23 A wrong skills page is refused
+    When the companion pro registers with skills_page "../admin/", "/skills/", "http://elsewhere/skills/" or one of 65 characters
+    Then the answer is 400 naming skills_page, and nothing is kept
+
+  @step10
+  Scenario: BS-24 Mira's page shows the skills page as a tab in "Fähigkeiten"
+    Given pro is registered with the title Pro and skills_page "skills/"
+    When an admin opens Mira's page
+    Then the group "Fähigkeiten" has a tab "Pro Skills" holding an iframe of companion/pro/skills/
+    And Mira draws nothing of that page
+
+  @step11
+  Scenario: BS-25 A skill's category reaches the tab "Skills"
+    Given the skill wetter with metadata.mira.category "Haus & Garten" is on, kochen with "Küche" is not, frei has none
+    When the tab "Skills" reads its data
+    Then wetter is active with the category "Haus & Garten", kochen available with "Küche", frei without one
+
+  @step11
+  Scenario: BS-26 The tab "Skills" is grouped by category
+    Given skills with and without a category
+    When an admin opens the tab "Skills"
+    Then each of its lists has a heading per category, as written, and those without one last under "Weitere" (English "More")
+    And while no skill names a category the lists have no headings
+
+  @step12
+  Scenario: BS-27 The answer to a registration hands Mira's Home Assistant
+    Given Mira's ha.url and ha.token
+    When the companion pro registers
+    Then the answer is 200 with {"home_assistant": {"url": <ha.url>, "token": <ha.token>}}
+    And no log line holds the token

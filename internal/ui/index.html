@@ -301,6 +301,7 @@ details.item>summary h3 { color:var(--text); }
 .group-label { display:flex; justify-content:space-between; font-size:11px; font-weight:650; letter-spacing:.05em; color:var(--muted); text-transform:uppercase; margin:24px 0 10px; }
 .group-hint { margin:-4px 0 10px; }
 .card-list { display:flex; flex-direction:column; gap:10px; }
+.skill-category { font-size:13px; font-weight:650; color:var(--text); margin:16px 0 8px; }
 .item.card-item,html.ha .item.card-item { background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:0; margin:0; overflow:hidden; }
 .item.card-item:last-of-type { border-bottom:1px solid var(--line); }
 details.item.card-item[open] { border-color:color-mix(in oklch,var(--tone) 32%,var(--line)); }
@@ -890,6 +891,7 @@ const I18N = {
   "cat_skills_hint": "Was Mira beim Start geladen hat. Zum Ändern einen Skill aufklappen; der Schalter schaltet ihn ein oder aus.",
   "cat_problem": "Nicht gestartet",
   "cat_available": "Verfügbar",
+  "cat_more": "Weitere",
   "cat_available_hint": "Diese Skills liegen im Skill-Ordner, sind aber nicht eingeschaltet. Einschalten: mit „Einschalten“ hier oder in der mira.yaml unter skills.",
   "kind_plan": "Plan", "kind_thread": "Vorgang", "kind_schedules": "Zeitplan", "kind_mail": "Mail",
   "kind_mcp": "MCP-Server", "kind_agents": "Agenten", "kind_guide": "Anleitung", "kind_phonebook": "Telefonbuch",
@@ -1441,6 +1443,7 @@ const I18N = {
   "cat_skills_hint": "What Mira loaded at her start. Open a skill to change it; the switch turns it on or off.",
   "cat_problem": "Not started",
   "cat_available": "Available",
+  "cat_more": "More",
   "cat_available_hint": "These skills are in the skill folder but not switched on. Switch one on with “Switch on” here or in mira.yaml under skills.",
   "kind_plan": "Plan", "kind_thread": "Thread", "kind_schedules": "Schedule", "kind_mail": "Mail",
   "kind_mcp": "MCP server", "kind_agents": "Agents", "kind_guide": "Guide", "kind_phonebook": "Phone book",
@@ -1806,22 +1809,34 @@ function render() {
 
 // ---- Companion services (docs/spec/companions.md) -----------------------------
 // A registered companion is a tab of the group "setup" for admins; it holds the
-// companion's own page, passed on by Mira, on the page's own origin.
+// companion's own page, passed on by Mira, on the page's own origin. A
+// companion with a skills page has a second tab "<title> Skills" in the group
+// "abilities", holding that page the same way (decision 29); Mira draws
+// nothing of it. Its id is "companion-<name>:skills" (a name has no ":").
+const companionPages = {};
 async function loadCompanions() {
   let list = [];
   try { list = (await api("GET", "/v1/ui/companions")).companions || []; } catch (e) { return; }
-  const setup = GROUPS.find(g => g.id === "setup");
-  for (const c of list) {
-    const id = "companion-" + c.name;
+  const setup = GROUPS.find(g => g.id === "setup"), abilities = GROUPS.find(g => g.id === "abilities");
+  const add = (group, id, title) => {
     if (!TABS.includes(id)) TABS = [...TABS, id];
-    if (!setup.tabs.includes(id)) setup.tabs.push(id);
-    for (const l of Object.keys(I18N)) I18N[l]["tab_" + id] = c.title;
+    if (!group.tabs.includes(id)) group.tabs.push(id);
+    for (const l of Object.keys(I18N)) I18N[l]["tab_" + id] = title;
+  };
+  for (const c of list) {
+    add(setup, "companion-" + c.name, c.title);
+    if (c.skills_page) {
+      companionPages[c.name] = c.skills_page;
+      add(abilities, "companion-" + c.name + ":skills", c.title + " Skills");
+    }
   }
   if (list.length) { tab = tabOf(location.hash.slice(1)); render(); }
 }
-function companionView(name) {
-  $("#view").innerHTML = `<iframe class="companion" title="${esc(T["tab_companion-" + name] || name)}"
-    src="${esc(url("/ui/companion/" + encodeURIComponent(name) + "/"))}"
+function companionView(id) {
+  const [name, part] = id.split(":");
+  const page = part === "skills" ? companionPages[name] || "" : "";
+  $("#view").innerHTML = `<iframe class="companion" title="${esc(T["tab_companion-" + id] || name)}"
+    src="${esc(url("/ui/companion/" + encodeURIComponent(name) + "/" + page))}"
     style="width:100%;height:calc(100vh - 160px);min-height:480px;border:0;background:transparent"></iframe>`;
 }
 

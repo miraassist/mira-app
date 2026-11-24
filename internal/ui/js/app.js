@@ -591,12 +591,22 @@ class MiraSkills extends EditPage {
     return html`${this.bar()}<section class="list-section">
       ${listHead(T.cat_active, of("active").length, T.cat_skills_hint)}
       ${this.switchError ? html`<p class="msg err">${this.switchError}</p>` : nothing}
-      <div class="card-list">${of("active").map(s => this.skill(s))}</div>
+      ${this.byCategory(of("active"))}
       ${of("problem").length ? html`${groupLabel(T.cat_problem, of("problem").length)}
-        <div class="card-list">${of("problem").map(s => this.skill(s))}</div>` : nothing}
+        ${this.byCategory(of("problem"))}` : nothing}
       ${of("available").length ? html`${groupLabel(T.cat_available, of("available").length, T.cat_available_hint)}
-        <div class="card-list">${of("available").map(s => this.skill(s))}</div>` : nothing}
+        ${this.byCategory(of("available"))}` : nothing}
       </section>`;
+  }
+  // byCategory lists skills under a heading per category, as written, by
+  // name; those without one last under "Weitere" / "More"
+  // (docs/spec/companions.md, decision 30). While no skill names a category
+  // the list has no headings.
+  byCategory(list) {
+    if (!this.data.skills.some(x => x.category)) return html`<div class="card-list">${list.map(s => this.skill(s))}</div>`;
+    const cats = [...new Set(list.map(s => s.category || ""))].sort((a, b) => (a === "") - (b === "") || a.localeCompare(b));
+    return cats.map(c => html`<h3 class="skill-category">${c || T.cat_more}</h3>
+      <div class="card-list">${list.filter(s => (s.category || "") === c).map(s => this.skill(s))}</div>`);
   }
   skill(s) {
     const t = s.target, m = s.mcp;

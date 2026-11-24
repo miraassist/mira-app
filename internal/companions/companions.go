@@ -29,19 +29,38 @@ const (
 	timeout  = 10 * time.Second
 	// pingTimeout bounds the call back at a registration (decision 26).
 	pingTimeout = 5 * time.Second
+	// maxSkillsPage bounds a registration's skills page (decision 29).
+	maxSkillsPage = 64
 )
 
 var nameRE = regexp.MustCompile(`^[a-z][a-z0-9-]{0,31}$`)
 
-// Companion is a registration as the page sees it: no token.
+// Companion is a registration as the page sees it: no token. SkillsPage is
+// the path of its skills page under its page, empty for none (decision 29).
 type Companion struct {
-	Name  string `json:"name"`
-	Title string `json:"title"`
+	Name       string `json:"name"`
+	Title      string `json:"title"`
+	SkillsPage string `json:"skills_page,omitempty"`
 }
 
-// Registration is the body of PUT /v1/companions/{name}.
+// Registration is the body of PUT /v1/companions/{name}. SkillsPage is
+// optional: a path under the companion's page ("skills/") Mira's page shows
+// as a tab "<title> Skills" (decision 29).
 type Registration struct {
-	Title string `json:"title"`
+	Title      string `json:"title"`
+	URL        string `json:"url"`
+	Token      string `json:"token"`
+	SkillsPage string `json:"skills_page,omitempty"`
+}
+
+// Registered is the answer to a registration: Mira's Home Assistant, which
+// the companion works with as Mira does (decision 31).
+type Registered struct {
+	HomeAssistant *HomeAssistant `json:"home_assistant,omitempty"`
+}
+
+// HomeAssistant is Mira's ha.url and ha.token.
+type HomeAssistant struct {
 	URL   string `json:"url"`
 	Token string `json:"token"`
 }
@@ -69,6 +88,9 @@ type Handler struct {
 	// Wake connects the MCP servers under a registered companion's address
 	// that are not connected (decision 21); nil for none.
 	Wake func(ctx context.Context, url string)
+	// HomeAssistant gives Mira's ha.url and ha.token for the answer to a
+	// registration (decision 31); nil leaves it out.
+	HomeAssistant func() (url, token string)
 }
 
 func (h *Handler) log() *slog.Logger {
@@ -89,8 +111,8 @@ func (h *Handler) client() *http.Client {
 func (h *Handler) Register(mux *api.Mux) {
 	const tag = api.TagAccess
 	mux.Handle(api.Route{Method: http.MethodPut, Path: "/v1/companions/{name}", Tag: tag,
-		Summary: "A companion service registers itself (with its partner token)", Request: Registration{},
-		Status: http.StatusNoContent, Errors: []int{400, 403, 422, 500}}, h.put)
+		Summary: "A companion service registers itself (with its partner token); the answer has Mira's Home Assistant",
+		Request: Registration{}, Response: Registered{}, Status: http.StatusOK, Errors: []int{400, 403, 422, 500}}, h.put)
 	mux.Handle(api.Route{Method: http.MethodDelete, Path: "/v1/companions/{name}", Tag: tag,
 		Summary: "A companion service removes its registration", Status: http.StatusNoContent,
 		Errors: []int{403, 404, 500}}, h.delete)
@@ -129,6 +151,9 @@ func (h *Handler) put(w http.ResponseWriter, r *http.Request) {
 	if reg.Token == "" {
 		errs["token"] = "a token is needed"
 	}
+	if why := skillsPageProblem(reg.SkillsPage); why != "" {
+		errs["skills_page"] = why
+	}
 	if len(errs) > 0 {
 		h.Log.Warn("a companion's registration refused", "name", name, "token", c.Name, "errors", errs)
 		writeJSON(w, http.StatusBadRequest, Errors{Errors: errs})
@@ -143,7 +168,7 @@ func (h *Handler) put(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	takenFrom, err := h.Store.PutCompanion(r.Context(), store.Companion{Name: name, Title: reg.Title, URL: addr,
-		Token: reg.Token, TokenID: c.TokenID})
+		Token: reg.Token, TokenID: c.TokenID, SkillsPage: reg.SkillsPage})
 	if err == nil && takenFrom != "" {
 		// The newest registration wins (decision 6): a new partner token, made because the old one was lost, works.
 		h.Log.Warn("a companion's name taken over by another token", "name", name, "token", c.Name, "before", takenFrom)
@@ -153,14 +178,36 @@ func (h *Handler) put(w http.ResponseWriter, r *http.Request) {
 		h.Log.Error("a companion could not be kept", "name", name, "error", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "the registration could not be kept"})
 	default:
-		h.Log.Info("companion registered", "name", name, "url", reg.URL, "token", c.Name)
-		w.WriteHeader(http.StatusNoContent)
+		h.Log.Info("companion registered", "name", name, "url", reg.URL, "token", c.Name, "skills_page", reg.SkillsPage)
+		// Mira's Home Assistant goes to the companion; never into the log (decision 31).
+		var ans Registered
+		if h.HomeAssistant != nil {
+			u, t := h.HomeAssistant()
+			ans.HomeAssistant = &HomeAssistant{URL: u, Token: t}
+		}
+		writeJSON(w, http.StatusOK, ans)
 		// It is up again: its MCP servers connect now, not at the next
 		// retry; the answer does not wait (decision 21).
 		if h.Wake != nil {
 			go h.Wake(context.WithoutCancel(r.Context()), strings.TrimRight(reg.URL, "/"))
 		}
 	}
+}
+
+// skillsPageProblem says why a skills page is not a path under the companion's page; empty when it is one or there
+// is none (decision 29).
+func skillsPageProblem(p string) string {
+	if p == "" {
+		return ""
+	}
+	bad := utf8.RuneCountInString(p) > maxSkillsPage || strings.HasPrefix(p, "/") || strings.Contains(p, "..")
+	if u, err := url.Parse(p); err != nil || u.Scheme != "" || u.Host != "" {
+		bad = true
+	}
+	if bad {
+		return fmt.Sprintf("%q is not a path under the companion's page like skills/ (no .., no leading /, no scheme, at most 64 characters)", p)
+	}
+	return ""
 }
 
 // ping calls the companion back at its address with its token (decision 26): nil on a 2xx.
@@ -237,7 +284,7 @@ func (h *Handler) List(ctx context.Context) ([]Companion, error) {
 	}
 	out := make([]Companion, 0, len(all))
 	for _, c := range all {
-		out = append(out, Companion{Name: c.Name, Title: c.Title})
+		out = append(out, Companion{Name: c.Name, Title: c.Title, SkillsPage: c.SkillsPage})
 	}
 	return out, nil
 }
