@@ -49,3 +49,26 @@ Feature: BS Companion services
   Scenario: BS-08 A reload restarts Mira
     When a partner token calls POST /v1/skills/reload
     Then the answer is 202 and Mira restarts
+
+  @step6
+  Scenario: BS-09 A companion's prompt runs on the model it names
+    When a partner token calls POST /v1/complete with a model, a system prompt and a text
+    Then the answer has the model's text, its name, its privacy and the tokens
+    And without a model the main model answers
+
+  @step6
+  Scenario: BS-10 The call needs a token, also from the home network
+    When POST /v1/complete is called without a token, or with a token that is no partner's or owner's
+    Then it is refused
+
+  @step6
+  Scenario: BS-11 local_only refuses a cloud model
+    When a partner token calls POST /v1/complete with local_only and a cloud model
+    Then the answer is 400 naming the cloud model
+    And a local model answers
+
+  @step6
+  Scenario: BS-12 What does not fit is refused and never logged
+    When the text is over 64 KiB, the model unknown, or the model fails
+    Then the answers are 400, 400 naming the models, and 502 with the model's error
+    And no log line holds the texts

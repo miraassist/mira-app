@@ -1687,7 +1687,8 @@ func (a *app) httpHandler(runCtx context.Context) http.Handler {
 		compact = a.profileCompactor().Compact
 	}
 	// Companion services (docs/spec/companions.md).
-	comp := &companions.Handler{Store: a.store, Log: a.log.With("component", "companions"), Restart: restart}
+	comp := &companions.Handler{Store: a.store, Log: a.log.With("component", "companions"), Restart: restart,
+		Models: a.companionModels, Clock: a.clock}
 	uiOpts := ui.Options{
 		Companions: comp,
 		Token:      cfg.Server.Token, Sections: config.UISections, Config: uiConfig{a: a, runCtx: runCtx},
@@ -2235,4 +2236,19 @@ func (a *app) kindInstruction(_ context.Context, kind string) (string, error) {
 		return "", fmt.Errorf("skill %s (%s): %w", name, filepath.Join(sk.Dir, "SKILL.md"), errNoAnnounce)
 	}
 	return "", fmt.Errorf("the skill %s, which takes up the kind %q, is not started", name, kind)
+}
+
+// companionModels are Mira's models for a companion's completion
+// (docs/spec/companions.md, decisions 13 to 20): each model's settings and
+// its client, the key staying in Mira.
+func (a *app) companionModels() map[string]companions.Model {
+	out := make(map[string]companions.Model, len(a.models))
+	for name, c := range a.models {
+		m, ok := a.cfg.Model(name)
+		if !ok {
+			continue
+		}
+		out[name] = companions.Model{Settings: m, Client: c}
+	}
+	return out
 }

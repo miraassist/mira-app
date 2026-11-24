@@ -55,6 +55,60 @@ Departures, each with its reason:
 | 11 | Trust | A companion's page runs in the same origin as Home Assistant and Mira's page: it can use the Home Assistant token of the admin who opens it, as Mira's page can. The owner installed the companion and gave it its token |
 | 12 | Its activity | A partner token's calls stay in the partner activity (access-tokens.md, decision 12), registering and reloading too |
 
+## A companion asks one of Mira's models (decided and built 2026-11-24)
+
+A companion may need a language model for a step of its own (to judge a text, to word one), but the models, their
+addresses and keys are set up once, in Mira. It asks Mira to run one call on one of her models; the key never leaves
+Mira, and the models stay in one place.
+
+### By the maintainer (2026-11-24)
+
+| # | Question | Decision |
+|---|---|---|
+| 13 | How a companion gets a model | Through Mira: a call to her that runs a prompt on one of her models (1A). Not chosen: Mira handing out the models' settings with their keys; the companion reading `mira.yaml` and the secrets from a shared volume |
+| 14 | Which model | The one the companion names by its name in `mira.yaml`; without one, Mira's main model (2A) |
+| 15 | Authentication | Always a token, also from the home network: the partner token, as for every other call of a companion |
+
+### Taken while writing (2026-11-24)
+
+| # | Question | Decision |
+|---|---|---|
+| 16 | The call | `POST /v1/complete`, body `{"model", "system", "text", "local_only"}`; the partner token may call it (widens decision 5). Answer 200 `{"text", "model", "privacy", "input_tokens", "output_tokens"}` |
+| 17 | What it is | One completion: the system prompt and the text, no tools, no memory, no history, no turn. The model's answer as it comes |
+| 18 | Privacy | The answer names the model's `privacy` (`local` or `cloud`). With `local_only: true`, a cloud model is refused (400), so a companion can keep private text in the house |
+| 19 | Bounds | The text and the system prompt together at most 64 KiB; the call at most 60 s (the model's own timeout when shorter) |
+| 20 | Its trace | A log line `companion model call` with the token's name, the model, the tokens and the time, never the texts; the call is in the partner activity (decision 12) like the companion's other calls |
+
+### Step by step
+
+1. The companion calls `POST /v1/complete` with its partner token. No token, or another token than a partner's or the
+   owner's: 401/403 as for every call.
+2. Mira checks the body (decision 19), finds the model (decision 14), refuses a cloud model with `local_only`.
+3. Mira sends one request to the model with the system prompt and the text, as her other model calls (the model's
+   endpoint, key, timeout and retries).
+4. Mira answers with the model's text, its name, its privacy and the tokens; logs decision 20's line.
+
+### When something fails
+
+| Fails | Who learns of it |
+|---|---|
+| No `text`, too long, a model Mira does not have | 400 naming what is wrong (an unknown model with the names there are) |
+| `local_only` and a cloud model | 400 `<model> is a cloud model` |
+| The model fails or does not answer in time | 502 with the model's error (its start); a log line with the model and the error; the companion decides what it means |
+| Mira is limited (her settings cannot be read) | 503, as her other calls then |
+
+**Cost:** one model call per request, the companion's; the tokens are the house's like any other. Nothing kept.
+
+### Scenarios
+
+- **BS-09** A companion's prompt runs on the model it names: the answer has the model's text, name, privacy and
+  tokens; without a model, the main one.
+- **BS-10** Without a token, or with a token that is no partner's or owner's, the call is refused, also from the home
+  network.
+- **BS-11** With `local_only`, a cloud model is refused; a local one answers.
+- **BS-12** A text over 64 KiB, an unknown model, a failing model: 400, 400 naming the models, 502 with the error;
+  never the texts in the log.
+
 ## What it does
 
 1. **Registering** (decision 6): a companion calls `PUT /v1/companions/{name}` with its partner token; Mira checks the
@@ -91,6 +145,8 @@ Departures, each with its reason:
 3. **The integration**: `PAGE_FILES` and the proxy.
 4. **Reloading**: `POST /v1/skills/reload`.
 5. **The run on the test HA** with a companion: registered, its tab in the panel, its page loading and saving, a reload.
+6. **A companion asks one of Mira's models** (decisions 13 to 20): `POST /v1/complete`. BS-09 to BS-12. Built
+   2026-11-24.
 
 Built: steps 1 to 4. BS-07 (a non-admin through the integration) has no coded test yet.
 

@@ -19,6 +19,7 @@ import (
 
 	"github.com/miraassist/mira-app/internal/access"
 	"github.com/miraassist/mira-app/internal/api"
+	"github.com/miraassist/mira-app/internal/clock"
 	"github.com/miraassist/mira-app/internal/store"
 )
 
@@ -60,6 +61,17 @@ type Handler struct {
 	Log     *slog.Logger
 	Restart func() // the service's restart, after the answer is written (decision 10)
 	Client  *http.Client
+	// Models are Mira's models for a companion's completion (decisions 13
+	// to 20); Clock bounds its call. Without Models every model is unknown.
+	Models func() map[string]Model
+	Clock  clock.Clock
+}
+
+func (h *Handler) log() *slog.Logger {
+	if h.Log != nil {
+		return h.Log
+	}
+	return slog.Default()
 }
 
 func (h *Handler) client() *http.Client {
@@ -81,6 +93,7 @@ func (h *Handler) Register(mux *api.Mux) {
 	mux.Handle(api.Route{Method: http.MethodPost, Path: "/v1/skills/reload", Tag: api.TagSkills,
 		Summary: "Read the skills again: the service restarts (docs/spec/companions.md)", Response: Accepted{},
 		Status: http.StatusAccepted, Errors: []int{401}}, h.reload)
+	h.registerComplete(mux)
 }
 
 func partner(r *http.Request) (access.Caller, bool) {
