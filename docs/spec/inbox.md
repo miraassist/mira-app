@@ -519,6 +519,28 @@ writes; the turn waits for them. N things, N of each.
 `## Ansage` (the skill stays with `inbox.extract`), the tool `calendar_create` in the skills that named it (the building block `calendar.create`
 stays: the skill `termin` and the mail calendar use it).
 
+### 9. A skill brings a kind of its own (decided and built 2026-11-24)
+
+**Why.** Section 8 left room for "further kinds with a skill of their own"; a skill could take a kind (`takes`), but
+the reading's instruction is only the skill `postfach`'s, so the model did not know how to recognise and fill a kind
+of another skill, and a thread could finish only with a building block of the core or a Home Assistant action, not
+with a tool of the skill (an MCP server's). Asked for 2026-11-24 (the maintainer, A): a skill adds a kind to the
+inbox, with what the model fills and the tool that finishes it.
+
+| # | Question | Decision (taken while writing, 2026-11-24) |
+|---|---|---|
+| 38 | Where the skill says how to read its kind | Its own `inbox.extract` in SKILL.md, as `postfach` has: the code adds it to the reading's instruction under the kind's name ("Art reply: …"), after `postfach`'s, for every switched-on skill that takes a kind and brings one. `postfach`'s stays the frame (what a document is, the line, `expires`). A taking skill without one (`termin`, `todo`: `postfach` describes their kinds) is read as before |
+| 39 | What the model fills | The fields of the taking skill's target, by their names (as section 8); the target says them, with their descriptions |
+| 40 | How it finishes | The target's `finish: tool <skill>__<tool>` ([Threads](threads.md), finishes): on the yes the tool runs with the fields as its arguments; the yes is the tool's `confirm` too |
+| 41 | Third-party text | A thread started from a reading holds text of the document: its tool calls count as after third-party text ([Skill MCP](skill-mcp.md), decision 8: `third_party_text` true), always |
+| 42 | Asking | As every finding: a thread of the person, its entry in the person's message; asked over a private channel, with buttons ([Private choices](private-choices.md)) |
+
+**Fails:** a skill's `inbox.extract` missing while it takes a kind → read as before (decision 38); a `finish: {tool}`
+naming a tool of another skill → a problem of the skill ("unknown finish"), it does not start; the model names a kind no switched-on skill takes → the item is left out with a
+log line (as today); the finishing tool missing (its server down) → the thread's error, said to the person.
+
+**Cost:** the instruction grows by each taking skill's paragraph; nothing else.
+
 ## Open
 
 - **Before step 3: a message sent into a Telegram chat must be in that chat's history.** Checked 2026-11-11 in the code:
@@ -581,6 +603,8 @@ Decided 2026-11-11 from this list:
 Later, each with a spec of its own: further actions with a skill and a plan of their own by the same pattern;
 photos over Telegram (`telegram_attachment` with caption and
 `file_id`, `telegram_bot.download_file`); filing a photo into Paperless on request.
+11. **A skill brings a kind of its own** (section 9): the skill's `inbox.extract` per kind in the reading, the finish
+    `tool`, third-party text on its calls. IN-59 to IN-62. Built 2026-11-24.
 
 ## Test
 

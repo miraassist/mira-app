@@ -820,7 +820,13 @@ func build(ctx context.Context, cfg config.Config, opts buildOptions) (*app, err
 	agentNames := a.agentNames()
 	var startable []skills.Skill
 	for _, sk := range targets {
-		if fin := sk.Target.Finish; !sk.Target.Plan && fin.Action == nil && finishers[fin.Name] == nil {
+		if fin := sk.Target.Finish; fin.Tool != "" && !strings.HasPrefix(fin.Tool, sk.Name+"__") {
+			// A tool finish calls a tool of the target's own skill (docs/spec/threads.md).
+			problems = append(problems, skills.NewProblem(sk.Name, skills.KindUnknownFinish, fin.String(),
+				"tool "+sk.Name+"__<tool>, "+strings.Join(known, ", ")))
+			continue
+		}
+		if fin := sk.Target.Finish; !sk.Target.Plan && fin.Action == nil && fin.Tool == "" && finishers[fin.Name] == nil {
 			problems = append(problems, skills.NewProblem(sk.Name, skills.KindUnknownFinish, fin.Name, strings.Join(known, ", ")))
 			continue
 		}
@@ -835,7 +841,8 @@ func build(ctx context.Context, cfg config.Config, opts buildOptions) (*app, err
 	a.setProblems(problems)
 	a.threads = threads.New(threads.Options{
 		Lang: a.lang, Store: a.store, Targets: targets, Checks: checks, Finishers: finishers, Actions: haActions{a},
-		Hooks: a.actionDecision, Persons: a.persons, Logger: a.log,
+		RunTool: a.runThreadTool,
+		Hooks:   a.actionDecision, Persons: a.persons, Logger: a.log,
 		Deliver: func(ctx context.Context, n store.Message, area string) error {
 			a.proactiveMu.Lock()
 			nf := a.notifier
@@ -2251,4 +2258,17 @@ func (a *app) companionModels() map[string]companions.Model {
 		out[name] = companions.Model{Settings: m, Client: c}
 	}
 	return out
+}
+
+// runThreadTool runs a tool of a target's skill for the finish tool
+// (docs/spec/threads.md, finishes): through the registry, once it is built,
+// as Mira's own call with the thread's yes as its confirmation; thirdParty
+// marks the call as after third-party text (docs/spec/skill-mcp.md,
+// decision 8; docs/spec/inbox.md, decision 41).
+func (a *app) runThreadTool(ctx context.Context, name string, args json.RawMessage, thirdParty bool) (string, bool, error) {
+	reg := a.reader.reg.Load()
+	if reg == nil {
+		return "", true, fmt.Errorf("Mira's tools are not ready yet for %s", name)
+	}
+	return reg.Execute(mcp.WithThirdParty(ctx, thirdParty), tools.Invocation{Name: name, Args: args})
 }

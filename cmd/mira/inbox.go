@@ -54,7 +54,7 @@ func (a *app) newInbox(cfg config.Config, loaded []skills.Skill) *inbox.Service 
 	}
 	o := inbox.Options{Model: a.inboxRead(),
 		Extract: postfach.Inbox.Extract, Person: a.inboxPerson,
-		Kinds: a.inboxKinds, Ask: a.inboxAsk, Drop: a.inboxDrop, Tell: a.inboxTell, House: store.ReceiverHouse,
+		Kinds: a.inboxKinds, KindExtracts: a.inboxKindExtracts, Ask: a.inboxAsk, Drop: a.inboxDrop, Tell: a.inboxTell, House: store.ReceiverHouse,
 		Learn: a.inboxLearn, Owner: a.inboxOwner,
 		Open: func(ctx context.Context, key string) bool {
 			return a.threads != nil && a.threads.OpenFrom(ctx, key)
@@ -143,6 +143,24 @@ func (a *app) inboxKinds() map[string][]string {
 			fields = append(fields, f.Name)
 		}
 		out[kind] = fields
+	}
+	return out
+}
+
+// inboxKindExtracts are the reading instructions the taking skills bring
+// for their kinds (docs/spec/inbox.md, section 9, decision 38); postfach's own
+// frame is Options.Extract.
+func (a *app) inboxKindExtracts() map[string]string {
+	out := map[string]string{}
+	if a.threads == nil {
+		return out
+	}
+	for _, kind := range store.KindsWithSkill() {
+		sk, ok := a.threads.TargetOf(store.KindSkill(kind))
+		if !ok || sk.Name == inbox.Skill || sk.Inbox == nil {
+			continue
+		}
+		out[kind] = sk.Inbox.Extract
 	}
 	return out
 }

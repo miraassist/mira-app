@@ -808,3 +808,41 @@ func TestAnItemThatCannotBeAskedLeavesTheDocumentUnread(t *testing.T) {
 		t.Fatalf("log:\n%s", b.log)
 	}
 }
+
+// --- step 11: a skill brings a kind of its own -----------------------------------
+
+// IN-59 A skill's reading instructions for its kind go into the reading
+func TestIN59_ASkillsReadingInstructionsForItsKindGoIntoTheReading(t *testing.T) {
+	b := newBed(t)
+	// Given a switched-on skill takes the kind reply and brings inbox.extract
+	b.s.o.Kinds = func() map[string][]string {
+		return map[string][]string{"appointment": {"title"}, "reply": {"to", "subject", "proposals"}}
+	}
+	b.s.o.KindExtracts = func() map[string]string {
+		return map[string]string{"reply": "Eine Mail, die nach einer Antwort fragt: bis zu drei Vorschläge."}
+	}
+	b.reading(reading{Summary: "Mail", Items: nil})
+	// When a document is read
+	b.s.Read(context.Background(), 5444, "anna")
+	// Then the instruction lists the kind reply and has the skill's paragraph under its name
+	if !strings.Contains(b.model.instruction, "Arten: appointment, reply") ||
+		!strings.Contains(b.model.instruction, "Art reply:\nEine Mail, die nach einer Antwort fragt") {
+		t.Fatalf("instruction:\n%s", b.model.instruction)
+	}
+}
+
+// IN-60 A taking skill without instructions of its own is read as before
+func TestIN60_ATakingSkillWithoutInstructionsOfItsOwnIsReadAsBefore(t *testing.T) {
+	b := newBed(t)
+	// Given a skill takes a kind and has no inbox.extract
+	b.s.o.Kinds = func() map[string][]string { return map[string][]string{"appointment": {"title"}} }
+	// And a paragraph for a kind no switched-on skill takes now
+	b.s.o.KindExtracts = func() map[string]string { return map[string]string{"reply": "Antworten."} }
+	b.reading(reading{Summary: "Brief"})
+	b.s.Read(context.Background(), 5444, "anna")
+	// Then its kind is offered to the reading without a paragraph of its own
+	// And a skill's own paragraph comes only for a kind that is offered now
+	if !strings.Contains(b.model.instruction, "Arten: appointment\n") || strings.Contains(b.model.instruction, "Art ") {
+		t.Fatalf("instruction:\n%s", b.model.instruction)
+	}
+}

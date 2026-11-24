@@ -336,3 +336,26 @@ Feature: IN Mira's inbox in Paperless
     When the announcement offers both and Anna says "ja"
     Then the termin thread and the todo thread are confirmed one after the other in that turn
     And the Elternabend is in Anna's calendar and the reply on Anna's list
+
+  @step11
+  Scenario: IN-59 A skill's reading instructions for its kind go into the reading
+    Given a switched-on skill takes the kind reply and brings inbox.extract
+    When a document is read
+    Then the instruction lists the kind reply and has the skill's paragraph under its name
+
+  @step11
+  Scenario: IN-60 A taking skill without instructions of its own is read as before
+    Given a skill takes a kind and has no inbox.extract
+    Then its kind is offered to the reading without a paragraph of its own
+    And a skill's own paragraph comes only for a kind that is offered now
+
+  @step11
+  Scenario: IN-61 A finding of the skill's kind finishes with its tool
+    Given a thread of the kind reply waits for Anna's yes
+    When she says yes
+    Then the skill's tool runs once with the thread's fields as its arguments, and its answer is the thread's message
+
+  @step11
+  Scenario: IN-62 A finding's tool call counts as after third-party text
+    When the finishing tool is called
+    Then its call carries third_party_text true

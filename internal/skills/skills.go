@@ -233,10 +233,16 @@ func AgentInput(input map[string]any) map[string]any {
 // FinishAction is the name of a finish that calls a Home Assistant action.
 const FinishAction = "ha.action"
 
-// Finish is a building block by name, or a Home Assistant action.
+// FinishTool is the name of a finish that calls a tool of the target's
+// skill (docs/spec/threads.md, finishes; docs/spec/inbox.md, section 9).
+const FinishTool = "tool"
+
+// Finish is a building block by name, a Home Assistant action, or a tool of
+// the skill (finish: {tool: <skill>__<tool>}).
 type Finish struct {
 	Name   string
 	Action *Action
+	Tool   string
 }
 
 // Action is a Home Assistant action with its data. Both may hold
@@ -256,6 +262,13 @@ func (f *Finish) UnmarshalYAML(node *yaml.Node) error {
 		f.Name = strings.TrimSpace(node.Value)
 		return nil
 	}
+	var t struct {
+		Tool string `yaml:"tool"`
+	}
+	if err := node.Decode(&t); err == nil && strings.TrimSpace(t.Tool) != "" {
+		f.Name, f.Tool = FinishTool, strings.TrimSpace(t.Tool)
+		return nil
+	}
 	var a Action
 	if err := node.Decode(&a); err != nil {
 		return err
@@ -265,8 +278,11 @@ func (f *Finish) UnmarshalYAML(node *yaml.Node) error {
 }
 
 func (f Finish) String() string {
-	if f.Action != nil {
+	switch {
+	case f.Action != nil:
 		return f.Action.Action
+	case f.Tool != "":
+		return "tool " + f.Tool
 	}
 	return f.Name
 }

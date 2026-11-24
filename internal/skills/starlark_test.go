@@ -197,3 +197,28 @@ func TestSL15_TheWebAPIToolsAreGone(t *testing.T) {
 		t.Errorf("tools %v", got)
 	}
 }
+
+// A target's finish may name a tool of its skill (docs/spec/threads.md,
+// finishes; docs/spec/inbox.md, section 9): finish: {tool: <skill>__<tool>}.
+func TestATargetFinishesWithAToolOfItsSkill(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "antwort")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	md := "---\nname: antwort\ndescription: Antwortet\nmetadata:\n  mira:\n    takes: reply\n    inbox:\n      extract: Eine Mail, die nach einer Antwort fragt.\n" +
+		"    target:\n      fields:\n        - name: to\n          description: Empfänger\n        - name: body\n          description: Text\n      finish:\n        tool: antwort__send\n---\nAntworten.\n"
+	if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte(md), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	loaded, ps := skills.Load([]string{filepath.Dir(dir)}, map[string]map[string]any{"antwort": {}})
+	if len(ps) > 0 || len(loaded) != 1 {
+		t.Fatalf("%v", ps)
+	}
+	f := loaded[0].Target.Finish
+	if f.Name != skills.FinishTool || f.Tool != "antwort__send" || f.Action != nil || f.String() != "tool antwort__send" {
+		t.Errorf("finish %+v", f)
+	}
+	if loaded[0].Inbox == nil || loaded[0].Takes != "reply" {
+		t.Errorf("inbox %+v takes %q", loaded[0].Inbox, loaded[0].Takes)
+	}
+}

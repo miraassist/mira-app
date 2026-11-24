@@ -74,6 +74,11 @@ type Options struct {
 	// Actions lets a skill finish with a Home Assistant action; without it
 	// such targets cannot finish.
 	Actions Actions
+	// RunTool runs a tool of a target's skill by its full name with the
+	// thread's fields, for the finish tool (docs/spec/threads.md); thirdParty
+	// says whether its call counts as after third-party text. Its text and
+	// whether it is an error. Without it such targets cannot finish.
+	RunTool func(ctx context.Context, name string, args json.RawMessage, thirdParty bool) (string, bool, error)
 	// Hooks decide on a skill's action before it is called, as a call of
 	// its own (docs/spec/hooks.md, Skill actions); without them nothing is
 	// checked.
@@ -977,6 +982,12 @@ func (m *Manager) confirm(ctx context.Context, th store.Thread) (string, error) 
 // finisher is the building block that ends a target's threads.
 func (m *Manager) finisher(target string) (Finisher, error) {
 	sk := m.targets[target]
+	if sk.Target.Finish.Tool != "" {
+		if m.opts.RunTool == nil {
+			return nil, errors.New("no tools for the finish " + sk.Target.Finish.String())
+		}
+		return toolFinish{m, sk}, nil
+	}
 	if sk.Target.Finish.Action != nil {
 		if m.opts.Actions == nil {
 			return nil, errors.New("no Home Assistant for the action " + sk.Target.Finish.Action.Action)
