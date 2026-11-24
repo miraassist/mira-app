@@ -7,9 +7,8 @@ HACS) connects Home Assistant to it. Both share one version: update them togethe
 ## Setup
 
 1. Install and start this app.
-2. Install the **Mira** integration and restart Home Assistant: Settings → Marketplace → **Add from link** →
-   `https://github.com/miraassist/mira` (before Home Assistant 2026.11: HACS → Custom repositories, the same
-   address, type Integration).
+2. Install the **Mira** integration and restart Home Assistant: Settings → Marketplace, search for **Mira**,
+   **Install** (before Home Assistant 2026.11: HACS, search for **Mira**, **Download**).
 3. Settings → Devices & services → **Add integration** → **Mira**. As the address enter
    `http://localhost:8787`. The setup then asks for the AI model and the assistants Mira answers in.
 

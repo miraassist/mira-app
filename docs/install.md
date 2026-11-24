@@ -71,9 +71,9 @@ does not have; use MCP servers over HTTP, or a skill that brings its program (a 
 
 ## The integration
 
-1. Click **Open in the Marketplace** in the README, or Settings → Marketplace → **Add from link** →
-   `https://github.com/miraassist/mira`. The first time, the Marketplace asks to connect GitHub. Before Home
-   Assistant 2026.11: HACS → Custom repositories, the same address, type Integration.
+1. Settings → Marketplace, search for **Mira** (or click **Open in the Marketplace** in the README of
+   [miraassist/mira](https://github.com/miraassist/mira)). The first time, the Marketplace asks to connect GitHub.
+   Before Home Assistant 2026.11: HACS, search for **Mira**, **Download**.
 2. Install **Mira**, restart Home Assistant.
 3. Settings → Devices & services: the Mira service announces itself by mDNS (`_mira._tcp`, `server.announce`) and
    shows up under **Discovered**; otherwise Add integration → Mira with its URL. A new Mira service is added with one
