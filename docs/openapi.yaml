@@ -6865,6 +6865,8 @@ paths:
                       properties:
                         kind:
                           type: string
+                        tool:
+                          type: string
                         method:
                           type: string
                         url:
