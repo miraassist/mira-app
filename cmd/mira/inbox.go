@@ -182,6 +182,11 @@ func (a *app) inboxAsk(ctx context.Context, q inbox.Question) error {
 	if err != nil {
 		return err
 	}
+	// A target that asks privately: the private message is the question, no
+	// entry is announced (docs/spec/inbox.md, decision 43).
+	if a.threads.AskFinding(ctx, th) {
+		return nil
+	}
 	_, _, err = a.store.PutMessage(ctx, store.Message{ID: ulid.Make().String(), Kind: q.Kind, Source: store.SourceTask,
 		DedupeKey: "inbox:" + th.ID, Importance: 1, Receiver: q.Person, Spoken: q.Line, ThreadID: th.ID,
 		ExpiresAt: th.ExpiresAt})

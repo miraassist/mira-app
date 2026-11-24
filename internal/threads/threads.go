@@ -940,6 +940,28 @@ func (m *Manager) askPrivately(ctx context.Context, th store.Thread) bool {
 	return true
 }
 
+// AskFinding sends a finding's thread, just started from a document, to
+// its person privately when its target asks privately
+// (docs/spec/inbox.md, decision 43). False when the target does not, or it
+// could not (no person, no private channel): the finding is then announced
+// as every finding, and the log says why.
+func (m *Manager) AskFinding(ctx context.Context, th store.Thread) bool {
+	sk := m.targets[th.Target]
+	if sk.Target == nil || !sk.Target.Private {
+		return false
+	}
+	if m.opts.AskPrivately == nil || th.Person == "" {
+		m.log.Info("a private finding is announced: no person known", "thread", th.ID, "target", th.Target)
+		return false
+	}
+	if err := m.opts.AskPrivately(ctx, th, privateText(sk, th)); err != nil {
+		m.log.Info("a private finding is announced", "thread", th.ID, "person", th.Person, "error", err)
+		return false
+	}
+	m.log.Info("a finding asked privately", "thread", th.ID, "person", th.Person, "source", th.Source)
+	return true
+}
+
 // privateText is a private proposal: the request, then the fields in the
 // target's order, short ones first.
 func privateText(sk skills.Skill, th store.Thread) string {

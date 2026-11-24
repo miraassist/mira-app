@@ -359,3 +359,16 @@ Feature: IN Mira's inbox in Paperless
   Scenario: IN-62 A finding's tool call counts as after third-party text
     When the finishing tool is called
     Then its call carries third_party_text true
+
+  @step12
+  Scenario: IN-63 A finding of a private target is asked privately at once
+    Given a switched-on skill takes the kind reply and its target asks privately, with chosen body
+    When a document gives Anna a finding of the kind reply with three proposals
+    Then Anna gets a private message of the thread at once, with the request and the proposals as buttons
+    And no entry goes into her message, nothing is announced
+
+  @step12
+  Scenario: IN-64 Without a private channel the finding is announced as before
+    Given Anna has no private channel
+    When a document gives her a finding of the kind reply
+    Then the entry goes into her message as for every finding, and a log line says why

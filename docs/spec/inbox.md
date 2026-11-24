@@ -535,6 +535,8 @@ inbox, with what the model fills and the tool that finishes it.
 | 41 | Third-party text | A thread started from a reading holds text of the document: its tool calls count as after third-party text ([Skill MCP](skill-mcp.md), decision 8: `third_party_text` true), always |
 | 42 | Asking | As every finding: a thread of the person, its entry in the person's message; asked over a private channel, with buttons ([Private choices](private-choices.md)) |
 
+| 43 | A finding of a target that asks privately (2026-11-24, the maintainer, A; building decision 42) | When the taking skill's target has `private: true` ([Private choices](private-choices.md), decision 13), Mira sends the finding's thread privately to the person at once, when it starts: the request (the item's line) and the fields, with its buttons (the proposals when the target has `chosen`, else "Ja" and "Nein"). No entry goes into the person's message, so nothing is announced at a speaker. When it cannot (the person has no private channel), the entry goes into the message as for every finding and is announced by the skill's `## Ansage`, with a log line (as private-choices.md, decision 14) |
+
 **Fails:** a skill's `inbox.extract` missing while it takes a kind → read as before (decision 38); a `finish: {tool}`
 naming a tool of another skill → a problem of the skill ("unknown finish"), it does not start; the model names a kind no switched-on skill takes → the item is left out with a
 log line (as today); the finishing tool missing (its server down) → the thread's error, said to the person.
@@ -605,6 +607,9 @@ photos over Telegram (`telegram_attachment` with caption and
 `file_id`, `telegram_bot.download_file`); filing a photo into Paperless on request.
 11. **A skill brings a kind of its own** (section 9): the skill's `inbox.extract` per kind in the reading, the finish
     `tool`, third-party text on its calls. IN-59 to IN-62. Built 2026-11-24.
+12. **A finding asked privately** (section 9, decision 43): a finding of a target with `private: true` goes to the
+    person privately at its start, without an entry; without a private channel, the entry as before. IN-63, IN-64.
+    Built 2026-11-24.
 
 ## Test
 
