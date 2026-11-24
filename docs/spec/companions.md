@@ -2,7 +2,8 @@
 
 Status 2026-11-23: decisions 1 to 4 by the maintainer (in the companion's own repository, 2026-11-23: its settings on
 Mira's page, no second panel in Home Assistant, a path convention, the companion registers itself); 5 to 12 taken while
-writing, to be confirmed. Not built. Scenarios: [companions.feature](companions.feature) (`BS-…`).
+writing, to be confirmed. Not built. Decisions 22 to 27 by the maintainer 2026-11-24 (a companion's skills from the
+companion, its address checked at registration), not built. Scenarios: [companions.feature](companions.feature) (`BS-…`).
 
 ## Goal
 
@@ -119,6 +120,65 @@ companion registers at every start (`PUT /v1/companions/{name}`): that is the si
 - **BS-12** A text over 64 KiB, an unknown model, a failing model: 400, 400 naming the models, 502 with the error;
   never the texts in the log.
 
+## A companion's skills from the companion, and its address checked (decided 2026-11-24, the maintainer)
+
+Proposed 2026-11-24 for the companion mira-pro (its repository's `docs/spec/setup.md`), in general terms; decisions 22
+to 27 confirmed by the maintainer the same day as proposed. Not built.
+
+Seen 2026-11-24 while setting up mira-pro beside a test Mira: a companion's skills reach Mira only through a folder
+both share (`skills.dirs` on her side, a folder of the companion's on the other), and a companion learns only from its
+own log that Mira cannot reach the address it registered. On Home Assistant OS, where most owners run Mira and a
+companion as two apps, each app has folders of its own; a companion on another machine has none in common with Mira.
+The companion's setup should end with "Mira loaded your skills" and "Mira reached me", each seen, not guessed.
+
+The concept it hangs on: the **skill source** ([Skill source](skill-source.md)): `GET <url>/v1/skills` with a key at
+Mira's start, the skills' files in memory only, never shown, never in the history; and the **registration** above
+(decision 6).
+
+Departures, each with its reason:
+
+- **Every registered companion is a skill source of its own**, beside `skills.source`: its skills come from it, not
+  from a folder (decision 22). The rules of the skill source hold for them unchanged.
+- **A registration is kept only when Mira reaches the companion** (decision 26): the registration is the moment the
+  companion can show its owner what Mira saw.
+
+| # | Question | Decision |
+|---|---|---|
+| 22 | Where a companion's skills come from | **From the companion**: at her start Mira asks every registered companion `GET <url>/v1/skills` with the companion's token (the one it registered), in the skill source's format and with its rules (decisions 8 to 12 there: in memory only, not shown, not in the history, not in the log; a name taken twice: the owner's skill from a folder wins). Not chosen: a folder both share (two apps on Home Assistant OS have none of their own; the Supervisor's `/share` both could map is again a folder both must be set to, and none for a companion on another machine) |
+| 23 | Which companions | Those registered when Mira starts. A companion whose skills change asks for a reload (decision 10), as today; its first registration does the same |
+| 24 | A companion without skills | Answers `200` with `{"skills": []}`. A `404` counts the same (a companion that brings none, or one older than this): one log line, no repair |
+| 25 | When a companion cannot be asked | As the skill source (its errors table): retried at the start (three tries, 2 s and 4 s, each at most 10 s), then Mira starts without its skills, with a repair naming the companion's title; `401`/`403` not retried, a repair "<title> refuses Mira's token; it registers anew at its next start". The companions are asked side by side: the start waits for the slowest, at most the bound of one |
+| 26 | The check at registration | Before she keeps a registration, Mira calls `GET <url>/v1/ping` with the companion's token, once, at most 5 s. `2xx`: kept as today. Anything else: not kept, `422` with `Mira cannot reach <url>: <error>` (the error as Mira saw it: refused, timeout, the status), so the companion can show it. Not retried by Mira: the companion registers again (it does at every start). A companion older than this answers `404` and is refused: no partner runs one yet |
+| 27 | The owner's folders | Unchanged: `skills.dirs` stays for the owner's own skills and any companion that still writes a folder |
+
+### What it does
+
+1. **Registering** (decision 26): after the checks of decision 6, Mira calls `<url>/v1/ping`; only on `2xx` she keeps
+   the registration and logs `companion registered` as today; otherwise she answers `422` and logs `companion not
+   reached` with the name, the URL and the error.
+2. **Loading at the start** (decisions 22 to 25): before `skills.Load`, besides `skills.source`, one
+   `GET <url>/v1/skills` per registered companion, side by side; their skills go to `skills.Load` as one more
+   directory in memory each, after the folders.
+3. From there a companion's skill is loaded, switched on and wired like any other (the tab "Fähigkeiten", its MCP
+   server from `metadata.mira.mcp` in its `SKILL.md`).
+
+### When something fails
+
+| Fails | Who learns of it |
+|---|---|
+| Mira cannot reach the companion at registration | the companion: `422` with Mira's error; Mira's log `companion not reached` (name, URL, error) |
+| A companion cannot be reached at the start, a timeout, `429`, `5xx` | Mira's log per try; after the last a repair naming the companion; Mira starts without its skills |
+| A companion refuses Mira's token (`401`, `403`) | a repair naming the companion; the log with the URL and the status |
+| A companion's answer is not the expected JSON | a repair naming the companion; the log with the URL, the status and the answer's start |
+| A skill of a companion does not load | as every skill's problem, without its text (skill source, decision 11) |
+
+### Cost
+
+- One call per registration (the ping), one per registered companion at each start (its skills, typically tens of
+  kilobytes, kept in memory); the start waits for the slowest companion, at most one bound (about 36 s when one
+  cannot be reached).
+- Nothing grows while Mira runs; a companion's skills change only with a reload (a restart).
+
 ## What it does
 
 1. **Registering** (decision 6): a companion calls `PUT /v1/companions/{name}` with its partner token; Mira checks the
@@ -158,6 +218,8 @@ companion registers at every start (`PUT /v1/companions/{name}`): that is the si
 6. **A companion asks one of Mira's models** (decisions 13 to 20): `POST /v1/complete`. BS-09 to BS-12. Built
    2026-11-24.
 7. **A registration wakes the companion's MCP servers** (decision 21). BS-13.
+8. **A companion's skills from the companion** (decisions 22 to 25, 27): decided 2026-11-24. BS-14 to BS-17.
+9. **The check at registration** (decision 26): decided 2026-11-24. BS-18, BS-19.
 
 Built: steps 1 to 4. BS-07 (a non-admin through the integration) has no coded test yet.
 

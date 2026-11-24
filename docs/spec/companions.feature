@@ -79,3 +79,43 @@ Feature: BS Companion services
     When the companion pro registers with the address http://pro:8792
     Then Mira connects the server under that address at once, and leaves the other one to its retry loop
     And a server under that address that counts as connected is connected anew: its session is of the companion's last run
+
+  @step8
+  Scenario: BS-14 A registered companion's skills come from it
+    Given the companion pro is registered with the address http://pro:8792 and answers /v1/skills with the skill mail
+    When Mira starts
+    Then she asks http://pro:8792/v1/skills with pro's token
+    And the skill mail is loaded from memory like a skill of the skill source, and can be switched on on the tab "Fähigkeiten"
+
+  @step8
+  Scenario: BS-15 A companion without skills
+    Given the companion pro answers /v1/skills with an empty list, and the companion old answers 404
+    When Mira starts
+    Then she starts with neither's skills, without a repair, and logs one line for old
+
+  @step8
+  Scenario: BS-16 A companion that cannot be asked
+    Given the companion pro does not answer, and the companion other answers 401
+    When Mira starts
+    Then she tries pro three times and starts without its skills, with a repair naming pro
+    And she does not retry other, and a repair says other refuses Mira's token
+
+  @step8
+  Scenario: BS-17 The owner's skill wins a name taken twice
+    Given a skill mail in a folder of skills.dirs and the companion pro bringing a skill mail
+    When Mira starts
+    Then the owner's skill mail is loaded, pro's is left out, and the problem names both
+
+  @step9
+  Scenario: BS-18 A registration is kept only when Mira reaches the companion
+    Given the companion pro answers /v1/ping with 204
+    When it registers with the address http://pro:8792
+    Then Mira calls http://pro:8792/v1/ping with pro's token before she keeps it, and answers 204
+
+  @step9
+  Scenario: BS-19 A companion Mira cannot reach is refused with her error
+    Given nothing answers at http://pro:8792
+    When the companion pro registers with that address
+    Then Mira answers 422 "Mira cannot reach http://pro:8792: …" with the error she saw, and keeps nothing
+    And her log has "companion not reached" with the name, the URL and the error
+
