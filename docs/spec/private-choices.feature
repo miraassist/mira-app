@@ -53,3 +53,44 @@ Feature: PC Choices in a private question
     When a thread finishes with its skill's tool
     Then the call's _meta has io.mira-assist/thread with the thread's id
     And a call of a turn has no such field
+
+  @step6
+  Scenario: PC-12 The target names its buttons in the person's language
+    Given a target with labels in de and en: "Vorschlag {n} senden", "Was anderes senden", "Ignorieren"
+    When Anna, who speaks German, is asked privately with three proposals
+    Then Telegram shows one row each: "Vorschlag 1 senden" to "Vorschlag 3 senden", "Was anderes senden", "Ignorieren"
+    And the app shows "Vorschlag 1 senden", "Was anderes senden" with a text field, "Ignorieren"
+    And a target without labels keeps "Ja", "Nein" and "Vorschlag {n}"
+
+  @step6
+  Scenario: PC-13 A tap on "Was anderes senden" asks what to send instead
+    When Anna taps "Was anderes senden" in Telegram
+    Then the buttons go, the question "Was soll ich stattdessen antworten?" goes into her chat and into the thread's log
+    And the thread stays open
+
+  @step6
+  Scenario: PC-14 New proposals are asked again privately
+    Given Anna's thread waits for a choice and asks privately
+    When a turn writes new proposals into it
+    Then the new proposals go to her privately with their buttons
+
+  @step6
+  Scenario: PC-15 A chosen proposal is the yes
+    When Anna taps "Vorschlag 2 senden", or a turn fills the chosen field with the second proposal
+    Then the thread finishes with it, and no private yes/no question is left for it
+
+  @step6
+  Scenario: PC-16 "Ignorieren" ends a thread that waits for a choice
+    When Anna taps "Ignorieren" while her thread waits for a choice
+    Then the thread ends as declined
+
+  @step6
+  Scenario: PC-17 A label for a proposal without its number is a problem of the skill
+    Given a target whose labels name choose without {n}
+    Then the skill has a problem naming the label
+
+  @step6
+  Scenario: PC-18 A button of replaced proposals does nothing
+    Given Anna got proposals with buttons, and then new proposals
+    When she taps "Vorschlag 2 senden" on the older message
+    Then nothing is chosen, Telegram's answer says it is done already, and a log line names it

@@ -164,6 +164,9 @@ type Target struct {
 	// message with buttons, not into the turn
 	// (docs/spec/private-choices.md, decision 13).
 	Private bool `yaml:"private"`
+	// Labels name the buttons of a private question, per language ("de",
+	// "en"; docs/spec/private-choices.md, decision 16).
+	Labels map[string]ChoiceLabels `yaml:"labels"`
 	// Confirm asks the user for a yes before an action finish runs; the
 	// building blocks decide that themselves.
 	Confirm bool `yaml:"confirm"`
@@ -213,6 +216,17 @@ func (t Target) TimeoutDuration() time.Duration {
 		return time.Hour
 	}
 	return 15 * time.Minute
+}
+
+// ChoiceLabels are a target's button titles in one language; an empty one
+// is Mira's own. Choose has {n} for the proposal's number.
+type ChoiceLabels struct {
+	Yes     string `yaml:"yes"`
+	No      string `yaml:"no"`
+	Choose  string `yaml:"choose"`
+	Other   string `yaml:"other"`
+	Dismiss string `yaml:"dismiss"`
+	Ask     string `yaml:"ask"`
 }
 
 type TargetField struct {
@@ -680,6 +694,11 @@ func load(root Root, name string, values map[string]any, opts Options) (Skill, *
 			}
 			if !chosen || !proposals {
 				return Skill{}, problem("targetchosen", t.Chosen)
+			}
+		}
+		for lang, l := range t.Labels {
+			if l.Choose != "" && !strings.Contains(l.Choose, "{n}") {
+				return Skill{}, problem("targetlabel", lang+".choose")
 			}
 		}
 		for i, f := range t.Fields {

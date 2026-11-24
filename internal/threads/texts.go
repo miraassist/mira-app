@@ -13,7 +13,7 @@ type texts struct {
 	fieldsForeign                                                         string
 	codeStarted                                                           string
 	checkFailed, started, working, workFailed, askUser, proposeUser       string
-	askedPrivately                                                        string
+	askedPrivately, chosenYes                                             string
 	cancelled, yesLogged, memorySaved                                     string
 	noAction, notHere, actionProposal, actionDone, undoDesc               string
 	sourceReady                                                           string
@@ -84,6 +84,7 @@ var catalog = map[i18n.Lang]texts{
 		askUser:           "Frag den Nutzer: %s",
 		proposeUser:       "Sag dem Nutzer den Vorschlag und frag, ob es so passt: %s",
 		askedPrivately:    "Die Frage ist privat an die Person gegangen (Telegram oder die App), mit Knöpfen. Sag nur in einem kurzen Satz, dass du sie dort gefragt hast; nenne den Inhalt nicht.",
+		chosenYes:         "Die Person hat einen der Vorschläge gewählt; das ist ihr Ja. Bestätige jetzt mit thread_confirm, ohne nachzufragen.",
 		cancelled:         "Vorgang abgebrochen.",
 		yesLogged:         "Ja",
 		memorySaved:       "Ergebnis: gemerkt. Inhalt: %s",
@@ -198,6 +199,7 @@ var catalog = map[i18n.Lang]texts{
 		askUser:           "Ask the user: %s",
 		proposeUser:       "Tell the user the proposal and ask whether it suits: %s",
 		askedPrivately:    "The question went to the person privately (Telegram or the app), with buttons. Only say in one short sentence that you asked them there; do not name its content.",
+		chosenYes:         "The person chose one of the proposals; that is their yes. Confirm now with thread_confirm, without asking again.",
 		cancelled:         "Thread cancelled.",
 		yesLogged:         "yes",
 		memorySaved:       "Result: remembered. Content: %s",

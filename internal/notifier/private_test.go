@@ -6,8 +6,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/miraassist/mira-app/internal/choices"
 	"github.com/miraassist/mira-app/internal/config"
 	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/skills"
 	"github.com/miraassist/mira-app/internal/store"
 )
 
@@ -235,7 +238,8 @@ func TestPC02_ProposalsBecomeButtons(t *testing.T) {
 		t.Fatalf("data %+v", data)
 	}
 	acts := data[0]["actions"].([]map[string]any)
-	if len(acts) != 3 || acts[0]["action"] != "mira:th1:1" || acts[1]["title"] != "Vorschlag 2" || acts[2]["behavior"] != "textInput" {
+	v := choices.Version(props)
+	if len(acts) != 3 || acts[0]["action"] != "mira:th1:1."+v || acts[1]["title"] != "Vorschlag 2" || acts[2]["behavior"] != "textInput" {
 		t.Errorf("actions %+v", acts)
 	}
 	if got := e.tg.sent["notify.mobile_app_annas_phone"][0]; !strings.Contains(got, "\n1. Donnerstag passt.\n2. Lieber Freitag.\n3. Ich melde mich.") {
@@ -262,8 +266,62 @@ func TestPC02_ProposalsBecomeButtons(t *testing.T) {
 			kb = c.Data["inline_keyboard"].([]string)
 		}
 	}
-	want := []string{"Vorschlag 1:/mira th1 1,Vorschlag 2:/mira th1 2,Vorschlag 3:/mira th1 3", "Nein:/mira th1 no"}
+	// One row per button since decision 16; each proposal's with the mark of its proposals (decision 22).
+	want := []string{"Vorschlag 1:/mira th1 1." + v, "Vorschlag 2:/mira th1 2." + v, "Vorschlag 3:/mira th1 3." + v, "Nein:/mira th1 no"}
 	if !slices.Equal(kb, want) {
 		t.Errorf("keyboard %q", kb)
+	}
+}
+
+// PC-12 The target names its buttons in the person's language
+func TestPC12_TheTargetNamesItsButtonsInThePersonsLanguage(t *testing.T) {
+	props := []string{"Donnerstag passt.", "Lieber Freitag.", "Ich melde mich."}
+	target := &skills.Target{Labels: map[string]skills.ChoiceLabels{
+		"de": {Choose: "Vorschlag {n} senden", Other: "Was anderes senden", Dismiss: "Ignorieren", Ask: "Was soll ich stattdessen antworten?"},
+		"en": {Choose: "Send proposal {n}", Other: "Send something else", Dismiss: "Ignore"}}}
+	labels := func(_ context.Context, _ string, lang i18n.Lang) choices.Labels {
+		return choices.ForTarget(target, lang)
+	}
+	v := choices.Version(props)
+	// Given Anna, who speaks German, is asked privately with three proposals in Telegram
+	e := newEnv(t, func(c *config.Config) {
+		c.Persons = map[string]config.Person{"anna": {Entity: "person.anna", Channels: []string{"notify.telegram_anna"}}}
+	})
+	e.ha.set("notify.telegram_anna", "unknown", nil)
+	e.ha.mu.Lock()
+	if e.ha.platforms == nil {
+		e.ha.platforms = map[string]string{}
+	}
+	e.ha.platforms["notify.telegram_anna"] = "telegram_bot"
+	e.ha.mu.Unlock()
+	e.n.asks = func(context.Context, string) ([]string, bool) { return props, true }
+	e.n.labels = labels
+	e.message("q", 1, func(m *store.Message) { private("anna")(m); m.ThreadID = "th1" })
+	e.clk.Set(at("08:00"))
+	e.tick()
+	var kb []string
+	for _, c := range e.ha.calls {
+		if c.Domain == "telegram_bot" {
+			kb = c.Data["inline_keyboard"].([]string)
+		}
+	}
+	// Then Telegram shows one row each
+	want := []string{"Vorschlag 1 senden:/mira th1 1." + v, "Vorschlag 2 senden:/mira th1 2." + v, "Vorschlag 3 senden:/mira th1 3." + v,
+		"Was anderes senden:/mira th1 other", "Ignorieren:/mira th1 no"}
+	if !slices.Equal(kb, want) {
+		t.Errorf("keyboard %q", kb)
+	}
+	// And the app shows the first proposal, "other" with a text field, "dismiss"
+	acts := choices.AppActions("th1", labels(context.Background(), "th1", i18n.DE), props)
+	if len(acts) != 3 || acts[0]["title"] != "Vorschlag 1 senden" || acts[1]["action"] != "mira:th1:other" ||
+		acts[1]["behavior"] != "textInput" || acts[2]["title"] != "Ignorieren" || acts[2]["action"] != "mira:th1:no" {
+		t.Errorf("actions %+v", acts)
+	}
+	// In English the target's English titles; a target without labels keeps Mira's own.
+	if l := choices.ForTarget(target, i18n.EN); l.Proposal != "Send proposal {n}" || l.Ask != "What should I send instead?" {
+		t.Errorf("en %+v", l)
+	}
+	if kb := choices.TelegramKeyboard("th1", choices.ForTarget(&skills.Target{}, i18n.DE), nil); !slices.Equal(kb, []string{"Ja:/mira th1 yes,Nein:/mira th1 no"}) {
+		t.Errorf("without labels %q", kb)
 	}
 }

@@ -213,3 +213,105 @@ func TestPC10_WithoutAPersonTheProposalIsSaidInTheTurn(t *testing.T) {
 		t.Errorf("out %q\nlog:\n%s", out, logs.String())
 	}
 }
+
+// choiceEnv is a target that asks privately with proposals, chosen into
+// body (docs/spec/private-choices.md, decisions 18, 20).
+func choiceEnv(t *testing.T) (*env, *[]string, *[]ranTool) {
+	t.Helper()
+	e := setup(t)
+	var asked []string
+	var ran []ranTool
+	sk := skills.Skill{Name: "antwort", Description: "Antwortet", Target: &skills.Target{
+		Fields:  []skills.TargetField{{Name: "to"}, {Name: "subject"}, {Name: "body"}, {Name: "proposals", Optional: true}},
+		Private: true, Confirm: true, Chosen: "body",
+		Finish: skills.Finish{Name: skills.FinishTool, Tool: "antwort__send"},
+	}}
+	e.m = New(Options{Lang: i18n.DE, Store: e.st, Targets: []skills.Skill{sk}, Clock: e.clk,
+		RunTool: func(_ context.Context, name string, args json.RawMessage, thirdParty bool, _ string) (string, bool, error) {
+			var a map[string]any
+			_ = json.Unmarshal(args, &a)
+			ran = append(ran, ranTool{name, a, thirdParty})
+			return "Gesendet.", false, nil
+		},
+		AskPrivately: func(_ context.Context, th store.Thread, text string) error {
+			asked = append(asked, th.Person+": "+th.Fields["proposals"])
+			return nil
+		}})
+	return e, &asked, &ran
+}
+
+func (e *env) replyFinding(t *testing.T) store.Thread {
+	t.Helper()
+	return e.item(t, "antwort", "reply", "Maler: Donnerstag oder Freitag?",
+		map[string]string{"to": "maler@example.org", "subject": "Re: Termin", "proposals": "Donnerstag passt.\nLieber Freitag."},
+		e.clk.Now().Add(48*time.Hour))
+}
+
+// PC-14 New proposals are asked again privately
+func TestPC14_NewProposalsAreAskedAgainPrivately(t *testing.T) {
+	e, asked, ran := choiceEnv(t)
+	ctx := context.Background()
+	// Given Anna's thread waits for a choice and asks privately
+	th := e.replyFinding(t)
+	inv := e.annasTurn(t)
+	if _, err := e.m.Take(ctx, inv, th.ID); err != nil {
+		t.Fatal(err)
+	}
+	// When a turn writes new proposals into it
+	out, err := e.m.Fill(ctx, inv, map[string]string{"proposals": "Montag passt.\nDienstag passt.\nMittwoch passt."})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Then the new proposals go to her privately with their buttons
+	if len(*asked) != 1 || (*asked)[0] != "anna: Montag passt.\nDienstag passt.\nMittwoch passt." || !strings.Contains(out, "privat") {
+		t.Fatalf("asked %q, the turn got %q", *asked, out)
+	}
+	if len(*ran) != 0 {
+		t.Errorf("sent %+v", *ran)
+	}
+}
+
+// PC-15 A chosen proposal is the yes
+func TestPC15_AChosenProposalIsTheYes(t *testing.T) {
+	e, asked, ran := choiceEnv(t)
+	ctx := context.Background()
+	// When Anna taps "Vorschlag 2 senden"
+	th := e.replyFinding(t)
+	if _, err := e.m.ChooseThread(ctx, th.ID, "Lieber Freitag."); err != nil {
+		t.Fatal(err)
+	}
+	// Then the thread finishes with it, and no private yes/no question is left for it
+	if len(*ran) != 1 || (*ran)[0].args["body"] != "Lieber Freitag." || len(*asked) != 0 {
+		t.Fatalf("ran %+v asked %q", *ran, *asked)
+	}
+	if got, _ := e.st.GetThread(ctx, th.ID); got.State != store.ThreadDone {
+		t.Errorf("state %s", got.State)
+	}
+	// A turn that fills body with the second proposal: told it is the yes, not asked again.
+	e2, asked2, _ := choiceEnv(t)
+	th2 := e2.replyFinding(t)
+	inv := e2.annasTurn(t)
+	if _, err := e2.m.Take(ctx, inv, th2.ID); err != nil {
+		t.Fatal(err)
+	}
+	out, err := e2.m.Fill(ctx, inv, map[string]string{"body": "Lieber Freitag."})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(*asked2) != 0 || !strings.Contains(out, "thread_confirm") {
+		t.Errorf("asked %q, the turn got %q", *asked2, out)
+	}
+	// A body of the model's own (no proposal) still asks for the yes privately.
+	e3, asked3, _ := choiceEnv(t)
+	th3 := e3.replyFinding(t)
+	inv3 := e3.annasTurn(t)
+	if _, err := e3.m.Take(ctx, inv3, th3.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e3.m.Fill(ctx, inv3, map[string]string{"body": "Montag ginge auch."}); err != nil {
+		t.Fatal(err)
+	}
+	if len(*asked3) != 1 {
+		t.Errorf("asked %q", *asked3)
+	}
+}

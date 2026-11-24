@@ -88,6 +88,9 @@ type Options struct {
 	// (no proposals; the buttons "Ja" and "Nein") or for a choice among its
 	// proposals (docs/spec/private-choices.md, decision 2). Nil: no buttons.
 	Asks func(ctx context.Context, thread string) (proposals []string, ok bool)
+	// Labels are a thread's button titles in lang (its target's, over
+	// Mira's own; docs/spec/private-choices.md, decision 16).
+	Labels func(ctx context.Context, thread string, lang i18n.Lang) choices.Labels
 }
 
 // PhoneNews is what is new at the FRITZ!Box: messages not heard, missed
@@ -110,6 +113,7 @@ type Notifier struct {
 	phone       func(ctx context.Context) (PhoneNews, error)
 	record      func(ctx context.Context, key, record, ack string) error
 	asks        func(ctx context.Context, thread string) (proposals []string, ok bool)
+	labels      func(ctx context.Context, thread string, lang i18n.Lang) choices.Labels
 	// phoneShown is what each screen's phone hint last showed.
 	phoneShown map[string]PhoneNews
 	// phoneHeld are the areas playing messages of the answering machine:
@@ -191,6 +195,7 @@ func New(opts Options) *Notifier {
 		phone:         opts.Phone,
 		record:        opts.Record,
 		asks:          opts.Asks,
+		labels:        opts.Labels,
 		phoneShown:    map[string]PhoneNews{},
 		phoneHeld:     map[string]bool{},
 		awaitingIdle:  map[string]bool{},
@@ -924,7 +929,7 @@ func (n *Notifier) sendPrivate(ctx context.Context, nt store.Message) error {
 	}
 	var errs []error
 	for _, id := range recipients {
-		via, err := n.sendTo(ctx, id, text, question, len(proposals))
+		via, err := n.sendTo(ctx, id, text, question, proposals)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("%s: %w", id, err))
 			continue
@@ -985,7 +990,7 @@ func threadOf(nt store.Message) string {
 // thread waiting for a yes), a Telegram chat gets the buttons as an inline
 // keyboard and the companion app as actions (docs/spec/private-choices.md);
 // another channel gets the text alone.
-func (n *Notifier) sendTo(ctx context.Context, personID, text, question string, proposals int) (string, error) {
+func (n *Notifier) sendTo(ctx context.Context, personID, text, question string, proposals []string) (string, error) {
 	p, ok := n.persons[personID]
 	if !ok {
 		return "", retry.Fatal(fmt.Errorf("unknown person"))
@@ -1010,6 +1015,9 @@ func (n *Notifier) sendTo(ctx context.Context, personID, text, question string, 
 			lang = n.langs.ForPerson(ctx, personID)
 		}
 		labels = choices.LabelsFor(lang)
+		if n.labels != nil {
+			labels = n.labels(ctx, question, lang)
+		}
 	}
 	var errs []error
 	for _, ch := range p.Channels {

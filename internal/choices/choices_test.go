@@ -9,6 +9,8 @@ import (
 
 	"github.com/miraassist/mira-app/internal/config"
 	haws "github.com/miraassist/mira-app/internal/ha/ws"
+	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/skills"
 	"github.com/miraassist/mira-app/internal/store"
 	"github.com/miraassist/mira-app/internal/testsupport/logcap"
 )
@@ -45,7 +47,13 @@ type fakeThreads struct {
 	threads              map[string]store.Thread
 	confirmed, cancelled []string
 	chosen               []string
+	notes                []string
 	confirmErr           error
+}
+
+func (f *fakeThreads) Note(_ context.Context, id, text string) error {
+	f.notes = append(f.notes, id+": "+text)
+	return nil
 }
 
 func (f *fakeThreads) Get(_ context.Context, id string) (store.Thread, error) {
@@ -249,6 +257,103 @@ func TestPC04_ATapOnAProposalFillsTheFieldAndConfirms(t *testing.T) {
 	b.threads.threads["th1"] = th
 	b.s.Handle(context.Background(), tg)
 	if len(b.threads.chosen) != 1 {
+		t.Errorf("chosen %v", b.threads.chosen)
+	}
+}
+
+func (b *bench) withLabels() {
+	b.s.o.Labels = func(context.Context, store.Thread) Labels {
+		return LabelsFor(i18n.DE).With(skills.ChoiceLabels{Choose: "Vorschlag {n} senden", Other: "Was anderes senden",
+			Dismiss: "Ignorieren", Ask: "Was soll ich stattdessen antworten?"})
+	}
+}
+
+func (b *bench) proposals(lines string) {
+	th := b.threads.threads["th1"]
+	th.Fields = map[string]string{"proposals": lines}
+	b.threads.threads["th1"] = th
+}
+
+// PC-13 A tap on "Was anderes senden" asks what to send instead
+func TestPC13_ATapOnOtherAsksWhatToSendInstead(t *testing.T) {
+	b := newBench(t, store.ThreadWaiting)
+	b.withLabels()
+	b.proposals("Donnerstag passt.\nLieber Freitag.")
+	tap, ok := ParseTelegram(telegramTap("/mira th1 other", 1001))
+	if !ok {
+		t.Fatal("the tap does not parse")
+	}
+	// When Anna taps "Was anderes senden" in Telegram
+	b.s.Handle(context.Background(), tap)
+	// Then the buttons go, the question goes into her chat and into the thread's log
+	if got := strings.Join(b.services(), ","); got != "telegram_bot.answer_callback_query,telegram_bot.edit_replymarkup,telegram_bot.send_message" {
+		t.Fatalf("calls %s", got)
+	}
+	if send := b.ha.calls[2].data; send["entity_id"] != "notify.telegram_anna" || send["message"] != "Was soll ich stattdessen antworten?" {
+		t.Errorf("sent %+v", send)
+	}
+	if strings.Join(b.threads.notes, ",") != "th1: Was soll ich stattdessen antworten?" {
+		t.Errorf("notes %v", b.threads.notes)
+	}
+	// And the thread stays open
+	if len(b.threads.cancelled)+len(b.threads.confirmed)+len(b.threads.chosen) != 0 {
+		t.Errorf("the thread was ended: %+v", b.threads)
+	}
+	// In the app the typed text is the turn, after the question in the log.
+	b2 := newBench(t, store.ThreadWaiting)
+	b2.withLabels()
+	raw, _ := json.Marshal(map[string]any{"action": "mira:th1:other", "reply_text": "lieber Montag"})
+	app, ok := ParseApp(raw, "u-anna")
+	if !ok {
+		t.Fatal("the app's other does not parse")
+	}
+	b2.s.Handle(context.Background(), app)
+	if len(b2.threads.notes) != 1 || len(b2.turns) != 1 || b2.turns[0] != "anna/u-anna: lieber Montag" {
+		t.Errorf("notes %v turns %v", b2.threads.notes, b2.turns)
+	}
+}
+
+// PC-16 "Ignorieren" ends a thread that waits for a choice
+func TestPC16_DismissEndsAThreadThatWaitsForAChoice(t *testing.T) {
+	b := newBench(t, store.ThreadWaiting)
+	b.proposals("Donnerstag passt.\nLieber Freitag.")
+	tap, _ := ParseTelegram(telegramTap("/mira th1 no", 1001))
+	b.s.Handle(context.Background(), tap)
+	if strings.Join(b.threads.cancelled, ",") != "th1" {
+		t.Errorf("cancelled %v", b.threads.cancelled)
+	}
+	// A yes still needs a thread that waits for it.
+	b2 := newBench(t, store.ThreadWaiting)
+	yes, _ := ParseTelegram(telegramTap("/mira th1 yes", 1001))
+	b2.s.Handle(context.Background(), yes)
+	if len(b2.threads.confirmed) != 0 {
+		t.Errorf("confirmed %v", b2.threads.confirmed)
+	}
+}
+
+// PC-18 A button of replaced proposals does nothing
+func TestPC18_AButtonOfReplacedProposalsDoesNothing(t *testing.T) {
+	b := newBench(t, store.ThreadWaiting)
+	old := Version([]string{"Donnerstag passt.", "Lieber Freitag."})
+	// Given Anna got new proposals after the old ones
+	b.proposals("Montag passt.\nDienstag passt.")
+	// When she taps the second proposal on the older message
+	tap, ok := ParseTelegram(telegramTap("/mira th1 2."+old, 1001))
+	if !ok || tap.Choice != "2" || tap.Version != old {
+		t.Fatalf("tap %+v", tap)
+	}
+	b.s.Handle(context.Background(), tap)
+	// Then nothing is chosen, Telegram's answer says it is done already, and a log line names it
+	if len(b.threads.chosen) != 0 || b.ha.calls[0].data["message"] != "Das ist schon erledigt." {
+		t.Fatalf("chosen %v calls %+v", b.threads.chosen, b.ha.calls)
+	}
+	if !strings.Contains(b.logs.String(), "outdated=true") {
+		t.Errorf("log:\n%s", b.logs.String())
+	}
+	// The current mark chooses.
+	now, _ := ParseTelegram(telegramTap("/mira th1 2."+Version([]string{"Montag passt.", "Dienstag passt."}), 1001))
+	b.s.Handle(context.Background(), now)
+	if strings.Join(b.threads.chosen, ",") != "th1: Dienstag passt." {
 		t.Errorf("chosen %v", b.threads.chosen)
 	}
 }

@@ -1384,7 +1384,7 @@ func (a *app) startProactive(parent context.Context) {
 	n := notifier.New(notifier.Options{
 		Shared: a.notifyShared, Config: cfg, Store: a.store, HA: a.ha, Logger: a.log, Telemetry: a.tel, Structure: a.structure.Snapshot,
 		Composer: a.notifyCompose, Instruction: a.kindInstruction, Screens: a.screens(ctx, cfg), Languages: a.langs,
-		Phone: a.phoneNews(), Record: a.record, Asks: a.threadAsks,
+		Phone: a.phoneNews(), Record: a.record, Asks: a.threadAsks, Labels: a.threadLabels,
 	})
 	a.notifier = n
 	a.startChoices(ctx)
@@ -1451,7 +1451,7 @@ func (a *app) messageNotifier() *notifier.Notifier {
 	if a.notifier == nil {
 		a.notifier = notifier.New(notifier.Options{Config: a.cfg, Store: a.store, HA: a.ha, Logger: a.log, Telemetry: a.tel,
 			Structure: a.structure.Snapshot, Composer: a.notifyCompose, Instruction: a.kindInstruction, Languages: a.langs,
-			Record: a.record, Asks: a.threadAsks})
+			Record: a.record, Asks: a.threadAsks, Labels: a.threadLabels})
 	}
 	return a.notifier
 }

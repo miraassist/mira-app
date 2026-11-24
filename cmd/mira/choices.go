@@ -45,6 +45,10 @@ func (t choiceThreads) Confirm(ctx context.Context, id string) (string, error) {
 	return t.a.threads.ConfirmThread(ctx, id)
 }
 
+func (t choiceThreads) Note(ctx context.Context, id, text string) error {
+	return t.a.threads.Note(ctx, id, text)
+}
+
 func (t choiceThreads) Cancel(ctx context.Context, id string) error {
 	return t.a.threads.CancelThread(ctx, id)
 }
@@ -59,7 +63,15 @@ func (a *app) startChoices(ctx context.Context) {
 		return
 	}
 	s := choices.New(choices.Options{HA: a.ha, Threads: choiceThreads{a}, Persons: a.persons,
-		Tell: a.tellPrivately, Turn: a.choiceTurn, Lang: func() i18n.Lang { return a.lang }, Log: a.log.With("component", "choices")})
+		Tell: a.tellPrivately, Turn: a.choiceTurn, Lang: func() i18n.Lang { return a.lang },
+		Labels: func(ctx context.Context, th store.Thread) choices.Labels {
+			lang := a.lang
+			if a.langs != nil {
+				lang = a.langs.ForPerson(ctx, th.Person)
+			}
+			return a.threadLabels(ctx, th.ID, lang)
+		},
+		Log: a.log.With("component", "choices")})
 	a.goProactive(ctx, "choices", func(ctx context.Context) error {
 		if err := s.Start(ctx); err != nil {
 			return err
@@ -67,6 +79,17 @@ func (a *app) startChoices(ctx context.Context) {
 		<-ctx.Done()
 		return nil
 	})
+}
+
+// threadLabels are a thread's button titles in lang: its target's over
+// Mira's own (docs/spec/private-choices.md, decision 16).
+func (a *app) threadLabels(ctx context.Context, id string, lang i18n.Lang) choices.Labels {
+	th, err := a.store.GetThread(ctx, id)
+	if err != nil {
+		return choices.LabelsFor(lang)
+	}
+	sk, _ := a.threads.TargetOf(th.Target)
+	return choices.ForTarget(sk.Target, lang)
 }
 
 // tellPrivately leaves a private message for a person: a tap's outcome.

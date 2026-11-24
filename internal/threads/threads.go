@@ -734,6 +734,11 @@ func (m *Manager) fill(ctx context.Context, inv tools.Invocation, th store.Threa
 			return "", err
 		}
 		m.start(ctx, th, launches)
+		// New proposals of a thread that asks privately go to its person
+		// again, with their buttons (docs/spec/private-choices.md, decision 18).
+		if _, changed := values["proposals"]; changed && len(problems) == 0 && waitsForChoice(sk, th) && m.askPrivately(ctx, th) {
+			return t.askedPrivately, nil
+		}
 		return strings.Join(append(problems, m.status(th)), "\n"), nil
 	}
 	return m.work(ctx, inv, th)
@@ -910,6 +915,11 @@ func (m *Manager) apply(ctx context.Context, th store.Thread, res Result, tell b
 		case store.ThreadWaiting:
 			return fmt.Sprintf(t.askUser, say)
 		case store.ThreadProposed:
+			// A chosen proposal is the person's yes: no second question
+			// (docs/spec/private-choices.md, decision 20).
+			if choiceMade(m.targets[th.Target], th) {
+				return t.chosenYes
+			}
 			if m.askPrivately(ctx, th) {
 				return t.askedPrivately
 			}
@@ -960,6 +970,28 @@ func (m *Manager) AskFinding(ctx context.Context, th store.Thread) bool {
 	}
 	m.log.Info("a finding asked privately", "thread", th.ID, "person", th.Person, "source", th.Source)
 	return true
+}
+
+// choiceMade: the thread's chosen field holds one of its proposals, so the
+// person chose (docs/spec/private-choices.md, decision 20).
+func choiceMade(sk skills.Skill, th store.Thread) bool {
+	if sk.Target == nil || sk.Target.Chosen == "" {
+		return false
+	}
+	v := strings.TrimSpace(th.Fields[sk.Target.Chosen])
+	for _, p := range strings.Split(th.Fields["proposals"], "\n") {
+		if v != "" && strings.TrimSpace(p) == v {
+			return true
+		}
+	}
+	return false
+}
+
+// waitsForChoice: a thread of a target that asks privately with proposals,
+// whose chosen field is still empty.
+func waitsForChoice(sk skills.Skill, th store.Thread) bool {
+	return sk.Target != nil && sk.Target.Private && sk.Target.Chosen != "" &&
+		strings.TrimSpace(th.Fields["proposals"]) != "" && strings.TrimSpace(th.Fields[sk.Target.Chosen]) == ""
 }
 
 // privateText is a private proposal: the request, then the fields in the

@@ -7,6 +7,8 @@ package choices
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,6 +20,7 @@ import (
 	"github.com/miraassist/mira-app/internal/config"
 	haws "github.com/miraassist/mira-app/internal/ha/ws"
 	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/skills"
 	"github.com/miraassist/mira-app/internal/store"
 )
 
@@ -26,6 +29,8 @@ const (
 	Yes   = "yes"
 	No    = "no"
 	Reply = "reply"
+	// Other asks what to send instead (decision 17).
+	Other = "other"
 )
 
 // telegramCommand starts a Telegram button's data: it must begin with "/"
@@ -35,16 +40,55 @@ const telegramCommand = "/mira"
 // appPrefix starts a companion app action's key.
 const appPrefix = "mira:"
 
-// Labels are a button's titles in the person's language; Proposal has %d
-// for the proposal's number.
-type Labels struct{ Yes, No, Reply, Proposal string }
+// Labels are the buttons' titles in the person's language; Proposal has {n}
+// for the proposal's number. Other is empty when the target names no such
+// button (decision 17); Ask is the question after it.
+type Labels struct{ Yes, No, Reply, Proposal, Other, Dismiss, Ask string }
 
-// LabelsFor are the buttons' titles in lang.
+// LabelsFor are Mira's own titles.
 func LabelsFor(lang i18n.Lang) Labels {
 	if lang == i18n.EN {
-		return Labels{Yes: "Yes", No: "No", Reply: "Reply", Proposal: "Proposal %d"}
+		return Labels{Yes: "Yes", No: "No", Reply: "Reply", Proposal: "Proposal {n}", Dismiss: "No", Ask: "What should I send instead?"}
 	}
-	return Labels{Yes: "Ja", No: "Nein", Reply: "Antworten", Proposal: "Vorschlag %d"}
+	return Labels{Yes: "Ja", No: "Nein", Reply: "Antworten", Proposal: "Vorschlag {n}", Dismiss: "Nein", Ask: "Was soll ich stattdessen schicken?"}
+}
+
+// With puts a target's titles over Mira's own (decision 16).
+func (l Labels) With(c skills.ChoiceLabels) Labels {
+	set := func(dst *string, v string) {
+		if strings.TrimSpace(v) != "" {
+			*dst = strings.TrimSpace(v)
+		}
+	}
+	set(&l.Yes, c.Yes)
+	set(&l.No, c.No)
+	set(&l.Proposal, c.Choose)
+	set(&l.Other, c.Other)
+	set(&l.Dismiss, c.Dismiss)
+	set(&l.Ask, c.Ask)
+	return l
+}
+
+// ForTarget are the titles of a target's buttons in lang: its own in that
+// language, else its German ones, over Mira's.
+func ForTarget(t *skills.Target, lang i18n.Lang) Labels {
+	l := LabelsFor(lang)
+	if t == nil {
+		return l
+	}
+	if c, ok := t.Labels[string(lang)]; ok {
+		return l.With(c)
+	}
+	return l.With(t.Labels[string(i18n.DE)])
+}
+
+// proposal is the title of proposal n.
+func (l Labels) proposal(n int) string { return strings.ReplaceAll(l.Proposal, "{n}", strconv.Itoa(n)) }
+
+// telegramButton is one button "Label:/mira <thread> <choice>"; a comma in
+// the label would start the next button (decision 3).
+func telegramButton(label, thread, choice string) string {
+	return fmt.Sprintf("%s:%s %s %s", strings.ReplaceAll(label, ",", ""), telegramCommand, thread, choice)
 }
 
 // MaxProposals is how many proposals get a button (decision 2).
@@ -53,21 +97,28 @@ const MaxProposals = 3
 // TelegramKeyboard is telegram_bot's inline_keyboard: for a yes/no question
 // one row, for proposals a row of them and a row with Nein. No space after a
 // comma: it would go into the next label (decision 3).
-func TelegramKeyboard(thread string, l Labels, proposals int) []string {
+func TelegramKeyboard(thread string, l Labels, props []string) []string {
+	proposals := len(props)
 	if proposals == 0 {
-		return []string{fmt.Sprintf("%s:%s %s %s,%s:%s %s %s", l.Yes, telegramCommand, thread, Yes, l.No, telegramCommand, thread, No)}
+		return []string{telegramButton(l.Yes, thread, Yes) + "," + telegramButton(l.No, thread, No)}
 	}
-	var row []string
+	// One row per button: a label that says what it does is long
+	// (decisions 16, 17).
+	var rows []string
 	for i := 1; i <= min(proposals, MaxProposals); i++ {
-		row = append(row, fmt.Sprintf(l.Proposal+":%s %s %d", i, telegramCommand, thread, i))
+		rows = append(rows, telegramButton(l.proposal(i), thread, strconv.Itoa(i)+"."+Version(props)))
 	}
-	return []string{strings.Join(row, ","), fmt.Sprintf("%s:%s %s %s", l.No, telegramCommand, thread, No)}
+	if l.Other != "" {
+		rows = append(rows, telegramButton(l.Other, thread, Other))
+	}
+	return append(rows, telegramButton(l.Dismiss, thread, No))
 }
 
 // AppActions are the companion app's actions, with a typed answer as the
 // last: Android shows three, so with proposals the first two and the typed
 // answer, whose "nein" or "den dritten" the turn understands (decision 4).
-func AppActions(thread string, l Labels, proposals int) []map[string]any {
+func AppActions(thread string, l Labels, props []string) []map[string]any {
+	proposals := len(props)
 	reply := map[string]any{"action": appPrefix + thread + ":" + Reply, "title": l.Reply, "behavior": "textInput"}
 	if proposals == 0 {
 		return []map[string]any{
@@ -76,9 +127,18 @@ func AppActions(thread string, l Labels, proposals int) []map[string]any {
 			reply,
 		}
 	}
-	var out []map[string]any
-	for i := 1; i <= min(proposals, 2); i++ {
-		out = append(out, map[string]any{"action": fmt.Sprintf("%s%s:%d", appPrefix, thread, i), "title": fmt.Sprintf(l.Proposal, i)})
+	v := "." + Version(props)
+	first := map[string]any{"action": appPrefix + thread + ":1" + v, "title": l.proposal(1)}
+	if l.Other != "" {
+		// The first proposal, "other" with a text field, "dismiss"
+		// (decision 19); "2" or "3" typed there picks another.
+		return []map[string]any{first,
+			{"action": appPrefix + thread + ":" + Other, "title": l.Other, "behavior": "textInput"},
+			{"action": appPrefix + thread + ":" + No, "title": l.Dismiss}}
+	}
+	out := []map[string]any{first}
+	if proposals > 1 {
+		out = append(out, map[string]any{"action": appPrefix + thread + ":2" + v, "title": l.proposal(2)})
 	}
 	return append(out, reply)
 }
@@ -107,6 +167,21 @@ func Proposals(th store.Thread) []string {
 	return out
 }
 
+// Version marks the proposals a button belongs to: a tap on a button of
+// proposals that were replaced does nothing (docs/spec/private-choices.md,
+// decision 22).
+func Version(props []string) string {
+	h := sha256.Sum256([]byte(strings.Join(props, "\n")))
+	return hex.EncodeToString(h[:3])
+}
+
+// splitChoice is a choice "2.ab12cd" as its number and the proposals'
+// version ("" for a button made before versions).
+func splitChoice(c string) (choice, version string) {
+	choice, version, _ = strings.Cut(c, ".")
+	return choice, version
+}
+
 // isChoice is a proposal's number.
 func isChoice(s string) bool {
 	n, err := strconv.Atoi(s)
@@ -119,6 +194,8 @@ func AppTag(thread string) string { return "mira-" + thread }
 // Tap is one answer by a button.
 type Tap struct {
 	Thread, Choice string
+	// Version is the proposals' a proposal's button belongs to.
+	Version string
 	// Telegram: the bot, the chat, the callback to answer and the message
 	// whose buttons go.
 	Bot, Chat  int64
@@ -140,10 +217,14 @@ func ParseTelegram(attrs map[string]any) (Tap, bool) {
 	}
 	data, _ := attrs["data"].(string)
 	parts := strings.Fields(data)
-	if len(parts) != 3 || parts[0] != telegramCommand || (parts[2] != Yes && parts[2] != No && !isChoice(parts[2])) {
+	if len(parts) != 3 || parts[0] != telegramCommand {
 		return Tap{}, false
 	}
-	t := Tap{Thread: parts[1], Choice: parts[2], Chat: toInt(attrs["chat_id"]), CallbackID: fmt.Sprint(attrs["id"])}
+	if c, _ := splitChoice(parts[2]); c != Yes && c != No && c != Other && !isChoice(c) {
+		return Tap{}, false
+	}
+	choice, version := splitChoice(parts[2])
+	t := Tap{Thread: parts[1], Choice: choice, Version: version, Chat: toInt(attrs["chat_id"]), CallbackID: fmt.Sprint(attrs["id"])}
 	if bot, ok := attrs["bot"].(map[string]any); ok {
 		t.Bot = toInt(bot["id"])
 	}
@@ -170,16 +251,18 @@ func ParseApp(data json.RawMessage, user string) (Tap, bool) {
 	if len(parts) != 2 || parts[0] == "" {
 		return Tap{}, false
 	}
+	var version string
+	parts[1], version = splitChoice(parts[1])
 	switch {
 	case parts[1] == Yes || parts[1] == No || isChoice(parts[1]):
-	case parts[1] == Reply:
+	case parts[1] == Reply || parts[1] == Other:
 		if strings.TrimSpace(d.ReplyText) == "" {
 			return Tap{}, false
 		}
 	default:
 		return Tap{}, false
 	}
-	return Tap{Thread: parts[0], Choice: parts[1], HAUser: user, Reply: strings.TrimSpace(d.ReplyText)}, true
+	return Tap{Thread: parts[0], Choice: parts[1], Version: version, HAUser: user, Reply: strings.TrimSpace(d.ReplyText)}, true
 }
 
 func toInt(v any) int64 {
@@ -215,6 +298,9 @@ type Threads interface {
 	Cancel(ctx context.Context, id string) error
 	// Choose puts a chosen proposal into the thread and says yes.
 	Choose(ctx context.Context, id, proposal string) (string, error)
+	// Note writes Mira's question after "other" into the thread's log, so
+	// the person's next turn sees it (decision 17).
+	Note(ctx context.Context, id, text string) error
 }
 
 // Options make the taps' service.
@@ -229,7 +315,9 @@ type Options struct {
 	// that Home Assistant user.
 	Turn func(ctx context.Context, person, haUser, text string) error
 	Lang func() i18n.Lang
-	Log  *slog.Logger
+	// Labels are a thread's button titles for its person (decision 16).
+	Labels func(ctx context.Context, th store.Thread) Labels
+	Log    *slog.Logger
 }
 
 // Service hears the taps and acts on them.
@@ -369,6 +457,10 @@ func (s *Service) Handle(ctx context.Context, t Tap) {
 		s.answer(ctx, t, tx.notYours)
 		return
 	}
+	if t.Choice == Other {
+		s.other(ctx, t, th)
+		return
+	}
 	if t.Choice == Reply {
 		// A typed answer is a turn of the person (decision 12).
 		if err := s.o.Turn(ctx, th.Person, t.HAUser, t.Reply); err != nil {
@@ -380,7 +472,9 @@ func (s *Service) Handle(ctx context.Context, t Tap) {
 		s.choose(ctx, t, th)
 		return
 	}
-	if th.State != store.ThreadProposed {
+	// "Nein" or "dismiss" ends a thread also while it waits for a choice
+	// (decision 21); a yes only one that waits for it.
+	if !store.ThreadOpen(th.State) || (t.Choice == Yes && th.State != store.ThreadProposed) {
 		s.o.Log.Info("a tap on a thread that waits for no yes", "thread", t.Thread, "state", th.State, "choice", t.Choice)
 		s.answer(ctx, t, tx.already)
 		return
@@ -415,9 +509,9 @@ func (s *Service) choose(ctx context.Context, t Tap, th store.Thread) {
 	tx := s.texts()
 	n, _ := strconv.Atoi(t.Choice)
 	props := Proposals(th)
-	if !store.ThreadOpen(th.State) || n > len(props) {
+	if !store.ThreadOpen(th.State) || n > len(props) || (t.Version != "" && t.Version != Version(props)) {
 		s.o.Log.Info("a tap on a proposal that is not there", "thread", t.Thread, "state", th.State, "choice", t.Choice,
-			"proposals", len(props))
+			"proposals", len(props), "outdated", t.Version != "" && t.Version != Version(props))
 		s.answer(ctx, t, tx.already)
 		return
 	}
@@ -433,6 +527,41 @@ func (s *Service) choose(ctx context.Context, t Tap, th store.Thread) {
 		if err := s.o.Tell(ctx, th.Person, done); err != nil {
 			s.o.Log.Warn("a tap's outcome could not be told", "thread", t.Thread, "person", th.Person, "error", err)
 		}
+	}
+}
+
+// other takes a tap on "other" (decision 17): Mira's question goes into the
+// thread's log; in Telegram also into the chat, and the person's next
+// message there is the turn; in the app the typed text is that turn.
+func (s *Service) other(ctx context.Context, t Tap, th store.Thread) {
+	tx := s.texts()
+	if !store.ThreadOpen(th.State) {
+		s.answer(ctx, t, tx.already)
+		return
+	}
+	labels := LabelsFor(i18n.DE)
+	if s.o.Labels != nil {
+		labels = s.o.Labels(ctx, th)
+	}
+	ask := labels.Ask
+	if err := s.o.Threads.Note(ctx, th.ID, ask); err != nil {
+		s.o.Log.Warn("could not note the question after other in the thread", "thread", th.ID, "error", err)
+	}
+	s.o.Log.Info("a thread's person wants to send something else", "thread", th.ID, "person", th.Person, "telegram", t.Telegram())
+	if !t.Telegram() {
+		if err := s.o.Turn(ctx, th.Person, t.HAUser, t.Reply); err != nil {
+			s.o.Log.Warn("a typed answer could not be a turn", "thread", t.Thread, "person", th.Person, "error", err)
+		}
+		return
+	}
+	s.answer(ctx, t, ask)
+	chat := s.chatEntity(ctx, t.Bot, t.Chat)
+	if chat == "" {
+		s.o.Log.Warn("could not ask what to send instead: the chat's notify entity is unknown", "thread", th.ID, "chat", t.Chat)
+		return
+	}
+	if err := s.o.HA.CallService(ctx, "telegram_bot", "send_message", map[string]any{"entity_id": chat, "message": ask}, nil); err != nil {
+		s.o.Log.Warn("could not ask what to send instead", "thread", th.ID, "chat", chat, "error", err)
 	}
 }
 

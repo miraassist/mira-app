@@ -1,7 +1,7 @@
 # Choices in a private question (buttons) – Spec
 
 Status 2026-11-24: decided (decision 1 by the maintainer, 2 to 12 taken while writing); the state table checked on
-the test HA (2026-11-24, the test HA's Telegram bot and the maintainer's phone); steps 2, 3 and 5 built; step 4 withdrawn. Scenarios: [private-choices.feature](private-choices.feature) (PC-01 to
+the test HA (2026-11-24, the test HA's Telegram bot and the maintainer's phone); steps 2, 3 and 5 built; step 4 withdrawn; step 6 being built. Scenarios: [private-choices.feature](private-choices.feature) (PC-01 to
 PC-10; PC-07 and PC-08 withdrawn).
 
 ## Goal
@@ -48,6 +48,20 @@ New is only the tap: buttons on the private message, and the tap as the answer.
 | 14 | Such a thread without a known person, or the person without a private channel | Taken while writing: the proposal is said in the turn as for any thread, with a log line naming the thread and why; the person may still answer by voice |
 | 12 | A typed answer | Unchanged: the Telegram message or the app's Assist is a turn of the person and finds the thread; the app's "Antworten" text (`reply_text`) is taken as such a turn |
 
+### Buttons that say what they do (2026-11-24, the maintainer, 1A, 2A, 3A)
+
+Seen in the first run with a reply to a mail: "Vorschlag 1" and "Nein" do not say what a tap does.
+
+| # | Question | Decision |
+|---|---|---|
+| 16 | Who names the buttons | The thread's target, `labels` per language (`de`, `en`): `yes`, `no` (a yes/no question), `choose` (a proposal, with `{n}` for its number), `other`, `dismiss` (with proposals), `ask` (the question after `other`). Mira takes the person's language; a label the target does not name is Mira's ("Ja", "Nein", "Vorschlag {n}", "Nein", "Was soll ich stattdessen schicken?"; no "other" button). `choose` without `{n}` is a problem of the skill. The mail skill: "Senden" / "Nicht senden" for a release, "Vorschlag {n} senden", "Was anderes senden", "Ignorieren", "Was soll ich stattdessen antworten?" (1A) |
+| 17 | The button "other" | Only when the target names `other`. Telegram: a tap answers the callback, removes the buttons, writes `ask` into the thread's log as Mira's and sends it into the chat; the person's next message there is a turn that sees the open thread with that question. The app: `other` is the action with a text field (`behavior: textInput`), the typed text is that turn (decision 12), with `ask` in the thread's log first |
+| 18 | What the turn does with it | The model writes up to three new proposals from the person's sentence into `proposals` and leaves the chosen field empty (3A); a thread of a target that asks privately sends the new proposals privately with their buttons again |
+| 19 | The app's three actions (2A) | With proposals: `choose` 1, `other` (text field), `dismiss`. The message lists all proposals; "2" or "3" typed into the field is a turn that picks it |
+| 20 | A chosen proposal is the yes | A tap on `choose`, or a turn that fills the chosen field with one of the proposals, is the person's yes: the thread finishes without a second question. Before, the fill made the thread propose and a private yes/no question was left until the finish withdrew it (seen 2026-11-24, six seconds; a delivery in between would have asked after the mail was sent) |
+| 21 | `dismiss` (and "Nein") with proposals | Ends the thread as declined also while it waits for a choice (before, a "Nein" with proposals was refused as "waits for no yes") |
+| 22 | A button of replaced proposals | A proposal's button carries a short mark of the proposals it belongs to (`/mira <id> 2.<mark>`, `mira:<id>:2.<mark>`; the first six hex digits of their SHA-256). A tap whose mark is not the thread's proposals' does nothing; Telegram's answer says "Das ist schon erledigt."; a log line. Seen while building: new proposals after a typed answer leave the old message's buttons in Telegram, whose "2" would send the new second proposal |
+
 ## The state table
 
 | # | Transition | Trigger | Signal | How Mira learns of it | Checked on the test HA |
@@ -87,3 +101,5 @@ with the number of questions but the ids of the open ones.
 4. ~~A tap on a pending confirmation~~ (decision 8, withdrawn): PC-07 and PC-08 withdrawn.
 5. **A thread that asks privately** (decisions 13 to 15): `private: true` on a target; the thread's id in its
    finish tool's `_meta`. PC-09, PC-10, PC-11. Built 2026-11-24.
+6. **Buttons that say what they do** (decisions 16 to 21): `labels` on a target, the button "other", new proposals
+   asked again, a chosen proposal as the yes, "dismiss" while waiting, the mark of the proposals. PC-12 to PC-18.
