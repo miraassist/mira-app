@@ -19,8 +19,9 @@ Both share one version: update them together.
 First the integration: see [miraassist/mira](https://github.com/miraassist/mira#get-started). Then the Mira
 service, one of:
 
-- **Home Assistant OS:** Settings → Apps → App store → Repositories → `https://github.com/miraassist/mira-app`,
-  then install and start **Mira**. In the integration's setup: Add integration → Mira, address
+- **Home Assistant OS:** [![Add the app repository to my Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmiraassist%2Fmira-app)
+  or Settings → Apps → App store → Repositories → `https://github.com/miraassist/mira-app`, then install and start
+  **Mira**. In the integration's setup: Add integration → Mira, address
   `http://localhost:8787`.
 - **Docker** on a machine in your home network: a `compose.yaml` in an empty folder, then `docker compose up -d`.
   Home Assistant then finds Mira under **Discovered**.
@@ -43,7 +44,8 @@ service, one of:
 Until version 0.30, the app came from `https://github.com/miraassist/mira`. Home Assistant's Marketplace takes no
 repository with an app any more, so the app is here now, and to Home Assistant it is another app. To move: copy
 `mira.yaml` from the old app's config folder (`/addon_configs/…_mira/`), add
-`https://github.com/miraassist/mira-app` under Settings → Apps → App store → Repositories, install Mira from there,
+`https://github.com/miraassist/mira-app` under Settings → Apps → App store → Repositories (or with the button
+above), install Mira from there,
 put `mira.yaml` into its config folder, start it, then remove the old app and the old repository. The integration
 stays where it was. Mira's memory, messages and other data stay with the old app; the new one starts without them.
 
