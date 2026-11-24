@@ -271,7 +271,7 @@ const groupLabel = (text, count, hint = "") => html`<div class="group-label"><sp
 const itemIcon = kind => svg`<svg class="mira-icon" viewBox="0 0 24 24" aria-hidden="true">${
   kind === "voice" ? svg`<path d="M4 9v6m4-10v14m4-17v20m4-17v14m4-10v6"/>` :
   kind === "agent" ? svg`<rect x="4" y="7" width="16" height="13" rx="3"/><path d="M12 7V3M8 12v2m8-2v2M9 17h6"/>` :
-  kind === "model" ? svg`<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4m6-4v4M9 18v4m6-4v4M2 9h4m-4 6h4m12-6h4m-4 6h4"/>` :
+  kind === "model" ? svg`<path d="M9 18h6m-5 3h4M12 3a6 6 0 0 0-3.8 10.6c.6.5.8 1.2.8 1.9V16h6v-.5c0-.7.2-1.4.8-1.9A6 6 0 0 0 12 3Z"/>` :
   kind === "hook" ? svg`<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6Z"/><path d="m9 12 2 2 4-4"/>` :
   svg`<path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z"/>`
 }</svg>`;
