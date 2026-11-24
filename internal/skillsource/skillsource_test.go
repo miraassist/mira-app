@@ -344,6 +344,9 @@ func TestBS16_ACompanionThatCannotBeAsked(t *testing.T) {
 		t.Errorf("tries: pro %d (want 3), other %d (want 1)", down.calls.Load(), refusing.calls.Load())
 	}
 	texts := problems[0].Text(i18n.DE) + " | " + problems[1].Text(i18n.DE)
+	if strings.Contains(texts, "%!") || !strings.Contains(texts, "antwortet 401") {
+		t.Errorf("a status is not written as a number: %q", texts)
+	}
 	if problems[0].Skill != "Pro" || !strings.Contains(texts, "Die Skills von Pro konnten nicht geladen werden") ||
 		problems[1].Skill != "Other" || !strings.Contains(texts, "Other lehnt Miras Token ab") {
 		t.Errorf("problems %q (%s, %s)", texts, problems[0].Skill, problems[1].Skill)
