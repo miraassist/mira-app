@@ -4,8 +4,8 @@
 # the page, and the syntax of the page's JavaScript (Node, from nvm when it is
 # not on the PATH). The integration is in its own repository
 # (miraassist/mira) with its own checks; with a checkout of it beside this one
-# (or MIRA_INTEGRATION naming it), the Go tests also check the interface: the
-# same version on both sides.
+# (or MIRA_INTEGRATION naming it), the Go tests also check the interface:
+# neither side's minimum version is above the other's version.
 #
 #   scripts/check.sh              # everything
 #   scripts/check.sh --release    # before a release: Go tests again, none from the cache

@@ -1725,11 +1725,11 @@ Für Fortgeschrittenes (mehrere Modelle, weitere MCP-Server, Skills mit Einstell
 
 ### Mira aktualisieren
 
-Mira besteht aus zwei Teilen, die beide aus demselben Release kommen: der **Integration** in Home Assistant und dem **Mira-Service** (die HA-App oder dein Container). Beide haben dieselbe Version.
+Mira besteht aus zwei Teilen: der **Integration** in Home Assistant und dem **Mira-Service** (die HA-App oder dein Container). Jeder Teil hat seine eigene Version und wird für sich aktualisiert; die Integration ändert sich seltener als der Service.
 
-- **Integration und HA-App:** Einstellungen → Updates zeigt beide. Erst die Integration aktualisieren, dann die HA-App (sie startet sich dabei selbst neu), dann Home Assistant einmal neu starten. Wird eins der beiden noch nicht angeboten, sorgt Mira dafür, dass Home Assistant gleich nachsieht; die HA-App kommt nach einem Release oft erst ein paar Minuten nach der Integration. Sonst hilft ein Neustart von Home Assistant.
+- **Integration und HA-App:** Einstellungen → Updates zeigt, was neu ist. Die HA-App startet sich beim Update selbst neu; nach einem Update der Integration startest du Home Assistant einmal neu. Wird eins der beiden noch nicht angeboten, sorgt Mira dafür, dass Home Assistant gleich nachsieht; die HA-App kommt nach einem Release oft erst ein paar Minuten nach der Integration. Sonst hilft ein Neustart von Home Assistant.
 - **Eigener Container:** im Ordner der `compose.yaml` `docker compose pull && docker compose up -d`. Deine Daten liegen in den Ordnern `config` und `data` und bleiben.
-- **Bis beide gleich sind**, steht unter Einstellungen → Reparaturen, welcher Teil älter ist. Mira arbeitet in der Zeit weiter.
+- **Ist ein Teil zu alt für den anderen**, steht unter Einstellungen → Reparaturen, welcher und auf welche Version er mindestens muss. Sonst dürfen beide verschiedene Versionen haben.
 
 **Updates für den Container in Home Assistant sehen:** [What's Up Docker (WUD)](https://getwud.github.io/wud/) beobachtet deine Container und meldet neue Versionen. Mit seinem MQTT-Auslöser erscheint ein Update für Mira unter Einstellungen → Updates wie bei der App. Neben Mira, auf demselben Rechner:
 

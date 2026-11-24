@@ -2,7 +2,8 @@
 
 Mira is a voice assistant for Home Assistant: conversations, tasks she keeps an eye on, memory and skills.
 This app runs the Mira service; the **Mira integration** (from the Marketplace, before Home Assistant 2026.11 from
-HACS) connects Home Assistant to it. Both share one version: update them together.
+HACS) connects Home Assistant to it. Each has its own version; if one is too old for the other, Settings → Repairs
+says which to update.
 
 ## Setup
 

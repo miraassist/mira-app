@@ -437,30 +437,30 @@ Between Home Assistant and the service there are two directions, on separate pat
 
 ## 10. Release and updates
 
-**One repository, one tag, one version.** This repository holds everything a user updates: the Mira service (Go),
-the integration (`custom_components/mira`, through HACS / Home Assistant's marketplace) and the HA app (`app/`, the
-app store's repository is this repository too, `repository.yaml` at its root). The service, the integration and the
-app carry one version (`cmd/mira/main.go`, `const.py`, `manifest.json`, `app/config.yaml`).
+**Two repositories, two versions** ([Two repositories](spec/repositories.md), [Versions](spec/versions.md)). This
+repository holds the Mira service (Go) and the HA app (`app/`, the app store's repository, `repository.yaml` at its
+root); the service and the app carry one version (`cmd/mira/main.go`, `app/config.yaml`). The integration is in
+miraassist/mira with its own version (`const.py`, `manifest.json`) and its own release: a tag there attaches
+`mira.zip`, which the Marketplace (HACS before Home Assistant 2026.11) offers. Each side names the oldest version of
+the other it works with (`MinIntegration`, `MIN_SERVICE`).
 
-**What a tag `vX.Y.Z` sets off** (`.github/workflows/release.yml`), three jobs one after the other:
+**What a tag `vX.Y.Z` sets off here** (`.github/workflows/release.yml`), three jobs one after the other:
 
-1. **release** (a few minutes): the tag must match `manifest.json` and `const.py`; `go test ./...`; the service as
-   binaries (amd64, arm64), `mira.example.yaml` and the integration as `mira.zip`, all attached to the GitHub release
-   with its notes, as a **draft**: nobody sees it yet.
+1. **release** (a few minutes): `go test ./...`; the service as binaries (amd64, arm64) and `mira.example.yaml`,
+   attached to the GitHub release with its notes, as a **draft**: nobody sees it yet.
 2. **image** (the longest step, two architectures): the container image `ghcr.io/miraassist/mira:X.Y.Z` (and
    `:X.Y`).
 3. **app**: only once the image exists, the workflow sets `version` in `app/config.yaml` to the tag and commits that
    to `main` ("App: version X.Y.Z"). Home Assistant offers an app update as soon as that version changes on `main`,
-   so it never offers one whose image is not there yet ([HA app](spec/app.md)). Then it **publishes the release**:
-   from here on HACS can see the new integration, in the same minute as the Supervisor can see the app. A failed
-   image or app job leaves the release a draft, and nothing is offered.
+   so it never offers one whose image is not there yet ([HA app](spec/app.md)). Then it **publishes the release**. A
+   failed image or app job leaves the release a draft, and nothing is offered.
 
-**Two updates, two clocks.** The user gets two updates under Settings → Updates, from the same repository but by two
-different ways, each checking on its own schedule:
+**Two updates, two clocks.** The user gets the updates under Settings → Updates by two different ways, each checking
+on its own schedule:
 
 | What | Who offers it | Looks at | Sees the new version |
 |---|---|---|---|
-| The integration | HACS (from Home Assistant 2026.11: Home Assistant's marketplace) | the GitHub release and its `mira.zip` | when HACS refreshes this repository: on its own schedule, and at a start of Home Assistant |
+| The integration | HACS (from Home Assistant 2026.11: Home Assistant's marketplace) | the GitHub release of miraassist/mira and its `mira.zip` | when HACS refreshes this repository: on its own schedule, and at a start of Home Assistant |
 | The HA app (the service) | the Supervisor's app store | `app/config.yaml` on `main` | when the Supervisor reloads the store: on its own schedule, or on "Check for updates" |
 
 HACS and the marketplace check installed repositories every 48 hours and at every start of Home Assistant (their
@@ -468,17 +468,16 @@ source); the Supervisor's interval is its own. So one of the two may be offered 
 2026-11-10: a user updated the app, Mira's repair said the integration was older, and its update was not offered
 until Home Assistant was restarted; after that update, a second restart.
 
-**So Mira asks for the other update herself** ([Versions](spec/versions.md), Both updates offered together): the
-integration sends its version with every request; a service newer than the integration asks the marketplace (or
-HACS) to look at the repository again at once; an integration newer than the service asks the Supervisor to reload
-the app store. Both once, both only a nudge: if it fails, the update comes at the next regular check.
+**So Mira asks for the needed update herself** ([Versions](spec/versions.md), Both updates offered together): the
+integration sends its version with every request; when it is below the service's `MinIntegration`, the service asks
+the marketplace (or HACS) to look at the integration's repository again at once; a service below the integration's
+`MIN_SERVICE` makes the integration ask the Supervisor to reload the app store. Both once, both only a nudge: if it
+fails, the update comes at the next regular check.
 
 **Meanwhile** both keep working: between the integration and the service every new field is optional in both
-directions, and a repair says which one to update until the versions match ([Versions](spec/versions.md)).
+directions. Different versions are fine; a repair says which one to update only when one is below the other's
+minimum ([Versions](spec/versions.md)).
 
-**The best way for a user:** update the integration (Settings → Updates), update the app (it restarts the service by
-itself, Home Assistant does not), then restart Home Assistant once. When only one of the two is offered, a restart
-of Home Assistant makes HACS look again (Mira asks for it by herself, see above).
-
-**Before a tag** (CLAUDE.md, Releasing): the version raised in all places but `app/config.yaml`, the guide updated,
-the changelog and the release notes written, `scripts/check.sh` passed, pushed to `origin`.
+**Before a tag** (CLAUDE.md, Releasing): the version raised (here `cmd/mira/main.go`; `app/config.yaml` follows by
+itself), the guide updated, the changelog and the release notes written, `scripts/check.sh` passed, pushed to
+`origin`.

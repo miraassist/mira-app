@@ -12,7 +12,7 @@ Mira is an always-on voice assistant for Home Assistant. She has two parts in tw
 | Integration (Marketplace) | [miraassist/mira](https://github.com/miraassist/mira) | Thin Assist conversation agent that forwards each turn to the Mira service |
 | Mira service (Go) and HA app | this one: `cmd/mira`, `internal/`, `app/` | Prompting, tools, memory, messages, security policy; the app runs the service in Home Assistant OS |
 
-Both share one version: update them together.
+Each has its own version; if one is too old for the other, Home Assistant's Repairs say which to update.
 
 ## Install the Mira service
 
@@ -70,12 +70,12 @@ scripts/check.sh                                      # all CI checks, before a 
 
 `testenv/` holds a throwaway Home Assistant for tests against a real HA; see [testenv/README.md](testenv/README.md).
 It mounts the integration from a checkout of [miraassist/mira](https://github.com/miraassist/mira) beside this one
-(or `MIRA_INTEGRATION` in `testenv/.env` naming it); `scripts/check.sh` then also checks that both sides have the
-same version.
+(or `MIRA_INTEGRATION` in `testenv/.env` naming it); `scripts/check.sh` then also checks that neither side's minimum
+is above the other's version.
 
-Releases: the Mira service and the integration share one version. Bump it in `cmd/mira/main.go` here, and in the
-integration's `const.py` and `manifest.json`; then tag `vX.Y.Z` here first (the image and the app), then the same tag
-in the integration's repository.
+Releases: the service has its own version (`cmd/mira/main.go`); tag `vX.Y.Z` here. It names the oldest integration
+it works with (`MinIntegration` in `internal/ha/updates`), raised only when an older integration would fail; such a
+release says so first in its notes ([Versions](docs/spec/versions.md)).
 
 ## License
 

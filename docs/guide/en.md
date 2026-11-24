@@ -1701,11 +1701,11 @@ For advanced setups (several models, more MCP servers, skills with settings) the
 
 ### Updating Mira
 
-Mira has two parts, both from the same release: the **integration** in Home Assistant and the **Mira service** (the HA app or your container). Both carry the same version.
+Mira has two parts: the **integration** in Home Assistant and the **Mira service** (the HA app or your container). Each has its own version and is updated on its own; the integration changes less often than the service.
 
-- **Integration and HA app:** Settings → Updates shows both. Update the integration first, then the HA app (it restarts itself), then restart Home Assistant once. If one of the two is not offered yet, Mira makes Home Assistant look again at once; after a release the HA app often comes a few minutes after the integration. Otherwise a restart of Home Assistant helps.
+- **Integration and HA app:** Settings → Updates shows what is new. The HA app restarts itself when updated; after an update of the integration, restart Home Assistant once. If one of the two is not offered yet, Mira makes Home Assistant look again at once; after a release the HA app often comes a few minutes after the integration. Otherwise a restart of Home Assistant helps.
 - **Your own container:** in the folder of `compose.yaml`, `docker compose pull && docker compose up -d`. Your data is in the folders `config` and `data` and stays.
-- **Until both match**, Settings → Repairs says which part is older. Mira keeps working meanwhile.
+- **If one part is too old for the other**, Settings → Repairs says which one and the version it needs at least. Otherwise both may have different versions.
 
 **Seeing the container's updates in Home Assistant:** [What's Up Docker (WUD)](https://getwud.github.io/wud/) watches your containers and reports new versions. With its MQTT trigger an update for Mira shows under Settings → Updates like the app's. Next to Mira, on the same machine:
 

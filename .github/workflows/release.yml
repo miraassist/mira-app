@@ -1,14 +1,13 @@
 name: Release
 
-# The service and the integration (its own repository, miraassist/mira) share
-# one version; each repository releases its side with the same tag vX.Y.Z.
-# Here: the service's binaries are attached and the image goes to
+# The service has its own version; the integration (its own repository,
+# miraassist/mira) has its own and is released apart (docs/spec/versions.md,
+# Minimum versions instead of one version). Here: the service's binaries are attached and the image goes to
 # ghcr.io/miraassist/mira (amd64, arm64). Once the image is there, the Home
 # Assistant app (app/config.yaml) gets the version, so Home Assistant never
 # offers an update whose image does not exist yet (docs/spec/app.md). The
 # release is a draft until then and is published last; a failed image or app
-# job leaves it a draft, and nothing is offered. The integration's release
-# follows (docs/spec/versions.md, Both updates offered together).
+# job leaves it a draft, and nothing is offered.
 on:
   push:
     tags: ["v*"]

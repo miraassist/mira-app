@@ -1,8 +1,8 @@
 # Integration and service in different versions
 
 Status 2026-10-26: built (the rule for the interface, the repair, the first places that follow it). 2026-11-24:
-"Minimum versions instead of one version" decided (the maintainer), not built; it replaces the repair below and the
-one version for both. See also [HA connection](ha-integration.md).
+"Minimum versions instead of one version" decided (the maintainer) and built (steps 1 to 3); it replaces the repair
+below and the one version for both. See also [HA connection](ha-integration.md).
 
 ## Why
 
@@ -40,7 +40,7 @@ leniently, before it becomes part of the file.
 - **The answers** the integration reads (`/v1/health`, `/v1/status`, …) are read with defaults (`.get`), except
   fields every service has sent from the start (`id`, a problem's `name`).
 
-## Minimum versions instead of one version (decided 2026-11-24, not built)
+## Minimum versions instead of one version (decided and built 2026-11-24)
 
 ### Why
 
@@ -111,10 +111,11 @@ service are updated on their own; Mira says under Repairs when one is too old fo
 ### Steps
 
 1. **The service**: `MinIntegration`, the field in `/v1/status` and `/v1/health`, the Marketplace's refresh below
-   the minimum. VE-07, VE-08.
+   the minimum. VE-07, VE-08. Built 2026-11-24.
 2. **The integration**: `MIN_SERVICE`, the two repairs (de, en), the old one deleted, the store reload below the
-   minimum. VE-09 to VE-12.
+   minimum. VE-09 to VE-12 (pytest in miraassist/mira). Built 2026-11-24.
 3. **Releasing and checking**: the check across both checkouts, the version test gone, the texts above. VE-13.
+   Built 2026-11-24.
 
 ### Scenarios
 
@@ -130,7 +131,7 @@ service are updated on their own; Mira says under Repairs when one is too old fo
 - **VE-12** A version that is no `x.y.z` (`dev`) makes no repair.
 - **VE-13** `scripts/check.sh` fails when a minimum is above the other checkout's version.
 
-## The repair: which one to update (replaced by the minimums above, once built)
+## The repair: which one to update (replaced 2026-11-24 by the minimums above)
 
 The integration compares its own version with the service's, by major and minor (0.7 against 0.9); a patch apart is
 fine.
