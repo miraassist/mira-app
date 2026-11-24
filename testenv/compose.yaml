@@ -17,7 +17,9 @@ services:
       TZ: Europe/Berlin
     volumes:
       - ./ha:/config
-      - ../custom_components/mira:/config/custom_components/mira:ro
+      # The integration from its own repository (miraassist/mira): its checkout beside
+      # this one, or MIRA_INTEGRATION in testenv/.env naming it.
+      - ${MIRA_INTEGRATION:-../../mira}/custom_components/mira:/config/custom_components/mira:ro
       # Fake TECHO5 devices (Show, Echo) for tests without real hardware.
       - ./techo5_fake:/config/custom_components/techo5_fake:ro
       # A fake Zigbee2MQTT bridge on the test broker (docs/spec/device-onboarding.md).

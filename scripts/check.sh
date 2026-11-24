@@ -1,18 +1,23 @@
 #!/usr/bin/env bash
 # Run the CI checks locally before a push: gofmt, go vet, staticcheck, go test -race,
-# ruff (lint and format) and pytest for the integration, the syntax of the
-# page's JavaScript (Node, from nvm when it is not on the PATH), and Home
-# Assistant's hassfest (Docker image).
-# The HACS validation needs the GitHub repository and only runs in CI.
+# ruff (lint and format) and pytest for the tests of the fake devices and of
+# the page, and the syntax of the page's JavaScript (Node, from nvm when it is
+# not on the PATH). The integration is in its own repository
+# (miraassist/mira) with its own checks; with a checkout of it beside this one
+# (or MIRA_INTEGRATION naming it), the Go tests also check the interface: the
+# same version on both sides.
 #
 #   scripts/check.sh              # everything
-#   scripts/check.sh --no-docker  # without hassfest
 #   scripts/check.sh --release    # before a release: Go tests again, none from the cache
 set -euo pipefail
 
 repo=$(cd "$(dirname "$0")/.." && pwd)
 cd "$repo"
-docker=1
+# The integration's checkout, for the checks of the interface.
+export MIRA_INTEGRATION="${MIRA_INTEGRATION:-$repo/../mira}"
+if [[ ! -f "$MIRA_INTEGRATION/custom_components/mira/manifest.json" ]]; then
+	echo "no integration at $MIRA_INTEGRATION: the interface is not checked (set MIRA_INTEGRATION)"
+fi
 # staticcheck 2026.2.2; the same version as in .github/workflows/ci.yml.
 staticcheck_version=v0.8.2
 # ruff with its default rules; the same version as in .github/workflows/ci.yml.
@@ -22,7 +27,6 @@ ruff_version=0.17.3
 count=()
 for arg in "$@"; do
 	case "$arg" in
-	--no-docker) docker=0 ;;
 	--release) count=(-count=1) ;;
 	*)
 		echo "unknown option: $arg"
@@ -74,8 +78,8 @@ else
 fi
 
 step ruff
-uvx "ruff@$ruff_version" check custom_components tests
-uvx "ruff@$ruff_version" format --check custom_components tests
+uvx "ruff@$ruff_version" check tests
+uvx "ruff@$ruff_version" format --check tests
 
 step pytest
 if [[ -x .venv/bin/pytest ]]; then
@@ -97,11 +101,5 @@ if ! command -v node >/dev/null; then
 fi
 node scripts/check-js.mjs
 
-if ((docker)); then
-	step hassfest
-	out=$(docker run --rm -v "$repo":/github/workspace ghcr.io/home-assistant/hassfest 2>&1 || true)
-	grep -v -E '^Validating ' <<<"$out"
-	grep -q '^Invalid integrations: 0$' <<<"$out"
-fi
 
 printf '\nall checks passed\n'

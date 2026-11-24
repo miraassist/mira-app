@@ -1604,7 +1604,7 @@ def pre_tool(call, verdict):
 - Your rules run first, Mira's after them, and the strictest always wins. The only one you can loosen is Mira's default rule `critical.star` (what asks for a yes), by creating a file of your own with that name. The system rules, which guard against slipped-in instructions, always stay.
 - A rule sees labels by their **id**, not by their name: the label "Mira: confirm first" is `mira_confirm`, whatever language it is named in and even if you rename it. A rule that compares the name breaks with the next rename.
 - If a file does not load, Home Assistant reports it under **Repairs**, and Mira works on without it.
-- What a rule sees is in the [specification](https://github.com/miraassist/mira/blob/main/docs/spec/hooks.md).
+- What a rule sees is in the [specification](https://github.com/miraassist/mira-app/blob/main/docs/spec/hooks.md).
 
 ## Commands
 
@@ -1630,7 +1630,7 @@ You need no config file. Three steps:
 
 **1. Install the integration.** In Home Assistant: Settings → Marketplace → **Add from link**, enter `https://github.com/miraassist/mira` as the GitHub link, **Add**. The first time, the Marketplace asks to connect GitHub: follow the link, enter the code shown, approve. Then open **Mira**, **Install**, restart Home Assistant. (Before Home Assistant 2026.11 through HACS: Custom repositories → the same address, type Integration.)
 
-**2. Start Mira.** With Home Assistant OS as an app: Settings → Apps → App store → Repositories → add `https://github.com/miraassist/mira`, then install and start **Mira**. In step 3 Mira is then not under **Discovered**: **Add integration** → **Mira**, with the address `http://localhost:8787`.
+**2. Start Mira.** With Home Assistant OS as an app: Settings → Apps → App store → Repositories → add `https://github.com/miraassist/mira-app`, then install and start **Mira**. In step 3 Mira is then not under **Discovered**: **Add integration** → **Mira**, with the address `http://localhost:8787`.
 
 Otherwise on the Docker machine: in an empty folder create the file `compose.yaml` and run `docker compose up -d`:
 
@@ -1694,7 +1694,7 @@ Otherwise:
 
 **Security while setting up:** A new Mira pairs with the first Home Assistant that completes pairing, without a code. So set it up in your own home network, not in a guest or shared network. Had someone beaten you to it, you would notice at once: your dialog would ask for a code. Reset Mira's data then (see above) and set it up anew.
 
-For advanced setups (several models, more MCP servers, skills with settings) there is the file `mira.yaml`; see [mira.example.yaml](https://github.com/miraassist/mira/blob/main/mira.example.yaml). What you set in the integration wins over the file.
+For advanced setups (several models, more MCP servers, skills with settings) there is the file `mira.yaml`; see [mira.example.yaml](https://github.com/miraassist/mira-app/blob/main/mira.example.yaml). What you set in the integration wins over the file.
 
 ### Updating Mira
 

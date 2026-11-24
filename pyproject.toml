@@ -1,5 +1,6 @@
-# Python tooling for the Home Assistant integration in custom_components/mira.
-# The agent itself is Go; see go.mod.
+# Python tooling for the tests of the fake devices in testenv (tests/ha) and of
+# Mira's page (tests/ui). The service itself is Go; see go.mod. The integration
+# is in its own repository, miraassist/mira.
 [project]
 name = "mira-ha"
 version = "0.1.0"

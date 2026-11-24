@@ -5,7 +5,7 @@ blueprint:
     oder sagt den Stand; Mira legt das Skript für den Skill flug an.
     mira-version: 4
   domain: script
-  source_url: https://github.com/miraassist/mira/blob/main/skills/flug/blueprints/flug.yaml
+  source_url: https://github.com/miraassist/mira-app/blob/main/skills/flug/blueprints/flug.yaml
 
 mode: queued
 fields:

@@ -75,7 +75,10 @@ adds a gap: the GitHub release (the integration) is out minutes before the app's
 **What changes:**
 
 1. **The release comes out last.** The release job makes the GitHub release as a draft; the app job, after the image
-   and the app's version, publishes it. Integration and app become visible in the same minute. (A draft is not seen
+   and the app's version, publishes it. Integration and app become visible in the same minute. **Since 2026-11-24 the
+   integration is in its own repository** ([Two repositories](repositories.md)): the service's and app's release
+   comes first, the integration's (the same tag in miraassist/mira) right after; step 2 makes its update show at
+   once. (A draft is not seen
    by the marketplace: assumption, checked at the first release with it.) If the image or the app job fails, the
    release stays a draft: nothing is offered, the workflow's run shows why.
 2. **Mira asks the marketplace to look again.** When the integration is older than the service, the Mira service

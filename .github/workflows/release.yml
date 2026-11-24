@@ -1,14 +1,14 @@
 name: Release
 
-# Agent and integration share one version. A tag vX.Y.Z releases both: the Marketplace
-# picks the tag up for the integration, the agent binaries are attached and
-# the image goes to ghcr.io/<owner>/mira (amd64, arm64). Once the image is
-# there, the Home Assistant app (app/config.yaml) gets the version, so Home
-# Assistant never offers an update whose image does not exist yet
-# (docs/spec/app.md). The release is a draft until then and is published
-# last, so the integration's update and the app's come out together
-# (docs/spec/versions.md, Both updates offered together); a failed image or
-# app job leaves it a draft, and nothing is offered.
+# The service and the integration (its own repository, miraassist/mira) share
+# one version; each repository releases its side with the same tag vX.Y.Z.
+# Here: the service's binaries are attached and the image goes to
+# ghcr.io/miraassist/mira (amd64, arm64). Once the image is there, the Home
+# Assistant app (app/config.yaml) gets the version, so Home Assistant never
+# offers an update whose image does not exist yet (docs/spec/app.md). The
+# release is a draft until then and is published last; a failed image or app
+# job leaves it a draft, and nothing is offered. The integration's release
+# follows (docs/spec/versions.md, Both updates offered together).
 on:
   push:
     tags: ["v*"]
@@ -22,21 +22,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Integration version matches the tag
-        run: |
-          want="${GITHUB_REF_NAME#v}"
-          got="$(jq -r .version custom_components/mira/manifest.json)"
-          if [ "$want" != "$got" ]; then
-            echo "manifest.json says $got, tag says $want" >&2
-            exit 1
-          fi
-          # The version the integration compares with the agent's
-          # (0.16.0 went out with 0.15.2 here).
-          code="$(sed -n 's/^VERSION = "\(.*\)"$/\1/p' custom_components/mira/const.py)"
-          if [ "$want" != "$code" ]; then
-            echo "const.py says $code, tag says $want" >&2
-            exit 1
-          fi
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
@@ -50,12 +35,6 @@ jobs:
               -o "dist/mira-linux-$arch" ./cmd/mira
           done
           cp mira.example.yaml dist/
-      - name: Integration as a zip for HACS
-        # HACS installs the integration from this asset (hacs.json: zip_release),
-        # so GitHub counts its downloads (docs/spec/hacs-default.md, decision 4).
-        # Only the tracked files, at the zip's root: HACS unpacks it into
-        # custom_components/mira.
-        run: git archive --format=zip -o dist/mira.zip "HEAD:custom_components/mira"
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
           files: dist/*
@@ -77,7 +56,8 @@ jobs:
       - id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
         with:
-          images: ghcr.io/${{ github.repository }}
+          # The image keeps its name from before the integration moved out.
+          images: ghcr.io/miraassist/mira
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}

@@ -26,30 +26,16 @@ jobs:
       - name: coverage
         run: go tool cover -func=coverage.out | tail -1 | tee -a "$GITHUB_STEP_SUMMARY"
 
-  integration:
-    name: HA integration
+  fakes:
+    name: Fake devices
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       # ruff with its default rules; the same version as in scripts/check.sh.
-      - run: uvx ruff@0.17.3 check custom_components tests
-      - run: uvx ruff@0.17.3 format --check custom_components tests
+      - run: uvx ruff@0.17.3 check tests
+      - run: uvx ruff@0.17.3 format --check tests
       # The fake speaker reads a sound's length with ffprobe (docs/spec/fake-devices.md).
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: uv venv --python 3.14 && uv pip install -r requirements_test.txt
       - run: uv run --no-project python -m pytest
-
-  hassfest:
-    name: hassfest
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: home-assistant/actions/hassfest@86d4564712fa02543c808e3a693dd04f9d3f8361 # master
-  hacs:
-    name: HACS validation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: hacs/action@1ebf01c408f29afcb6406bd431bc98fd8cbb15aa # main
-        with:
-          category: integration

@@ -17,7 +17,7 @@ No config file is needed. For what goes beyond the setup (more models, skills wi
 is in this app's config folder (`/addon_configs/…_mira/mira.yaml`). What a skill brings along is kept there too: its
 program in `programs/` (such as korb for the skill `rewe`) and the skill's own folder in `skill-data/<skill>` (a login,
 say); both are in the app's backups. The guide explains everything else:
-<https://github.com/miraassist/mira/blob/main/docs/guide/en.md>.
+<https://github.com/miraassist/mira-app/blob/main/docs/guide/en.md>.
 
 ## Data
 

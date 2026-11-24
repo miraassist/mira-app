@@ -1,8 +1,10 @@
 # Working on Mira
 
-Mira is a voice assistant for Home Assistant: the Mira service (Go, `cmd/mira`, `internal/`), the Home Assistant
-integration (`custom_components/mira`), the HA app that runs the service (`app/`), and the skills (`skills/`). Mira
-FRITZ!Box ([miraassist/mira-fritz](https://github.com/miraassist/mira-fritz)) follows the same rules.
+Mira is a voice assistant for Home Assistant: the Mira service (Go, `cmd/mira`, `internal/`), the HA app that runs
+the service (`app/`) and the skills (`skills/`) are in this repository (miraassist/mira-app); the Home Assistant
+integration is in its own, [miraassist/mira](https://github.com/miraassist/mira), checked out beside this one
+(`MIRA_INTEGRATION` names another place; [Two repositories](docs/spec/repositories.md)). Mira FRITZ!Box
+([miraassist/mira-fritz](https://github.com/miraassist/mira-fritz)) follows the same rules.
 
 ## How work goes
 

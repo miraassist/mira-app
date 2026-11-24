@@ -1628,7 +1628,7 @@ def pre_tool(call, verdict):
 - Deine Regeln laufen zuerst, Miras danach, und es gilt immer das Strengste. Lockern kannst du nur Miras Standard-Regel `critical.star` (was nach einem Ja fragt), indem du eine eigene Datei mit diesem Namen anlegst. Die System-Regeln, die vor untergeschobenen Anweisungen schützen, bleiben immer.
 - Labels sieht eine Regel an ihrer **ID**, nicht an ihrem Namen: Das Label „Mira: nachfragen“ ist `mira_confirm`, egal in welcher Sprache es heißt oder ob du es umbenennst. Eine Regel, die den Namen vergleicht, geht beim nächsten Umbenennen kaputt.
 - Lädt eine Datei nicht, meldet Home Assistant das unter **Reparaturen**, und Mira arbeitet ohne sie weiter.
-- Was eine Regel alles sieht, steht in der [Spezifikation](https://github.com/miraassist/mira/blob/main/docs/spec/hooks.md).
+- Was eine Regel alles sieht, steht in der [Spezifikation](https://github.com/miraassist/mira-app/blob/main/docs/spec/hooks.md).
 
 ## Befehle
 
@@ -1654,7 +1654,7 @@ Eine Config-Datei brauchst du nicht. Drei Schritte:
 
 **1. Die Integration installieren.** In Home Assistant: Einstellungen → Marketplace → **Über Link hinzufügen**, als GitHub-Link `https://github.com/miraassist/mira` eintragen, **Hinzufügen**. Beim ersten Mal fragt der Marketplace nach einer Verbindung mit GitHub: dem Link folgen, den angezeigten Code eingeben, bestätigen. Dann **Mira** öffnen, **Installieren**, Home Assistant neu starten. (Vor Home Assistant 2026.11 über HACS: Benutzerdefinierte Repositories → dieselbe Adresse, Typ Integration.)
 
-**2. Mira starten.** Mit Home Assistant OS als App: Einstellungen → Apps → App-Store → Repositories → `https://github.com/miraassist/mira` hinzufügen, dann **Mira** installieren und starten. In Schritt 3 steht Mira dann nicht unter **Entdeckt**: **Integration hinzufügen** → **Mira**, als Adresse `http://localhost:8787`.
+**2. Mira starten.** Mit Home Assistant OS als App: Einstellungen → Apps → App-Store → Repositories → `https://github.com/miraassist/mira-app` hinzufügen, dann **Mira** installieren und starten. In Schritt 3 steht Mira dann nicht unter **Entdeckt**: **Integration hinzufügen** → **Mira**, als Adresse `http://localhost:8787`.
 
 Sonst auf dem Docker-Rechner: In einem leeren Ordner die Datei `compose.yaml` anlegen und `docker compose up -d` aufrufen:
 
@@ -1718,7 +1718,7 @@ Und sonst:
 
 **Sicherheit beim Einrichten:** Eine neue Mira koppelt sich mit dem ersten Home Assistant, der das Koppeln abschließt, ohne Code. Richte sie deshalb im eigenen Heimnetz ein, nicht in einem Gästenetz oder geteilten Netz. Hätte dir jemand zuvorgekommen, merkst du es sofort: Dein Dialog fragt dann nach einem Code. Setze Miras Daten dann zurück (siehe oben) und richte sie neu ein.
 
-Für Fortgeschrittenes (mehrere Modelle, weitere MCP-Server, Skills mit Einstellungen) gibt es die Datei `mira.yaml`, siehe [mira.example.yaml](https://github.com/miraassist/mira/blob/main/mira.example.yaml). Was du in der Integration einstellst, gilt vor der Datei.
+Für Fortgeschrittenes (mehrere Modelle, weitere MCP-Server, Skills mit Einstellungen) gibt es die Datei `mira.yaml`, siehe [mira.example.yaml](https://github.com/miraassist/mira-app/blob/main/mira.example.yaml). Was du in der Integration einstellst, gilt vor der Datei.
 
 ### Mira aktualisieren
 

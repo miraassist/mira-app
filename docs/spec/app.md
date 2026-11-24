@@ -16,7 +16,8 @@ with the repair from [Versions](versions.md) when the two drift apart.
 ## What an app is made of
 
 - **A repository** Home Assistant is given once (Settings → Apps → App store → Repositories): a
-  `repository.yaml` (name, maintainer, address) and a folder per app.
+  `repository.yaml` (name, maintainer, address) and a folder per app. Since 2026-11-24 it is
+  `https://github.com/miraassist/mira-app`, apart from the integration ([Two repositories](repositories.md)).
 - **The app's `config.yaml`:** name, `version`, `slug` (`mira`), description, the architectures (`amd64`,
   `aarch64`, the ones the image is built for), the image, the port (8787), what it may reach, and which folders it
   gets.
