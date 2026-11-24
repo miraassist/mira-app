@@ -45,7 +45,7 @@ repository with an app any more, so the app is here now, and to Home Assistant i
 `mira.yaml` from the old app's config folder (`/addon_configs/…_mira/`), add
 `https://github.com/miraassist/mira-app` under Settings → Apps → App store → Repositories, install Mira from there,
 put `mira.yaml` into its config folder, start it, then remove the old app and the old repository. The integration
-stays where it was.
+stays where it was. Mira's memory, messages and other data stay with the old app; the new one starts without them.
 
 More: [Installing Mira in detail](docs/install.md) · the guide's setup: [Deutsch](docs/guide/de.md#einrichtung) ·
 [English](docs/guide/en.md#setup).
