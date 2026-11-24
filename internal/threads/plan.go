@@ -233,9 +233,16 @@ func (m *Manager) StartAt(ctx context.Context, b Begin) (store.Thread, error) {
 		th.State = store.ThreadWaiting
 		m.logEntry(&th, "mira", th.Request)
 	}
+	// The agents of its fields whose input is there start with it
+	// (docs/spec/inbox.md, decision 44).
+	var launches []launch
+	if !sk.Target.Plan {
+		launches = m.dispatch(&th)
+	}
 	if err := m.save(ctx, &th); err != nil {
 		return store.Thread{}, err
 	}
+	m.start(ctx, th, launches)
 	m.log.Info("thread started", "thread", th.ID, "target", target, "place", th.Place, "by", "code", "source", th.Source)
 	return th, nil
 }

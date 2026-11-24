@@ -315,3 +315,94 @@ func TestPC15_AChosenProposalIsTheYes(t *testing.T) {
 		t.Errorf("asked %q", *asked3)
 	}
 }
+
+// agentChoiceEnv: a target that asks privately whose proposals an agent
+// writes from the mail's question (docs/spec/inbox.md, decision 44).
+func agentChoiceEnv(t *testing.T, askErr error) (*env, *[]string, *[]string, *[]string) {
+	t.Helper()
+	e := setup(t)
+	var asked, dispatched, told []string
+	sk := skills.Skill{Name: "antwort", Description: "Antwortet", Target: &skills.Target{
+		Fields: []skills.TargetField{{Name: "to"}, {Name: "subject"}, {Name: "question", Optional: true}, {Name: "body"},
+			{Name: "proposals", Optional: true, Agent: "antwort.schreiben", Input: map[string]any{"input": "{{ question }}"}}},
+		Private: true, Confirm: true, Chosen: "body",
+		Finish: skills.Finish{Name: skills.FinishTool, Tool: "antwort__send"},
+	}}
+	e.m = New(Options{Lang: i18n.DE, Store: e.st, Targets: []skills.Skill{sk}, Clock: e.clk,
+		RunTool: func(context.Context, string, json.RawMessage, bool, string) (string, bool, error) {
+			return "ok", false, nil
+		},
+		Dispatch: func(_ context.Context, th store.Thread, into, agent, callID string, input json.RawMessage) error {
+			dispatched = append(dispatched, into+" "+agent+" "+callID+" "+string(input))
+			return nil
+		},
+		Deliver: func(_ context.Context, n store.Message, _ string) error {
+			told = append(told, n.Receiver+": "+n.Spoken)
+			return nil
+		},
+		AskPrivately: func(_ context.Context, th store.Thread, text string) error {
+			if askErr != nil {
+				return askErr
+			}
+			asked = append(asked, th.Person+": "+th.Fields["proposals"])
+			return nil
+		}})
+	return e, &asked, &dispatched, &told
+}
+
+func (e *env) questionFinding(t *testing.T) store.Thread {
+	t.Helper()
+	th, err := e.m.StartAt(context.Background(), Begin{Target: "antwort", Person: "anna", Request: "Maler: Donnerstag oder Freitag?",
+		Fields:   map[string]string{"to": "maler@example.org", "subject": "Re: Termin", "question": "Passt Ihnen Donnerstag oder Freitag?"},
+		Deadline: e.clk.Now().Add(48 * time.Hour), Source: "mail:x:1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return th
+}
+
+// IN-65 A finding's field agent starts with its thread
+func TestIN65_AFindingsFieldAgentStartsWithItsThread(t *testing.T) {
+	e, asked, dispatched, _ := agentChoiceEnv(t, nil)
+	// When a document gives Anna a finding of that kind, with the question filled
+	th := e.questionFinding(t)
+	// Then the agent starts with the thread, and nothing is asked yet
+	if len(*dispatched) != 1 || !strings.HasPrefix((*dispatched)[0], "proposals antwort.schreiben ") ||
+		!strings.Contains((*dispatched)[0], `"Passt Ihnen Donnerstag oder Freitag?"`) {
+		t.Fatalf("dispatched %q", *dispatched)
+	}
+	if !e.m.AskFinding(context.Background(), th) || len(*asked) != 0 {
+		t.Errorf("asked %q", *asked)
+	}
+}
+
+// IN-66 The finding is asked privately when its proposals arrive
+func TestIN66_TheFindingIsAskedPrivatelyWhenItsProposalsArrive(t *testing.T) {
+	e, asked, dispatched, _ := agentChoiceEnv(t, nil)
+	ctx := context.Background()
+	th := e.questionFinding(t)
+	call := strings.Fields((*dispatched)[0])[2]
+	// When the agent's proposals arrive
+	e.m.AgentResult(ctx, th.ID, "proposals", store.AgentRun{CallID: call, Agent: "antwort.schreiben", Status: "done",
+		Output: "Donnerstag passt.\nLieber Freitag.\nIch melde mich."})
+	// Then Anna is asked privately with them and their buttons
+	if len(*asked) != 1 || (*asked)[0] != "anna: Donnerstag passt.\nLieber Freitag.\nIch melde mich." {
+		t.Fatalf("asked %q", *asked)
+	}
+	// And when the agent fails, the thread tells Anna as its message
+	e2, asked2, dispatched2, told2 := agentChoiceEnv(t, nil)
+	th2 := e2.questionFinding(t)
+	call2 := strings.Fields((*dispatched2)[0])[2]
+	e2.m.AgentResult(ctx, th2.ID, "proposals", store.AgentRun{CallID: call2, Agent: "antwort.schreiben", Status: "failed", Error: "model down"})
+	if len(*asked2) != 0 || len(*told2) != 1 || !strings.HasPrefix((*told2)[0], "anna: ") {
+		t.Errorf("asked %q told %q", *asked2, *told2)
+	}
+	// Without a private channel, the proposals come as the thread's message.
+	e3, _, dispatched3, told3 := agentChoiceEnv(t, errors.New("anna has no private channel"))
+	th3 := e3.questionFinding(t)
+	call3 := strings.Fields((*dispatched3)[0])[2]
+	e3.m.AgentResult(ctx, th3.ID, "proposals", store.AgentRun{CallID: call3, Agent: "antwort.schreiben", Status: "done", Output: "A.\nB."})
+	if len(*told3) != 1 || !strings.Contains((*told3)[0], "A.\nB.") {
+		t.Errorf("told %q", *told3)
+	}
+}

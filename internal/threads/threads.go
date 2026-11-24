@@ -964,6 +964,12 @@ func (m *Manager) AskFinding(ctx context.Context, th store.Thread) bool {
 		m.log.Info("a private finding is announced: no person known", "thread", th.ID, "target", th.Target)
 		return false
 	}
+	// Its proposals still to come from an agent: asked when they arrive
+	// (docs/spec/inbox.md, decision 44).
+	if sk.Target.Chosen != "" && strings.TrimSpace(th.Fields["proposals"]) == "" && th.Calls["proposals"] != "" {
+		m.log.Info("a private finding is asked once its proposals are there", "thread", th.ID, "person", th.Person)
+		return true
+	}
 	if err := m.opts.AskPrivately(ctx, th, privateText(sk, th)); err != nil {
 		m.log.Info("a private finding is announced", "thread", th.ID, "person", th.Person, "error", err)
 		return false

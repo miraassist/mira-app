@@ -537,6 +537,8 @@ inbox, with what the model fills and the tool that finishes it.
 
 | 43 | A finding of a target that asks privately (2026-11-24, the maintainer, A; building decision 42) | When the taking skill's target has `private: true` ([Private choices](private-choices.md), decision 13), Mira sends the finding's thread privately to the person at once, when it starts: the request (the item's line) and the fields, with its buttons (the proposals when the target has `chosen`, else "Ja" and "Nein"). No entry goes into the person's message, so nothing is announced at a speaker. When it cannot (the person has no private channel), the entry goes into the message as for every finding and is announced by the skill's `## Ansage`, with a log line (as private-choices.md, decision 14) |
 
+| 44 | A field of a finding that an agent fills (2026-11-24, the maintainer, B: answers written by a skill's agent with tools) | A thread started from a reading starts the agents of its fields whose input is there, as a thread does when a turn fills it ([Agents](agents.md), Continuation). A finding of a target that asks privately whose proposals an agent writes is asked when they arrive (decision 43 then), not at its start; until then no entry. The agent fails, or the person has no private channel: the thread says so to its person as a message of the thread (Agents, Continuation: "the thread asks the user for that field"), and a log line |
+
 **Fails:** a skill's `inbox.extract` missing while it takes a kind → read as before (decision 38); a `finish: {tool}`
 naming a tool of another skill → a problem of the skill ("unknown finish"), it does not start; the model names a kind no switched-on skill takes → the item is left out with a
 log line (as today); the finishing tool missing (its server down) → the thread's error, said to the person.
@@ -610,6 +612,8 @@ photos over Telegram (`telegram_attachment` with caption and
 12. **A finding asked privately** (section 9, decision 43): a finding of a target with `private: true` goes to the
     person privately at its start, without an entry; without a private channel, the entry as before. IN-63, IN-64.
     Built 2026-11-24.
+13. **Agents for a finding's fields** (section 9, decision 44): started with the thread; a private finding asked
+    when its proposals are there. IN-65, IN-66.
 
 ## Test
 

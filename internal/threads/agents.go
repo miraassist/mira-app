@@ -204,6 +204,15 @@ func (m *Manager) AgentResult(ctx context.Context, id, into string, rec store.Ag
 	}
 	m.log.Info("agent result in thread", "thread", id, "agent", rec.Agent, "into", into, "status", rec.Status)
 	m.start(ctx, th, launches)
+	// Proposals an agent wrote for a thread that asks privately go to its
+	// person with their buttons (docs/spec/inbox.md, decision 44).
+	if into == "proposals" && rec.Status == "done" && !complete && waitsForChoice(m.targets[th.Target], th) {
+		if !m.askPrivately(ctx, th) {
+			m.log.Warn("an agent's proposals could not be asked privately; told as the thread's message", "thread", id, "person", th.Person)
+			m.tell(ctx, th, privateText(m.targets[th.Target], th)+"\n"+th.Fields["proposals"])
+		}
+		return
+	}
 	if complete {
 		// A turn still waiting gets the finish's answer, not an empty one.
 		m.finishInBackground(ctx, th)

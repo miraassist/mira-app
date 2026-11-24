@@ -372,3 +372,15 @@ Feature: IN Mira's inbox in Paperless
     Given Anna has no private channel
     When a document gives her a finding of the kind reply
     Then the entry goes into her message as for every finding, and a log line says why
+
+  @step13
+  Scenario: IN-65 A finding's field agent starts with its thread
+    Given the taking skill's target has an agent that writes the proposals from the mail's question
+    When a document gives Anna a finding of that kind, with the question filled
+    Then the agent starts with the thread, and nothing is asked yet
+
+  @step13
+  Scenario: IN-66 The finding is asked privately when its proposals arrive
+    When the agent's proposals arrive
+    Then Anna is asked privately with them and their buttons
+    And when the agent fails, the thread tells Anna as its message and the log names it
