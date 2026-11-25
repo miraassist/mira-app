@@ -71,7 +71,7 @@ Mira subscribes to the URL (Server-Sent Events) at start and keeps the subscript
 | Event | What Mira does |
 |---|---|
 | `turn.started` | Notes the side-channel turn with the satellite in `listening` now (decision 1), or with none |
-| `reading` with `complete` ≥ 0.5 | Starts a run on its `text`, ending the turn's earlier run |
+| `reading` with `complete` ≥ 0.5 | Starts a run on its `text`, ending the turn's earlier run; not for a reading of less than 1 s of audio (`audio_s`): that is the wake word's tail ("irá.", "lá." after "Okay Mira", seen 2026-11-25), as the request starts a second or more into the turn's audio |
 | `reading` with `complete` < 0.5 or `null` | Nothing: the user may go on |
 | `reading.stale` | Ends the run of that reading |
 | `turn.final` | When no run has its `text`: starts one. Then keeps the side-channel turn for 10 s (below) |
@@ -127,7 +127,9 @@ One log line per run: `speculation` with the side-channel turn, the device, the 
 (`taken` with `rounds_taken`, `waited_ms` and the round that differed, if one; `stale`, `replaced`, `no_match`,
 `expired`, `yielded`, `skipped: <reason>` for decision 5 and a model without a free place, `failed`), and how its
 rounds ended (`done`: an answer or a call that does not only read). A failed run's error has a line of its own; each
-round a turn took logs `model round taken from a speculative run`.
+round a turn took logs `model round taken from a speculative run`; a turn whose request differs from a run's logs
+`speculation request differed` with the round and the first message that differs, both texts from where they part
+(or the tools and settings).
 
 ### 4. What the model is told
 
@@ -168,9 +170,9 @@ as a turn that read it a second earlier.
    the side-channel turn with its satellite; a fake side channel in the tests (a recorded stream of the reference
    server). SC-01 to SC-05 (built 2026-11-25).
 2. **The run** (`conversation`): building a turn's request without changing state, the rounds with read-only tools,
-   the end of a run. SC-06 to SC-11 (built 2026-11-25).
+   the end of a run. SC-06 to SC-11, SC-18 (built 2026-11-25).
 3. **Taking over** in `turn`, round by round, with waiting for a round on its way and the model's places. SC-12 to
-   SC-17 (built 2026-11-25).
+   SC-17, SC-19 (built 2026-11-25).
 4. **Through Mira on the test HA**: a fake side channel in `testenv` driven together with `techo5_fake.say`, every
    scenario once end to end; the log lines.
 5. **At home** (the maintainer): the reference server with `ASR_SPECULATE=1`, a week of turns; the share of runs

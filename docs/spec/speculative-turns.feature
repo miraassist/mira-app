@@ -105,3 +105,15 @@ Feature: SC Speculative turns
     Given a model with one place, held by a run
     When a turn at another satellite needs the model
     Then the run is ended and the turn gets the place
+
+  @step2
+  Scenario: SC-18 A reading of the wake word's tail starts nothing
+    Given a side-channel turn at the kitchen satellite
+    When a reading of its first second comes ("irá.")
+    Then no run starts on it
+
+  @step3
+  Scenario: SC-19 A differing request says where
+    Given a run on "Schalte das Licht im"
+    When Home Assistant calls with "Schalte das Licht im Wohnzimmer an"
+    Then the log says the round, the first message that differs and both texts from where they part

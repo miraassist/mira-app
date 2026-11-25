@@ -22,7 +22,7 @@ import (
 const sat = "sat-kueche"
 
 func reading(turn string, rev int, text string, complete float64) sidechannel.Event {
-	return sidechannel.Event{Kind: sidechannel.Reading, Turn: turn, Rev: rev, Text: text, Complete: &complete}
+	return sidechannel.Event{Kind: sidechannel.Reading, Turn: turn, Rev: rev, Text: text, Complete: &complete, AudioS: 2.5}
 }
 
 // atSatellite is a turn Home Assistant sends from the kitchen satellite.
@@ -298,4 +298,30 @@ func waitRequests(t *testing.T, h *harness, n int) {
 		}
 		<-time.After(5 * time.Millisecond) // real time: polling the fake model's record, at most 5 s
 	}
+}
+
+func TestSC18_AReadingOfTheWakeWordsTailStartsNothing(t *testing.T) {
+	h := newHarness(t)
+	warm(t, h)
+	taken := make(chan struct{})
+	h.llm.Push(fakellm.Step{Content: "Es ist 7:12 Uhr.", Taken: taken})
+	tail := reading("s1", 1, "irá.", 0.9)
+	tail.AudioS = 0.6
+	h.engine.Speculate(tail, sat)
+	h.engine.Speculate(reading("s1", 2, "Wie spät ist es?", 0.9), sat)
+	await(t, taken, "run")
+	if n := requestsWith(h, "irá."); n != 0 {
+		t.Fatalf("the wake word's tail started %d runs", n)
+	}
+}
+
+func TestSC19_ADifferingRequestSaysWhere(t *testing.T) {
+	h := newHarness(t)
+	warm(t, h)
+	h.llm.Push(fakellm.Step{Content: "Welches Zimmer?"}, fakellm.Step{Content: "Licht ist an."})
+	h.engine.Speculate(reading("s1", 1, "Schalte das Licht im", 0.8), sat)
+	waitRequests(t, h, 1)
+	differed := h.logs.Await("speculation request differed", "round=0", "Schalte das Licht im Wohnzimmer")
+	atSatellite(t, h, "c1", "Schalte das Licht im Wohnzimmer an", nil)
+	await(t, differed, "the line saying where the requests differ")
 }

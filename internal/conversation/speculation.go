@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/oklog/ulid/v2"
 
@@ -35,6 +36,11 @@ const (
 	// speculateFrom is the side channel's guess that the user is done from
 	// which a reading starts a run: Smart Turn's own threshold.
 	speculateFrom = 0.5
+	// readingsFrom: a reading of less audio is the wake word's tail ("irá",
+	// "lá" after "Okay Mira"), not the request: at a satellite the request
+	// starts a second or more after the turn's audio does (Home Assistant's
+	// pipeline runs, 2026-11-25: speech from 1.1 s and 1.8 s).
+	readingsFrom = 1.0
 	// keepAfterFinal is how long a run waits for its turn after the side
 	// channel's final transcript.
 	keepAfterFinal = 10 * time.Second
@@ -47,6 +53,8 @@ const (
 // answer.
 type specRound struct {
 	hash string
+	// req is the request, for the log line of a turn whose request differs.
+	req  llm.ChatRequest
 	done chan struct{}
 	out  *llm.ChatResponse
 	err  error
@@ -128,6 +136,11 @@ func (e *Engine) Speculate(ev sidechannel.Event, device string) {
 	s := e.spec()
 	switch ev.Kind {
 	case sidechannel.Reading:
+		if ev.AudioS < readingsFrom {
+			e.log.Debug("reading of the wake word's tail left out", "side_turn", ev.Turn, "audio_s", ev.AudioS,
+				"text", excerpt.Of(ev.Text))
+			return
+		}
 		if ev.Complete == nil || *ev.Complete < speculateFrom {
 			return
 		}
@@ -239,8 +252,8 @@ func (r *specRun) finish(why string) {
 }
 
 // add starts a round with its request's hash.
-func (r *specRun) add(hash string) *specRound {
-	sr := &specRound{hash: hash, done: make(chan struct{})}
+func (r *specRun) add(hash string, req llm.ChatRequest) *specRound {
+	sr := &specRound{hash: hash, req: req, done: make(chan struct{})}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.rounds = append(r.rounds, sr)
@@ -349,7 +362,7 @@ func (e *Engine) runRounds(ctx context.Context, r *specRun) error {
 		if round >= b.model.MaxToolRounds {
 			chatReq.ToolChoice = "none"
 		}
-		sr := r.add(requestHash(chatReq))
+		sr := r.add(requestHash(chatReq), chatReq)
 		release, ok := e.agents.TryAcquire(b.modelName, b.model, func() { e.endRun(r, "yielded") })
 		if !ok {
 			sr.err = errors.New("no free place at the model")
@@ -427,6 +440,9 @@ func (e *Engine) takeRound(ctx context.Context, a *adoption, req Request, n int,
 		hash = requestHash(chatReq)
 		for _, r := range runs {
 			sr := r.round(ctx, 0)
+			if sr != nil && sr.hash != hash {
+				e.logDiffer(r, 0, sr.req, chatReq)
+			}
 			if sr != nil && sr.hash == hash && a.run == nil {
 				r.mu.Lock()
 				r.taken = true
@@ -450,6 +466,7 @@ func (e *Engine) takeRound(ctx context.Context, a *adoption, req Request, n int,
 	}
 	if sr.hash != hash {
 		a.differed = n
+		e.logDiffer(r, n, sr.req, chatReq)
 		return nil, false
 	}
 	select {
@@ -547,4 +564,46 @@ func (e *Engine) peekLang(ctx context.Context, sent, person string) i18n.Lang {
 	}
 	// Without a language sent, Turn remembers nothing.
 	return e.languages.Turn(ctx, "", "", person)
+}
+
+// logDiffer says where a turn's request differs from its run's
+// (docs/spec/speculative-turns.md, 3): the first message that differs, with
+// both texts from where they part, or the tools or the settings.
+func (e *Engine) logDiffer(r *specRun, round int, run, turn llm.ChatRequest) {
+	attrs := []any{"side_turn", r.side, "device", r.device, "round", round}
+	switch {
+	case len(run.Messages) != len(turn.Messages):
+		attrs = append(attrs, "where", "messages", "run_messages", len(run.Messages), "turn_messages", len(turn.Messages))
+	default:
+		for i := range run.Messages {
+			a, b := mustJSON(run.Messages[i]), mustJSON(turn.Messages[i])
+			if a == b {
+				continue
+			}
+			at := 0
+			for at < len(a) && at < len(b) && a[at] == b[at] {
+				at++
+			}
+			from := max(0, at-40)
+			for from > 0 && !utf8.RuneStart(a[from]) {
+				from--
+			}
+			attrs = append(attrs, "where", fmt.Sprintf("message %d (%s)", i, run.Messages[i].Role),
+				"run", excerpt.Of(a[from:]), "turn", excerpt.Of(b[from:]))
+			break
+		}
+	}
+	if len(attrs) == 6 {
+		run.Messages, turn.Messages = nil, nil
+		attrs = append(attrs, "where", "tools or settings", "run", excerpt.Of(mustJSON(run)), "turn", excerpt.Of(mustJSON(turn)))
+	}
+	e.log.Info("speculation request differed", attrs...)
+}
+
+func mustJSON(v any) string {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return fmt.Sprintf("%v", v)
+	}
+	return string(b)
 }
