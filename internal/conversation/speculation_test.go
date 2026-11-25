@@ -77,16 +77,15 @@ func TestSC06_AFinishedSoundingReadingStartsARun(t *testing.T) {
 	}
 }
 
-func TestSC07_AReadingThatSoundsUnfinishedStartsNothing(t *testing.T) {
+func TestSC20_EveryReadingStartsARun(t *testing.T) {
 	h := newHarness(t)
 	warm(t, h)
 	taken := make(chan struct{})
-	h.llm.Push(fakellm.Step{Content: "Ja.", Taken: taken})
+	h.llm.Push(fakellm.Step{Content: "Welches Zimmer?", Taken: taken})
 	h.engine.Speculate(reading("s1", 1, "Schalte das Licht im", 0.2), sat)
-	h.engine.Speculate(reading("s2", 1, "Wie spät ist es?", 0.8), sat)
 	await(t, taken, "run")
-	if requestsWith(h, "Schalte das Licht im") != 0 {
-		t.Fatal("an unfinished reading started a run")
+	if requestsWith(h, "Schalte das Licht im") != 1 {
+		t.Fatal("no run on the unfinished reading")
 	}
 }
 
@@ -324,4 +323,35 @@ func TestSC19_ADifferingRequestSaysWhere(t *testing.T) {
 	differed := h.logs.Await("speculation request differed", "round=0", "Schalte das Licht im Wohnzimmer")
 	atSatellite(t, h, "c1", "Schalte das Licht im Wohnzimmer an", nil)
 	await(t, differed, "the line saying where the requests differ")
+}
+
+func TestSC21_TheSatellitesVoiceIsKeptAcrossARestart(t *testing.T) {
+	h := newHarness(t)
+	ctx := context.Background()
+	// What an earlier Mira kept: anna's voice, German.
+	if err := h.store.SetKV(ctx, "speculation."+sat, `{"voice":"anna","lang":"de"}`); err != nil {
+		t.Fatal(err)
+	}
+	h.identify = func(ctx context.Context, req conversation.Request) (string, string) {
+		if req.Speculative {
+			return req.Voice, prompt.ByVoice
+		}
+		return "anna", prompt.ByVoice
+	}
+	h.llm.Push(fakellm.Step{Content: "Es ist 7:12 Uhr, Anna."})
+	h.engine.Speculate(reading("s1", 1, "Wie spät ist es?", 0.9), sat)
+	waitRequests(t, h, 1)
+	resp := atSatellite(t, h, "c1", "Wie spät ist es?", nil)
+	if resp.Text != "Es ist 7:12 Uhr, Anna." || len(h.llm.Requests()) != 1 {
+		t.Fatalf("answer %q after %d requests: the kept voice was not used", resp.Text, len(h.llm.Requests()))
+	}
+
+	// A turn whose voice names ben keeps ben for the next restart.
+	h.identify = func(ctx context.Context, req conversation.Request) (string, string) { return "ben", prompt.ByVoice }
+	h.llm.Push(fakellm.Step{Content: "Gern."})
+	atSatellite(t, h, "c2", "Danke", nil)
+	got, err := h.store.GetKV(ctx, "speculation."+sat)
+	if err != nil || got != `{"voice":"ben","lang":"de"}` {
+		t.Fatalf("kept %q (%v)", got, err)
+	}
 }

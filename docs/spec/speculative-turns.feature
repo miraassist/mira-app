@@ -40,11 +40,7 @@ Feature: SC Speculative turns
     When a reading comes with complete 0.8
     Then a run starts with its text at the kitchen satellite
 
-  @step2
-  Scenario: SC-07 A reading that sounds unfinished starts nothing
-    Given a side-channel turn at the kitchen satellite
-    When a reading comes with complete 0.2
-    Then no run starts
+  # SC-07 (a reading that sounds unfinished starts nothing) dropped 2026-11-25: every reading starts a run (SC-20).
 
   @step2
   Scenario: SC-08 A stale reading ends its run
@@ -117,3 +113,15 @@ Feature: SC Speculative turns
     Given a run on "Schalte das Licht im"
     When Home Assistant calls with "Schalte das Licht im Wohnzimmer an"
     Then the log says the round, the first message that differs and both texts from where they part
+
+  @step2
+  Scenario: SC-20 Every reading starts a run, also one that sounds unfinished
+    Given a side-channel turn at the kitchen satellite
+    When a reading comes with complete 0.2
+    Then a run starts with its text
+
+  @step2
+  Scenario: SC-21 The satellite's voice and language are kept across a restart
+    Given anna's voice was the last one at the kitchen satellite, and Mira started again
+    When a reading comes there
+    Then the run is anna's, in the language Home Assistant sent last

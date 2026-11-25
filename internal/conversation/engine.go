@@ -408,7 +408,7 @@ func (e *Engine) Handle(ctx context.Context, req Request) (Response, error) {
 	e.afterTurn(context.WithoutCancel(ctx), key, own, pre, req)
 	held = ts.TurnOver()
 	e.noteFollowUp(req, person, err == nil && resp.ContinueConversation)
-	e.noteForSpeculation(req, person, personBy, err == nil && resp.ContinueConversation)
+	e.noteForSpeculation(context.WithoutCancel(ctx), req, person, personBy, err == nil && resp.ContinueConversation)
 	res := agent.Result{Model: resp.Model, FallbackFrom: resp.FallbackFrom, ModelCalls: resp.ModelCalls, ModelTime: resp.ModelTime,
 		PromptTokens: resp.PromptTokens + resp.MorePromptTokens, Completion: resp.CompletionTokens}
 	// A turn its caller ended is cancelled, not failed; the turn logged

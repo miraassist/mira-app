@@ -48,7 +48,7 @@ helper with a job of its own; it writes no run row and has no result of its own.
 
 | # | Question | Decision |
 |---|---|---|
-| 1 | Which satellite, room and person a run is for | The one satellite in `listening` when the side channel opens its turn gives the device and its room; with none or several in `listening` there is no run. The person is found as a turn finds it, with the voice taken from the last person speaker-id recognized at this satellite (speaker-id knows the turn's voice only after the transcript); the conversation's person in a running conversation. Whether the guess was right decides the request comparison (2) |
+| 1 | Which satellite, room and person a run is for | The one satellite in `listening` when the side channel opens its turn gives the device and its room; with none or several in `listening` there is no run. The person is found as a turn finds it, with the voice taken from the last person speaker-id recognized at this satellite (speaker-id knows the turn's voice only after the transcript); the conversation's person in a running conversation. Whether the guess was right decides the request comparison (2). The voice and the language are kept in the database per satellite (`speculation.<device id>`, [Database](../database.md); decided 2026-11-25: after a restart the first run at each satellite guessed nobody) |
 | 2 | When a turn takes over | Only when the turn's model request for a round is the same as the run's for that round: the same messages and the same tools, the same model and settings, compared as their hash. The time in the prompt is by the minute already (`i18n.FormatTime`); a run across a minute's change is simply not taken |
 | 3 | A tool call that does not only read | The run stops at the round that calls it and keeps the round. Taken over, the turn runs that round's calls itself, as always, and goes on from there with its own rounds |
 | 4 | Which tools only read | Only a tool marked so (`tools.Spec.ReadOnly`: an MCP tool's `readOnlyHint`, `read_only_tools`, an own tool marked read-only). Not the rights' classes: Mira's own tools count as `ReadHouse` there even when they write |
@@ -71,13 +71,12 @@ Mira subscribes to the URL (Server-Sent Events) at start and keeps the subscript
 | Event | What Mira does |
 |---|---|
 | `turn.started` | Notes the side-channel turn with the satellite in `listening` now (decision 1), or with none |
-| `reading` with `complete` ≥ 0.5 | Starts a run on its `text`, ending the turn's earlier run; not for a reading of less than 1 s of audio (`audio_s`): that is the wake word's tail ("irá.", "lá." after "Okay Mira", seen 2026-11-25), as the request starts a second or more into the turn's audio |
-| `reading` with `complete` < 0.5 or `null` | Nothing: the user may go on |
+| `reading` | Starts a run on its `text`, ending the turn's earlier run, whatever `complete` says (decided 2026-11-25, A1: from 0.5 on, runs on "Nein, übermorgen" or "Ist die Stehlampe an?" started only with the final text; a reading that goes stale ends its run, mostly within 100 ms). Not for a reading of less than 1 s of audio (`audio_s`): that is the wake word's tail ("irá.", "lá." after "Okay Mira", seen 2026-11-25), as the request starts a second or more into the turn's audio |
 | `reading.stale` | Ends the run of that reading |
 | `turn.final` | When no run has its `text`: starts one. Then keeps the side-channel turn for 10 s (below) |
 | `speech.started`, `speech.paused`, others | Nothing (an unknown event is ignored, decision of [Versions](versions.md)) |
 
-0.5 is Smart Turn's own threshold; at most one run per side-channel turn at a time.
+At most one run per side-channel turn at a time.
 
 ### 2. A speculative run
 
@@ -141,9 +140,11 @@ Nothing new: a round taken over is the round the model would have been asked for
 - **Per run:** the reads a turn makes before its first round (session, history, profile, memory search, device
   lines, structure: all in memory or the database), one model request per round, and the read-only tools it calls
   (the same calls the turn would make).
-- **Paid for nothing:** a run not taken. With a cloud model each costs the prompt tokens of a turn (and the tokens
-  written until it was ended). On the 241 turns: a run per pause with `complete` ≥ 0.5, so about one to two runs per
-  turn; Mira's log line per run counts them.
+- **Paid for nothing:** a run not taken. With a cloud model each costs the prompt tokens of a turn's first round (and
+  the tokens written until it was ended). Measured at the test HA's Show (2026-11-25, Gemini Flash Lite, 34 turns):
+  0.5 to 0.7 requests not taken per turn, each about 19 to 21k prompt tokens of which 16 to 18k cached: about
+  +10 to 14k prompt tokens per voice turn (+30 %), hardly any output; most were ended within 100 ms, whether such a
+  request is billed is not known. Mira's log line per run counts them.
 - **The turn waits for:** a hash of its request per round (microseconds); for a round still on its way, its rest.
 - **Grows with:** the number of satellites listening at once (one run each at most).
 
@@ -170,7 +171,7 @@ as a turn that read it a second earlier.
    the side-channel turn with its satellite; a fake side channel in the tests (a recorded stream of the reference
    server). SC-01 to SC-05 (built 2026-11-25).
 2. **The run** (`conversation`): building a turn's request without changing state, the rounds with read-only tools,
-   the end of a run. SC-06 to SC-11, SC-18 (built 2026-11-25).
+   the end of a run. SC-06, SC-08 to SC-11, SC-18, SC-20, SC-21 (built 2026-11-25).
 3. **Taking over** in `turn`, round by round, with waiting for a round on its way and the model's places. SC-12 to
    SC-17, SC-19 (built 2026-11-25).
 4. **Through Mira on the test HA**: a fake side channel in `testenv` driven together with `techo5_fake.say`, every

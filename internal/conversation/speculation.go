@@ -33,9 +33,6 @@ import (
 // the same takes the run's round instead of asking the model.
 
 const (
-	// speculateFrom is the side channel's guess that the user is done from
-	// which a reading starts a run: Smart Turn's own threshold.
-	speculateFrom = 0.5
 	// readingsFrom: a reading of less audio is the wake word's tail ("irá",
 	// "lá" after "Okay Mira"), not the request: at a satellite the request
 	// starts a second or more after the turn's audio does (Home Assistant's
@@ -108,22 +105,73 @@ func (e *Engine) spec() *speculation {
 
 // noteForSpeculation remembers of a satellite's turn what the next run
 // there builds on (decision 1).
-func (e *Engine) noteForSpeculation(req Request, person, by string, listening bool) {
+func (e *Engine) noteForSpeculation(ctx context.Context, req Request, person, by string, listening bool) {
 	if req.Channel != config.ChannelVoice || req.DeviceID == "" || req.Speculative {
 		return
 	}
 	s := e.spec()
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	if by == prompt.ByVoice {
-		s.voice[req.DeviceID] = person
+	was := satNote{Voice: s.voice[req.DeviceID], Lang: s.lang[req.DeviceID]}
+	_, known := s.lang[req.DeviceID]
+	s.mu.Unlock()
+	if !known {
+		// Read outside the lock: the side channel's handler takes it.
+		was = e.readNote(ctx, req.DeviceID)
 	}
-	s.lang[req.DeviceID] = req.Language
+	s.mu.Lock()
+	now := was
+	if by == prompt.ByVoice {
+		now.Voice = person
+	}
+	now.Lang = req.Language
+	s.voice[req.DeviceID], s.lang[req.DeviceID] = now.Voice, now.Lang
 	if listening {
 		s.conv[req.DeviceID] = req.ConversationID
 	} else {
 		delete(s.conv, req.DeviceID)
 	}
+	s.mu.Unlock()
+	// Kept across a restart (docs/database.md): else the first run at each
+	// satellite after it guesses nobody.
+	if now != was {
+		b, _ := json.Marshal(now)
+		if err := e.store.SetKV(ctx, keySpeculation+req.DeviceID, string(b)); err != nil {
+			e.log.Warn("could not keep the satellite's voice and language for speculative runs; kept in memory only",
+				"device", req.DeviceID, "error", err)
+		}
+	}
+}
+
+// keySpeculation is the key family of what a satellite's last turn named:
+// speculation.<device id> (docs/database.md).
+const keySpeculation = "speculation."
+
+// satNote is what Mira keeps per satellite for its runs: the person the
+// voice named last, the language Home Assistant sent.
+type satNote struct {
+	Voice string `json:"voice,omitempty"`
+	Lang  string `json:"lang,omitempty"`
+}
+
+// readNote is the satellite's note as kept; empty when there is none or it
+// cannot be read (with a warning).
+func (e *Engine) readNote(ctx context.Context, device string) satNote {
+	var n satNote
+	raw, err := e.store.GetKV(ctx, keySpeculation+device)
+	switch {
+	case errors.Is(err, store.ErrNotFound):
+		return n
+	case err != nil:
+		e.log.Warn("could not read the satellite's voice and language for speculative runs; the run guesses nobody",
+			"device", device, "error", err)
+		return n
+	}
+	if err := json.Unmarshal([]byte(raw), &n); err != nil {
+		e.log.Warn("the satellite's kept voice and language are not understood; the run guesses nobody",
+			"device", device, "value", excerpt.Of(raw), "error", err)
+		return satNote{}
+	}
+	return n
 }
 
 // Speculate takes an event of the side channel and the satellite its turn
@@ -139,9 +187,6 @@ func (e *Engine) Speculate(ev sidechannel.Event, device string) {
 		if ev.AudioS < readingsFrom {
 			e.log.Debug("reading of the wake word's tail left out", "side_turn", ev.Turn, "audio_s", ev.AudioS,
 				"text", excerpt.Of(ev.Text))
-			return
-		}
-		if ev.Complete == nil || *ev.Complete < speculateFrom {
 			return
 		}
 		e.startRun(ev.Turn, ev.Rev, device, ev.Text)
@@ -319,7 +364,17 @@ func (e *Engine) runRounds(ctx context.Context, r *specRun) error {
 	s := e.spec()
 	s.mu.Lock()
 	voice, lang, conv := s.voice[r.device], s.lang[r.device], s.conv[r.device]
+	_, known := s.lang[r.device]
 	s.mu.Unlock()
+	if !known {
+		n := e.readNote(ctx, r.device)
+		voice, lang = n.Voice, n.Lang
+		s.mu.Lock()
+		if _, known := s.lang[r.device]; !known {
+			s.voice[r.device], s.lang[r.device] = n.Voice, n.Lang
+		}
+		s.mu.Unlock()
+	}
 	if conv == "" {
 		conv = ulid.Make().String()
 	}
