@@ -173,3 +173,9 @@ reachable:
       required: true
       selector:
         boolean:
+add_number_named_device:
+  name: Add the device named by a number
+  description: Registers the device whose name is the number 4714 (docs/spec/parsing.md). Home Assistant's device page fails on it; remove it after the test.
+remove_number_named_device:
+  name: Remove the device named by a number
+  description: Removes the device whose name is the number 4714.

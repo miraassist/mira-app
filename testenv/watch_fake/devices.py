@@ -44,9 +44,11 @@ NAMES = {"battery": "Batterie", "moisture": "Wasser", "humidity": "Luftfeuchtigk
 # not here. (device name, identifier, the unique_id of its one entity)
 ODD_DEVICES = [
     ("Fake Wechselrichter", 4711, 4712),
-    # A name Home Assistant does not check either (docs/spec/parsing.md).
-    (4714, "name-as-number", "name-as-number-1"),
 ]
+# A name Home Assistant does not check either (docs/spec/parsing.md), only on request
+# (watch_fake.add_number_named_device): Home Assistant's own device page fails on it
+# ("trim is not a function", 2026-11-25), so the test HA does not keep it.
+NUMBER_NAMED = (4714, "name-as-number")
 
 
 def register_odd_devices(hass: HomeAssistant, config_entry_id: str) -> None:
@@ -58,14 +60,27 @@ def register_odd_devices(hass: HomeAssistant, config_entry_id: str) -> None:
         device = devices.async_get_or_create(
             config_entry_id=config_entry_id, identifiers={(DOMAIN, identifier)}, name=name, manufacturer="Fake Maker"
         )
-        if not isinstance(name, str):
-            # Home Assistant itself fails to make an entity for a device whose name is no text ('int' object has
-            # no attribute 'casefold', 2026.11.1): such a device has none (docs/spec/parsing.md).
-            continue
         entities.async_get_or_create(
             "sensor", DOMAIN, unique_id, config_entry=hass.config_entries.async_get_entry(config_entry_id),
             device_id=device.id, suggested_object_id=slugify(f"{name} Leistung"), original_name="Leistung",
         )
+
+
+def add_number_named(hass: HomeAssistant, config_entry_id: str) -> None:
+    """Register the device whose name is a number, without an entity: Home Assistant itself fails to make one for
+    a device whose name is no text ('int' object has no attribute 'casefold', 2026.11.1)."""
+    name, identifier = NUMBER_NAMED
+    dr.async_get(hass).async_get_or_create(
+        config_entry_id=config_entry_id, identifiers={(DOMAIN, identifier)}, name=name, manufacturer="Fake Maker"
+    )
+
+
+def remove_number_named(hass: HomeAssistant, config_entry_id: str) -> None:
+    """Remove the device whose name is a number, if it is there."""
+    devices = dr.async_get(hass)
+    for device in dr.async_entries_for_config_entry(devices, config_entry_id):
+        if (DOMAIN, NUMBER_NAMED[1]) in device.identifiers:
+            devices.async_remove_device(device.id)
 
 
 def entities_of(domain: str) -> list[Entity]:

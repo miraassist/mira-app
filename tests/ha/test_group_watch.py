@@ -540,10 +540,15 @@ async def test_GW26_a_restart_floods_nothing(hass, house, freezer):
 
 async def test_fg33_the_test_ha_has_registry_entries_of_another_type_on_purpose(hass: HomeAssistant, house) -> None:
     """FG-33 (docs/spec/fake-devices.md, step 11): a device whose identifier is a number, and its entity whose
-    unique_id is a number, as Home Assistant keeps them."""
+    unique_id is a number, as Home Assistant keeps them; the device whose name is a number on request."""
     device = next(d for d in dr.async_get(hass).devices if d.name == "Fake Wechselrichter")
     assert ("watch_fake", 4711) in device.identifiers
     entity = next(e for e in er.async_entries_for_device(er.async_get(hass), device.id))
     assert entity.unique_id == 4712
+    # The device whose name is a number only on request, and gone again after it.
+    assert not any(d.name == 4714 for d in dr.async_get(hass).devices)
+    await hass.services.async_call("watch_fake", "add_number_named_device", {}, blocking=True)
     named = next(d for d in dr.async_get(hass).devices if d.name == 4714)
     assert ("watch_fake", "name-as-number") in named.identifiers
+    await hass.services.async_call("watch_fake", "remove_number_named_device", {}, blocking=True)
+    assert not any(d.name == 4714 for d in dr.async_get(hass).devices)

@@ -42,7 +42,7 @@ from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.util import dt as dt_util
 
-from .devices import register_odd_devices
+from .devices import add_number_named, register_odd_devices, remove_number_named
 from .house import PHONES, ensure_structure
 
 DOMAIN = "watch_fake"
@@ -192,6 +192,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """The fake devices (devices.py)."""
     hass.data.setdefault(DOMAIN, {"settable": [], "devices": []})["devices"].clear()
     register_odd_devices(hass, entry.entry_id)
+    # Kept only on request; one left from before goes (devices.py, NUMBER_NAMED).
+    remove_number_named(hass, entry.entry_id)
+
+    async def add_odd(call: ServiceCall) -> None:
+        add_number_named(hass, entry.entry_id)
+
+    async def remove_odd(call: ServiceCall) -> None:
+        remove_number_named(hass, entry.entry_id)
+
+    hass.services.async_register(DOMAIN, "add_number_named_device", add_odd, vol.Schema({}))
+    hass.services.async_register(DOMAIN, "remove_number_named_device", remove_odd, vol.Schema({}))
     await hass.config_entries.async_forward_entry_setups(entry, DEVICE_PLATFORMS)
     return True
 

@@ -167,3 +167,4 @@ Feature: FG Fake satellites that behave like the real ones
     Given watch_fake is set up
     Then the device registry has a device whose identifier is a number
     And the entity registry has an entity of that device whose unique_id is a number
+    And a device whose name is a number comes only on request, and goes again

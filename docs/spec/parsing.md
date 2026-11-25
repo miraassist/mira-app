@@ -68,7 +68,7 @@ the repair stays, the log has the error once per change of the file.
 1. **What is proven in the service** (rows 1 to 4 and 6): the repair of the registries, the found devices' and
    Matter's lists, the `unique_id`, the skill source, the ten places. PA-01 to PA-04, PA-06 in Go. Built
    2026-11-23. Found on the way: Home Assistant does not check a device's name either; it is read as it comes in the
-   house structure and the found devices (`ws.Text`), and the test HA has a device whose name is a number. The
+   house structure and the found devices (`ws.Text`), and the test HA has a device whose name is a number on request (`watch_fake.add_number_named_device`; Home Assistant's own device page fails on it). The
    forgetting of gone found devices forgets nothing in a round where a device was left out: left out is not gone
    (rule 1).
 2. **A broken `mira.yaml`** (row 7): the limited start, the problem in the status, the repair, the watch of the file.
