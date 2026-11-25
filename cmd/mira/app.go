@@ -768,11 +768,6 @@ func build(ctx context.Context, cfg config.Config, opts buildOptions) (*app, err
 		ducker = music.NewDucker(a.duckOptions(snapshot))
 		a.goRun(ctx, "ducking", ducker.Run)
 	}
-	// The side channel of the speech-to-text, if there is one
-	// (docs/spec/speculative-turns.md).
-	if a.ha != nil && a.cfg.Speculation.EventsURL != "" {
-		a.goRun(ctx, "side channel", func(ctx context.Context) error { return a.runSideChannel(ctx, snapshot) })
-	}
 	// Phone calls from the satellite of the turn (docs/spec/phone.md).
 	a.phonebook = &phone.Book{On: a.phoneBookOn, Read: a.readPhonebook}
 	internal = append(internal, phone.Tool(phone.Options{Lang: a.lang, Book: a.phonebook,
@@ -960,7 +955,7 @@ func build(ctx context.Context, cfg config.Config, opts buildOptions) (*app, err
 		KV:      a.store, NotFound: store.ErrNotFound, Logger: a.log.With("component", "heard"),
 	})
 	a.engine = conversation.New(conversation.Options{
-		Spoke: heardOf.Spoke, Interrupted: heardOf.Take,
+		Spoke: heardOf.Spoke, Interrupted: heardOf.Take, InterruptionWaits: heardOf.Waits, Timers: a.clock,
 		Config: cfg, LLM: a.llm, Models: models, Store: a.store, Tools: registry,
 		Guard: guard, Agents: a.agents,
 		Structure: snapshot, StructurePrompt: a.assist.Text,
@@ -983,6 +978,11 @@ func build(ctx context.Context, cfg config.Config, opts buildOptions) (*app, err
 	a.registerAgents(registry)
 	if anyModel(cfg, func(m config.LLM) bool { return m.WarmupOnPrefixChange || m.WarmSlots }) {
 		a.warmup = a.engine.RequestWarmup
+	}
+	// The side channel of the speech-to-text, if there is one
+	// (docs/spec/speculative-turns.md).
+	if a.ha != nil && a.cfg.Speculation.EventsURL != "" {
+		a.goRun(ctx, "side channel", func(ctx context.Context) error { return a.runSideChannel(ctx, snapshot) })
 	}
 	return a, nil
 }

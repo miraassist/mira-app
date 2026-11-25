@@ -114,6 +114,15 @@ VALUES (?, ?, ?, ?, ?, ?, ?)`,
 	})
 }
 
+// HasConfirmation says whether a session has a pending confirmation, without
+// taking it.
+func (s *Store) HasConfirmation(ctx context.Context, sessionKey string) (bool, error) {
+	var n int
+	err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM confirmations WHERE session_key = ? AND expires_at > ?`,
+		sessionKey, formatTime(s.now())).Scan(&n)
+	return n > 0, err
+}
+
 // TakeConfirmation returns and removes the pending confirmation of a session.
 // Taking it is destructive on purpose: one approval authorises one call.
 func (s *Store) TakeConfirmation(ctx context.Context, sessionKey string) (Confirmation, error) {

@@ -32,7 +32,14 @@ func (a *app) identify(ctx context.Context, req conversation.Request) (person, b
 		if req.HAUser != "" {
 			return a.personOfHAUser(ctx, req.HAUser), ""
 		}
-		return atSatellite(persons, a.voiceOf(ctx, req.Text, persons), func() string {
+		// A speculative run's turn: speaker-id has not heard it yet; the
+		// voice is the one its satellite's last turn named
+		// (docs/spec/speculative-turns.md, decision 1).
+		voice := req.Voice
+		if !req.Speculative {
+			voice = a.voiceOf(ctx, req.Text, persons)
+		}
+		return atSatellite(persons, voice, func() string {
 			if !anyAloneIsMe(persons) {
 				return ""
 			}

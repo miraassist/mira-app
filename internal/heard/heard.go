@@ -98,6 +98,14 @@ func (t *Tracker) Take(key string) (string, bool) {
 	return q, ok
 }
 
+// Waits says whether a conversation has a note waiting, without taking it.
+func (t *Tracker) Waits(key string) bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	_, ok := t.notes[key]
+	return ok
+}
+
 // Spoke starts watching the satellite's speaker for an answer a voice turn
 // has spoken there; a newer answer at the same satellite ends the older
 // watch. ctx is not kept: the watch runs on its own.

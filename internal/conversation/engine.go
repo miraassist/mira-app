@@ -63,6 +63,11 @@ type Request struct {
 	// Person is who writes, named by the Home Assistant integration for a
 	// messenger (Telegram through HA): it matched the chat to a person.
 	Person string
+	// Speculative marks the request a speculative run builds
+	// (docs/spec/speculative-turns.md): identify takes Voice as the voice
+	// instead of asking speaker-id, which has not heard the turn yet.
+	Speculative bool
+	Voice       string
 	// Stream, set for a voice turn, gets the answer while it is written
 	// (docs/spec/streaming.md); the Response still carries it whole. Other
 	// channels ignore it.
@@ -179,6 +184,13 @@ type Options struct {
 	Persona   func() string
 	Telemetry *telemetry.Provider
 	Logger    *slog.Logger
+	// InterruptionWaits says whether Interrupted has a note for a
+	// conversation, without taking it (a speculative run, docs/spec/
+	// speculative-turns.md, decision 5).
+	InterruptionWaits func(key string) bool
+	// Timers are what a speculative run's expiry waits on; nil is the real
+	// clock.
+	Timers clock.Clock
 	// Clock and Location set the time the model is told. Tests pin both.
 	Clock    func() time.Time
 	Location *time.Location
@@ -204,11 +216,17 @@ type Engine struct {
 	playing     func(device string) bool
 	spoke       func(key, device, text string, began time.Time)
 	interrupted func(key string) (string, bool)
-	thread      func(ctx context.Context, sess store.Session, place string, followedUp []string, announced string) (string, bool)
-	joinThread  func(ctx context.Context, sessionKey, threadID string) error
-	summarize   func(ctx context.Context, threadID, how string)
-	holdThread  func(threadID string) (release func(ctx context.Context))
-	identify    func(ctx context.Context, req Request) (person, by string)
+	// interruptionWaits, timers, specOnce and specs: speculative turns
+	// (speculation.go).
+	interruptionWaits func(key string) bool
+	timers            clock.Clock
+	specOnce          sync.Once
+	specs             *speculation
+	thread            func(ctx context.Context, sess store.Session, place string, followedUp []string, announced string) (string, bool)
+	joinThread        func(ctx context.Context, sessionKey, threadID string) error
+	summarize         func(ctx context.Context, threadID, how string)
+	holdThread        func(threadID string) (release func(ctx context.Context))
+	identify          func(ctx context.Context, req Request) (person, by string)
 	// follow are the voice conversations Mira's last answer left listening,
 	// by conversation id: whose they are, at which satellite, since when.
 	followMu   sync.Mutex
@@ -263,37 +281,39 @@ func New(opts Options) *Engine {
 		opts.Structure = func() structure.Snapshot { return structure.Snapshot{} }
 	}
 	e := &Engine{
-		cfg:         opts.Config,
-		models:      map[string]Chatter{config.MainModel: opts.LLM},
-		store:       opts.Store,
-		tools:       opts.Tools,
-		guard:       opts.Guard,
-		agents:      opts.Agents,
-		structure:   opts.Structure,
-		assist:      opts.StructurePrompt,
-		music:       opts.Music,
-		deviceHints: opts.DeviceHints,
-		playing:     opts.Playing,
-		spoke:       opts.Spoke,
-		interrupted: opts.Interrupted,
-		deviceTools: opts.DeviceTools,
-		afterword:   opts.Afterword,
-		thread:      opts.Thread,
-		joinThread:  opts.JoinThread,
-		summarize:   opts.SummarizeThread,
-		holdThread:  opts.HoldThread,
-		identify:    opts.Identify,
-		personName:  opts.PersonName,
-		persona:     opts.Persona,
-		languages:   opts.Languages,
-		tel:         opts.Telemetry,
-		log:         opts.Logger.With("component", "conversation"),
-		clock:       opts.Clock,
-		loc:         opts.Location,
-		sessions:    sessionLocks{held: map[string]*sessionLock{}},
-		webSeen:     map[string]time.Time{},
-		lastPrefix:  map[config.Channel]string{},
-		warm:        make(chan string, 1),
+		cfg:               opts.Config,
+		models:            map[string]Chatter{config.MainModel: opts.LLM},
+		store:             opts.Store,
+		tools:             opts.Tools,
+		guard:             opts.Guard,
+		agents:            opts.Agents,
+		structure:         opts.Structure,
+		assist:            opts.StructurePrompt,
+		music:             opts.Music,
+		deviceHints:       opts.DeviceHints,
+		playing:           opts.Playing,
+		spoke:             opts.Spoke,
+		interrupted:       opts.Interrupted,
+		interruptionWaits: opts.InterruptionWaits,
+		timers:            opts.Timers,
+		deviceTools:       opts.DeviceTools,
+		afterword:         opts.Afterword,
+		thread:            opts.Thread,
+		joinThread:        opts.JoinThread,
+		summarize:         opts.SummarizeThread,
+		holdThread:        opts.HoldThread,
+		identify:          opts.Identify,
+		personName:        opts.PersonName,
+		persona:           opts.Persona,
+		languages:         opts.Languages,
+		tel:               opts.Telemetry,
+		log:               opts.Logger.With("component", "conversation"),
+		clock:             opts.Clock,
+		loc:               opts.Location,
+		sessions:          sessionLocks{held: map[string]*sessionLock{}},
+		webSeen:           map[string]time.Time{},
+		lastPrefix:        map[config.Channel]string{},
+		warm:              make(chan string, 1),
 	}
 	for name, m := range opts.Models {
 		e.models[name] = m
@@ -388,6 +408,7 @@ func (e *Engine) Handle(ctx context.Context, req Request) (Response, error) {
 	e.afterTurn(context.WithoutCancel(ctx), key, own, pre, req)
 	held = ts.TurnOver()
 	e.noteFollowUp(req, person, err == nil && resp.ContinueConversation)
+	e.noteForSpeculation(req, person, personBy, err == nil && resp.ContinueConversation)
 	res := agent.Result{Model: resp.Model, FallbackFrom: resp.FallbackFrom, ModelCalls: resp.ModelCalls, ModelTime: resp.ModelTime,
 		PromptTokens: resp.PromptTokens + resp.MorePromptTokens, Completion: resp.CompletionTokens}
 	// A turn its caller ended is cancelled, not failed; the turn logged
@@ -452,70 +473,111 @@ func originOf(req Request) agent.Origin {
 	return agent.FromAssist
 }
 
-func (e *Engine) turn(ctx context.Context, ts *tools.TurnState, req Request, snap structure.Snapshot, pre turnPre) (Response, error) {
-	turnBegan := e.clock()
-	now := e.clock()
+// turnBuild is a turn's request before its first round, and what it was
+// built from.
+type turnBuild struct {
+	// ctx carries the turn's language.
+	ctx         context.Context
+	sess        store.Session
+	built       prompt.Request
+	prefix      prompt.Prefix
+	history     []llm.Message
+	turn        prompt.Turn
+	client      Chatter
+	model       config.LLM
+	modelName   string
+	mustBeLocal bool
+	// warm is the model's warm slots, entered; the turn leaves them.
+	warm *agent.WarmSlots
+}
+
+// errNoRun is why a speculative run cannot build a turn's request without
+// changing state (docs/spec/speculative-turns.md, decision 5).
+type errNoRun struct{ reason string }
+
+func (e errNoRun) Error() string { return "no speculative run: " + e.reason }
+
+// build builds a turn's request. A refusal comes back as the answer to give
+// instead (refused). peek is a speculative run: nothing is opened, taken or
+// written, and where the turn would change state the build ends with an
+// errNoRun.
+func (e *Engine) build(ctx context.Context, ts *tools.TurnState, req Request, snap structure.Snapshot, pre turnPre, now time.Time, peeking bool) (b turnBuild, refused *Response, err error) {
 	key := ts.SessionKey
-	if snap.ReadFailed {
-		// No structure since the start, and reading the registries failed:
-		// say that, not that Mira waits (docs/spec/context.md, 1.3, decision 6).
-		// The read's error is in the log where it failed.
-		e.log.Warn("turn refused: the house structure could not be read from home assistant", "session", key)
+	refuse := func(text func(texts) string, reason string) (turnBuild, *Response, error) {
+		if peeking {
+			return turnBuild{}, nil, errNoRun{reason}
+		}
 		lang := e.lang(ctx)
 		if e.languages != nil {
 			lang = e.languages.Turn(ctx, req.Language, "", "")
 		}
-		return Response{ConversationID: req.ConversationID, Text: i18n.Pick(catalog, lang).structureUnreadable}, nil
+		return turnBuild{}, &Response{ConversationID: req.ConversationID, Text: text(i18n.Pick(catalog, lang))}, nil
+	}
+	if snap.ReadFailed {
+		// No structure since the start, and reading the registries failed:
+		// say that, not that Mira waits (docs/spec/context.md, 1.3, decision 6).
+		// The read's error is in the log where it failed.
+		if !peeking {
+			e.log.Warn("turn refused: the house structure could not be read from home assistant", "session", key)
+		}
+		return refuse(func(t texts) string { return t.structureUnreadable }, "structure unreadable")
 	}
 	if !snap.ExposureKnown {
 		// What Assist may see comes from the integration (docs/spec/ha-integration.md).
 		// Until it has sent that, no tool runs: Home Assistant's MCP server would
 		// act on what is exposed there, and the guard cannot know those names.
-		e.log.Warn("turn refused: the list of what Assist may see has not arrived", "session", key)
-		lang := e.lang(ctx)
-		if e.languages != nil {
-			lang = e.languages.Turn(ctx, req.Language, "", "")
+		if !peeking {
+			e.log.Warn("turn refused: the list of what Assist may see has not arrived", "session", key)
 		}
-		return Response{ConversationID: req.ConversationID, Text: i18n.Pick(catalog, lang).waitingForHA}, nil
+		return refuse(func(t texts) string { return t.waitingForHA }, "exposure unknown")
 	}
 	if e.structureText() == "" {
-		e.log.Warn("turn refused: no house structure from home assistant's prompt", "session", key)
-		lang := e.lang(ctx)
-		if e.languages != nil {
-			lang = e.languages.Turn(ctx, req.Language, "", "")
+		if !peeking {
+			e.log.Warn("turn refused: no house structure from home assistant's prompt", "session", key)
 		}
-		return Response{ConversationID: req.ConversationID, Text: i18n.Pick(catalog, lang).noHousePrompt}, nil
+		return refuse(func(t texts) string { return t.noHousePrompt }, "no house prompt")
 	}
 	// The asking device's own lines and tools, or no turn: without them the
 	// model would not know its room or its timers (docs/spec/fallbacks.md,
 	// rows 5, 6; docs/spec/context.md, 1.1).
 	hints, err := e.deviceReady(ctx, req.DeviceID)
 	if err != nil {
-		e.log.Error("turn refused: the asking device's part of home assistant's prompt or tools is missing",
-			"session", key, "device", req.DeviceID, "error", err)
-		lang := e.lang(ctx)
-		if e.languages != nil {
-			lang = e.languages.Turn(ctx, req.Language, "", "")
+		if !peeking {
+			e.log.Error("turn refused: the asking device's part of home assistant's prompt or tools is missing",
+				"session", key, "device", req.DeviceID, "error", err)
 		}
-		return Response{ConversationID: req.ConversationID, Text: i18n.Pick(catalog, lang).noDeviceLines}, nil
+		return refuse(func(t texts) string { return t.noDeviceLines }, "no device lines")
 	}
 
-	sess, err := e.openSession(ctx, key, req, ts.Area)
-	if err != nil {
-		return Response{}, err
-	}
-	if pre.thread != "" {
-		sess = e.joinHistory(ctx, sess, pre.thread, pre.own, req.Channel)
-	}
-	e.compactIfLong(ctx, key, sess)
-	history, err := e.history(ctx, key)
-	if err != nil {
-		return Response{}, err
+	var sess store.Session
+	var history []llm.Message
+	if peeking {
+		sess, history, err = e.peekSession(ctx, key, req, ts.Area)
+		if err != nil {
+			return turnBuild{}, nil, err
+		}
+	} else {
+		sess, err = e.openSession(ctx, key, req, ts.Area)
+		if err != nil {
+			return turnBuild{}, nil, err
+		}
+		if pre.thread != "" {
+			sess = e.joinHistory(ctx, sess, pre.thread, pre.own, req.Channel)
+		}
+		e.compactIfLong(ctx, key, sess)
+		history, err = e.history(ctx, key)
+		if err != nil {
+			return turnBuild{}, nil, err
+		}
 	}
 
 	person := ts.Person
 	if e.languages != nil {
-		ctx = i18n.WithLang(ctx, e.languages.Turn(ctx, req.Language, sess.AreaID, person))
+		if peeking {
+			ctx = i18n.WithLang(ctx, e.peekLang(ctx, req.Language, person))
+		} else {
+			ctx = i18n.WithLang(ctx, e.languages.Turn(ctx, req.Language, sess.AreaID, person))
+		}
 	}
 	messageText, followedUp, announced := pre.messageText, pre.followedUp, pre.announced
 	threadText, foreign := e.threadContext(ctx, sess, ts.Place, followedUp, announced)
@@ -536,40 +598,79 @@ func (e *Engine) turn(ctx context.Context, ts *tools.TurnState, req Request, sna
 		ReplyInLang:    sentLang(req.Language),
 		Text:           req.Text,
 	}
-	// The last answer of this conversation was cut off while it was spoken
-	// (docs/spec/streaming.md, step 10).
-	if e.interrupted != nil {
-		turn.HeardUpTo, turn.Interrupted = e.interrupted(key)
-	}
-	if c, err := e.store.TakeConfirmation(ctx, key); err == nil {
-		ts.Pending = &c
-		turn.PendingConfirmation = c.Summary
-	} else if !errors.Is(err, store.ErrNotFound) {
-		return Response{}, err
+	if peeking {
+		// What the turn would take: a run cannot build its request
+		// (decision 5).
+		if e.interruptionWaits != nil && e.interruptionWaits(key) {
+			return turnBuild{}, nil, errNoRun{"an interrupted answer's note waits"}
+		}
+		if has, err := e.store.HasConfirmation(ctx, key); err != nil {
+			return turnBuild{}, nil, err
+		} else if has {
+			return turnBuild{}, nil, errNoRun{"a confirmation waits"}
+		}
+	} else {
+		// The last answer of this conversation was cut off while it was spoken
+		// (docs/spec/streaming.md, step 10).
+		if e.interrupted != nil {
+			turn.HeardUpTo, turn.Interrupted = e.interrupted(key)
+		}
+		if c, err := e.store.TakeConfirmation(ctx, key); err == nil {
+			ts.Pending = &c
+			turn.PendingConfirmation = c.Summary
+		} else if !errors.Is(err, store.ErrNotFound) {
+			return turnBuild{}, nil, err
+		}
 	}
 
 	prefix, err := e.Prefix(ctx, req.Channel)
 	if err != nil {
-		return Response{}, err
+		return turnBuild{}, nil, err
 	}
 	agentName := config.ChannelAgent(req.Channel)
 	client, model, modelName := e.modelFor(e.cfg.ModelFor(agentName))
 	// A model with warm slots: the turn goes on with the prompt its warm
 	// slot holds (docs/spec/warm-slot.md).
-	warm := e.warmSlots(modelName)
-	if warm != nil {
+	var warm *agent.WarmSlots
+	if peeking {
+		if e.agents.Warm(modelName) != nil {
+			return turnBuild{}, nil, errNoRun{"the model has warm slots"}
+		}
+	} else if warm = e.warmSlots(modelName); warm != nil {
 		warm.Enter()
-		defer warm.Leave()
 		prefix = e.servedPrefix(modelName, warm, prefix, req.Channel)
 	}
 	mustBeLocal := e.cfg.PrivacyFor(agentName) == config.PrivacyLocal
 	if mustBeLocal && model.Privacy != config.PrivacyLocal {
-		return Response{}, fmt.Errorf("%s must run on a local model; its model %s is %s", agentName, modelName, model.Privacy)
+		if warm != nil {
+			warm.Leave()
+		}
+		return turnBuild{}, nil, fmt.Errorf("%s must run on a local model; its model %s is %s", agentName, modelName, model.Privacy)
 	}
-	built := prompt.Build(prefix, history, turn)
+	return turnBuild{ctx: ctx, sess: sess, built: prompt.Build(prefix, history, turn), prefix: prefix, history: history, turn: turn,
+		client: client, model: model, modelName: modelName, mustBeLocal: mustBeLocal, warm: warm}, nil, nil
+}
+
+func (e *Engine) turn(ctx context.Context, ts *tools.TurnState, req Request, snap structure.Snapshot, pre turnPre) (Response, error) {
+	turnBegan := e.clock()
+	now := e.clock()
+	key := ts.SessionKey
+	b, refused, err := e.build(ctx, ts, req, snap, pre, now, false)
+	if err != nil {
+		return Response{}, err
+	}
+	if refused != nil {
+		return *refused, nil
+	}
+	if b.warm != nil {
+		defer b.warm.Leave()
+	}
+	ctx, sess, built, prefix, turn := b.ctx, b.sess, b.built, b.prefix, b.turn
+	client, model, modelName, mustBeLocal, warm := b.client, b.model, b.modelName, b.mustBeLocal, b.warm
+	followedUp := pre.followedUp
 	msgs := built.Messages
 	added := []llm.Message{msgs[len(msgs)-1]} // the rendered layer 7
-	e.logContext(ctx, key, req.Channel, prefix, built, history, turn, added[0].Content)
+	e.logContext(ctx, key, req.Channel, prefix, built, b.history, turn, added[0].Content)
 	toolCount, toolChars := toolsSize(built.Tools)
 
 	resp := Response{ConversationID: req.ConversationID, PrefixHash: built.PrefixHash}
@@ -579,6 +680,8 @@ func (e *Engine) turn(ctx context.Context, ts *tools.TurnState, req Request, sna
 	if req.Channel == config.ChannelVoice {
 		pass = newPasser(req.Stream)
 	}
+	adopt := adoption{differed: -1}
+	defer e.doneWith(&adopt)
 	var final llm.Message
 	// silent: the model asked to say nothing (stay_silent).
 	var silent bool
@@ -598,7 +701,18 @@ func (e *Engine) turn(ctx context.Context, ts *tools.TurnState, req Request, sna
 			chatReq.ToolChoice = "none"
 		}
 		began := e.clock()
-		out, err := e.chat(ctx, client, modelName, model, chatReq, pass.onText())
+		// A speculative run's round with the same request is taken
+		// instead (docs/spec/speculative-turns.md, 3).
+		out, took := e.takeRound(ctx, &adopt, req, round, chatReq)
+		var err error
+		if took {
+			if f := pass.onText(); f != nil {
+				f(out.Message().Content)
+			}
+			e.log.Info("model round taken from a speculative run", "session", key, "round", round, "model", modelName)
+		} else {
+			out, err = e.chat(ctx, client, modelName, model, chatReq, pass.onText())
+		}
 		if err != nil {
 			e.modelFailed(ctx, modelName, err)
 		}

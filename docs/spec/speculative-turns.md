@@ -1,6 +1,6 @@
 # Speculative turns
 
-Status 2026-11-25: decisions 1 to 7 decided; step 1 built (the subscription; its events are only logged until step 2). Optional: without
+Status 2026-11-25: decisions 1 to 7 decided; steps 1 to 3 built (the subscription, the runs, taking over); step 4 (through Mira on the test HA) open. Optional: without
 `speculation.events_url` in `mira.yaml` nothing changes. Scenarios: [speculative-turns.feature](speculative-turns.feature).
 
 ## Goal
@@ -92,18 +92,22 @@ Built as `Handle` and `turn` build a turn, with what Home Assistant will most li
 
 Then:
 
-- **Read, not taken or written:** the session is read, not opened (none or an expired one: an empty history); the
-  confirmation, the interruption note and the thread are looked at, not taken; any of them there, or a history due for
-  compaction: no run (decision 5), with a debug line naming which.
+- **The same code as the turn** (`Engine.build`, peeking): the session is read, not opened (none or an expired one:
+  an empty history); the confirmation and the interruption note are looked at, not taken; the language is not
+  remembered. The context is marked read-only (`internal/peek`): the threads' context would link a thread or open a
+  thread's skill not yet open, and leaves it. Any of them there, a thread the turn runs in, a history due for
+  compaction, or a model with warm slots (its served prompt is a turn's): no run (decision 5), its log line says
+  which (`skipped: …`).
 - **Rounds** as in `turn`, without streaming, on the turn's model; not on a fallback (a failing model ends the run).
-  Each round keeps the hash of its request, the model's message, and for each read-only call its result.
-- **Tools:** a call of a tool marked read-only passes the guard and runs as in a turn; the first call that is not ends
-  the run after this round (decision 3), and no call of that round runs. A guard that does not allow a read-only call
-  ends the run the same way.
+  Each round keeps the hash of its request and the model's message.
+- **Tools:** a call of a tool marked read-only runs as in a turn, through the guard; the first call that is not ends
+  the run after this round (decision 3), and no call of that round runs. A round's text is marked as already said
+  in its last tool result, as a streamed voice turn does.
 - **Stored:** nothing. No chat messages, no session, no run row, no `heard` mark, no follow-up note.
 
 The run lives until it is ended (a stale reading, a newer reading, a turn waiting for its place) or 10 s after the
-side channel's `turn.final`, whichever is first. Taken over, it is the turn's until the turn is done.
+side channel's `turn.final`, whichever is first; a run whose side-channel turn never ends goes after 30 s (a safety
+net: no signal comes when the side channel loses a turn). Taken over, it is the turn's until the turn is done.
 
 ### 3. The turn takes over
 
@@ -111,15 +115,19 @@ In `turn`, before each model round:
 
 1. Its request's hash is compared with the round of the same number of every run kept for its device.
 2. **The same:** the turn takes the run's message. If the run's round is still on its way, the turn waits for it
-   instead of asking the model a second time. The message's text goes to the stream at once; its read-only calls
-   take the run's results; its other calls run now, as in every turn.
+   instead of asking the model a second time; at round 0 it first waits until each run of its satellite has built
+   its request (milliseconds). The message's text goes to the stream at once; its calls run now, as in every turn,
+   the read-only ones too (a second read, cheap, and never a stale state): the next round is the run's only when
+   their results are the same.
 3. **Not the same, or no run:** the turn calls the model as always; the runs of its device are ended.
 
 From the first round not taken on, the turn is a normal turn. Everything a turn stores, it stores as today.
 
 One log line per run: `speculation` with the side-channel turn, the device, the text's start, how it ended
-(`taken` with the rounds taken and the time the turn waited for them, `stale`, `replaced`, `no_match` with the round
-that differed, `expired`, `no_place`, `skipped` with the reason of decision 5, `failed` with the model's error).
+(`taken` with `rounds_taken`, `waited_ms` and the round that differed, if one; `stale`, `replaced`, `no_match`,
+`expired`, `yielded`, `skipped: <reason>` for decision 5 and a model without a free place, `failed`), and how its
+rounds ended (`done`: an answer or a call that does not only read). A failed run's error has a line of its own; each
+round a turn took logs `model round taken from a speculative run`.
 
 ### 4. What the model is told
 
@@ -145,9 +153,9 @@ Nothing new: a round taken over is the round the model would have been asked for
 | The URL answers 404 or not `text/event-stream` | an error naming the URL and the answer's start | no runs until the setting changes; turns as always |
 | An event that does not parse | a warning with the event's start | the event is left out; the next one counts |
 | No satellite or several in `listening` | debug | no run for that side-channel turn |
-| No free place at the model | debug | no run |
+| No free place at the model | `speculation … skipped: no free place at the model` | no run |
 | The model fails in a run | `speculation … failed` with the error | the run ends; the turn calls the model as always and finds the error itself |
-| A read-only tool fails in a run | its result says so, as in a turn | the round is kept with that result; the turn's request is then the same only if its tool would fail the same way, which it compares as everything else |
+| A read-only tool fails in a run | its result says so, as in a turn | the next round is built on that result; the turn runs the tool again, and the next round is taken only when it fails the same way |
 | The turn's request differs | `speculation … no_match`, the round | the turn calls the model; nothing was done twice |
 | A turn comes for a device that has no run | nothing | as always |
 
@@ -160,9 +168,9 @@ as a turn that read it a second earlier.
    the side-channel turn with its satellite; a fake side channel in the tests (a recorded stream of the reference
    server). SC-01 to SC-05 (built 2026-11-25).
 2. **The run** (`conversation`): building a turn's request without changing state, the rounds with read-only tools,
-   the end of a run. SC-06 to SC-11.
+   the end of a run. SC-06 to SC-11 (built 2026-11-25).
 3. **Taking over** in `turn`, round by round, with waiting for a round on its way and the model's places. SC-12 to
-   SC-17.
+   SC-17 (built 2026-11-25).
 4. **Through Mira on the test HA**: a fake side channel in `testenv` driven together with `techo5_fake.say`, every
    scenario once end to end; the log lines.
 5. **At home** (the maintainer): the reference server with `ASR_SPECULATE=1`, a week of turns; the share of runs

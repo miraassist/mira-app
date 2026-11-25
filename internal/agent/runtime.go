@@ -76,8 +76,12 @@ type Runtime struct {
 	o   Options
 	log *slog.Logger
 
-	mu      sync.Mutex
-	slots   map[string]chan struct{}
+	mu    sync.Mutex
+	slots map[string]chan struct{}
+	// yield are, per model, the holders of a place that give it up when
+	// another caller has to wait (TryAcquire), by a number of their own.
+	yield   map[string]map[int]func()
+	yieldID int
 	warm    map[string]*WarmSlots
 	agents  map[string]Spec
 	cancels map[string]*canceler
@@ -159,6 +163,47 @@ func (r *Runtime) Enter(ctx context.Context, spec Spec, cc CallContext, ts *tool
 // to the model itself (a conversation turn); release frees it.
 func (r *Runtime) Acquire(ctx context.Context, name string, model config.LLM) (release func(), err error) {
 	return r.acquire(ctx, name, model.Parallel)
+}
+
+// TryAcquire takes a free place at a model without waiting; ok is false
+// when none is free. A caller that has to wait for a place later calls
+// yield, which must end the holder's use soon and not block; release frees
+// the place (docs/spec/speculative-turns.md, decision 6).
+func (r *Runtime) TryAcquire(name string, model config.LLM, yield func()) (release func(), ok bool) {
+	parallel := model.Parallel
+	if parallel < 1 {
+		parallel = 1
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	slot, found := r.slots[name]
+	if !found {
+		slot = make(chan struct{}, parallel)
+		r.slots[name] = slot
+	}
+	select {
+	case slot <- struct{}{}:
+	default:
+		return nil, false
+	}
+	if r.yield == nil {
+		r.yield = map[string]map[int]func(){}
+	}
+	if r.yield[name] == nil {
+		r.yield[name] = map[int]func(){}
+	}
+	r.yieldID++
+	id := r.yieldID
+	r.yield[name][id] = yield
+	var once sync.Once
+	return func() {
+		once.Do(func() {
+			r.mu.Lock()
+			delete(r.yield[name], id)
+			r.mu.Unlock()
+			<-slot
+		})
+	}, true
 }
 
 // run is a running call, as the calls made inside it find it in ctx.
@@ -709,8 +754,18 @@ func (r *Runtime) acquire(ctx context.Context, model string, parallel int) (func
 		return func() { <-slot }, nil
 	default:
 	}
-	// Every place is taken: the run waits, and the log says why it is slow.
-	r.log.Debug("a run waits for a place at its model", "model", model, "parallel", parallel)
+	// Every place is taken: a holder that yields gives its place up, else
+	// the run waits, and the log says why it is slow.
+	r.mu.Lock()
+	var yielders []func()
+	for _, f := range r.yield[model] {
+		yielders = append(yielders, f)
+	}
+	r.mu.Unlock()
+	for _, f := range yielders {
+		f()
+	}
+	r.log.Debug("a run waits for a place at its model", "model", model, "parallel", parallel, "yielded", len(yielders))
 	select {
 	case slot <- struct{}{}:
 		return func() { <-slot }, nil

@@ -26,7 +26,7 @@ var builtSteps = map[string][]int{
 	"HK": {1, 2},
 	"HW": {1, 2, 3},                                // docs/spec/hooks.md, Steps
 	"MO": {1, 2, 3, 4, 5, 7},                       // docs/spec/models.md, Steps; step 6 in Go (MO-50 to 54) and pytest (MO-55)
-	"SC": {1},                                      // docs/spec/speculative-turns.md
+	"SC": {1, 2, 3},                                // docs/spec/speculative-turns.md
 	"SM": {1, 2, 3, 4},                             // docs/spec/skill-mcp.md
 	"MX": {1, 2},                                   // docs/spec/mcp-connections.md
 	"EN": {1},                                      // docs/spec/endings.md

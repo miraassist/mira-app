@@ -33,11 +33,7 @@ func (a *app) runSideChannel(ctx context.Context, snapshot func() structure.Snap
 			}
 			return out
 		},
-		// Step 2 starts speculative runs here; until then the events are
-		// only logged.
-		Handle: func(ev sidechannel.Event, device string) {
-			a.log.Debug("side channel", "event", ev.Kind, "turn", ev.Turn, "device", device, "rev", ev.Rev, "text", ev.Text)
-		},
+		Handle: a.engine.Speculate,
 	})
 	return c.Run(ctx)
 }

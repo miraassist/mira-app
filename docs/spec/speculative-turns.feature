@@ -68,7 +68,7 @@ Feature: SC Speculative turns
   Scenario: SC-11 No run while a confirmation waits
     Given the conversation at the kitchen satellite has a confirmation waiting
     When a finished-sounding reading comes
-    Then no run starts, the confirmation is still there, and a debug line says why
+    Then no run starts, the confirmation is still there, and the log line says why
 
   @step3
   Scenario: SC-12 The same request takes the run's round

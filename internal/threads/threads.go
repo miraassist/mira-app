@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"github.com/miraassist/mira-app/internal/clock"
 	"log/slog"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -26,6 +27,7 @@ import (
 
 	"github.com/miraassist/mira-app/internal/config"
 	"github.com/miraassist/mira-app/internal/i18n"
+	"github.com/miraassist/mira-app/internal/peek"
 	"github.com/miraassist/mira-app/internal/skills"
 	"github.com/miraassist/mira-app/internal/store"
 	"github.com/miraassist/mira-app/internal/tools"
@@ -350,6 +352,10 @@ func deviceOf(ctx context.Context) string {
 // open, so the turn has the skill's tools (docs/spec/threads.md,
 // Assignment).
 func (m *Manager) link(ctx context.Context, sessionKey string, th store.Thread) {
+	if peek.Active(ctx) {
+		peek.Left(ctx, "link the thread")
+		return
+	}
 	if err := m.opts.Store.SetSessionThread(ctx, sessionKey, th.ID); err != nil {
 		m.log.Warn("could not link the turn to its thread", "thread", th.ID, "error", err)
 	}
@@ -381,6 +387,13 @@ func (m *Manager) Join(ctx context.Context, sessionKey, threadID string) error {
 
 // openSkill opens a thread's skill for a turn, so it has the skill's tools.
 func (m *Manager) openSkill(ctx context.Context, sessionKey, skill string) {
+	if peek.Active(ctx) {
+		// Open already: nothing would change.
+		if open, err := m.opts.Store.SessionSkills(ctx, sessionKey); err != nil || !slices.Contains(open, skill) {
+			peek.Left(ctx, "open the thread's skill")
+		}
+		return
+	}
 	if err := m.opts.Store.AddSessionSkill(ctx, sessionKey, skill); err != nil {
 		m.log.Warn("could not open the thread's skill for the turn", "skill", skill, "error", err)
 	}

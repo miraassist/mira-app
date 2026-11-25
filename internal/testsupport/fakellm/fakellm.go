@@ -124,6 +124,16 @@ func (s *Server) Last() Recorded {
 	return reqs[len(reqs)-1]
 }
 
+// Forget drops the requests seen and the steps already answered: the
+// script goes on where it was, the record starts empty.
+func (s *Server) Forget() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.script = s.script[s.next:]
+	s.next = 0
+	s.requests = nil
+}
+
 func (s *Server) Reset() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
