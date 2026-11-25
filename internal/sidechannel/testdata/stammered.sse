@@ -1,0 +1,31 @@
+: recorded from the reference side channel (ha-voice-rocm speechcpp-asr, ASR_SPECULATE=1), a synthetic stammered turn
+
+event: turn.started
+data: {"turn": "06deba79e74c", "t": 1795621249.404}
+
+event: speech.started
+data: {"turn": "06deba79e74c", "t": 1795621250.109, "at_s": 0.768}
+
+event: speech.paused
+data: {"turn": "06deba79e74c", "t": 1795621251.686, "at_s": 1.984, "complete": 0.177}
+
+event: reading
+data: {"turn": "06deba79e74c", "t": 1795621251.887, "rev": 1, "text": "Schalte das Licht im.", "audio_s": 2.176, "complete": 0.177, "took_s": 0.37}
+
+: ping
+
+event: speech.started
+data: {"turn": "06deba79e74c", "t": 1795621252.093, "at_s": 2.72}
+
+event: reading.stale
+data: {"turn": "06deba79e74c", "t": 1795621252.093, "rev": 1}
+
+event: speech.paused
+data: {"turn": "06deba79e74c", "t": 1795621253.39, "at_s": 3.776, "complete": 0.009}
+
+event: reading
+data: {"turn": "06deba79e74c", "t": 1795621253.739, "rev": 2, "text": "Schalte das Licht im Wohnzimmer an.", "audio_s": 3.968, "complete": 0.009, "took_s": 0.43}
+
+event: turn.final
+data: {"turn": "06deba79e74c", "t": 1795621255.164, "text": "Schalte das Licht im Wohnzimmer an.", "source": "speculative", "rev": 2, "stop_to_text_s": 0.0}
+

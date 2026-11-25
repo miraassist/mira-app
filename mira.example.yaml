@@ -141,6 +141,12 @@ web_search:
 #   threshold: 0.7          # the score a voice needs; a person's
 #                           # voice_threshold (under persons) wins
 
+# A side channel of the speech-to-text reports what is said while a
+# satellite still listens; Mira then starts the model early and uses its
+# answer when the turn asks the same (docs/spec/speculative-turns.md).
+# speculation:
+#   events_url: http://192.168.x.y:10312/api/events
+
 # Telegram runs through Home Assistant's own Telegram integration
 # (telegram_bot); Mira has no bot of her own (docs/spec/channels.md).
 

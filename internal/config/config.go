@@ -53,8 +53,11 @@ type Config struct {
 	Skills     Skills              `yaml:"skills"`
 	WebSearch  WebSearch           `yaml:"web_search"`
 	SpeakerID  SpeakerID           `yaml:"speaker_id"`
-	Agents     Agents              `yaml:"agents"`
-	Telemetry  Telemetry           `yaml:"telemetry"`
+	// Speculation starts the model on what a side channel reports while a
+	// satellite still listens (docs/spec/speculative-turns.md).
+	Speculation Speculation `yaml:"speculation"`
+	Agents      Agents      `yaml:"agents"`
+	Telemetry   Telemetry   `yaml:"telemetry"`
 
 	// mainMissing: the file has models but not main (LacksMain).
 	mainMissing bool
@@ -717,6 +720,14 @@ type SpeakerID struct {
 	// Threshold is the score a voice needs to count as a person (0 to 1);
 	// 0 takes speakerid.Threshold. A person's voice_threshold wins.
 	Threshold float64 `yaml:"threshold,omitempty"`
+}
+
+// Speculation is the side channel of the speech-to-text; without its URL
+// there are no speculative runs (docs/spec/speculative-turns.md).
+type Speculation struct {
+	// EventsURL is the side channel's Server-Sent Events, e.g.
+	// http://host:10312/api/events.
+	EventsURL string `yaml:"events_url,omitempty"`
 }
 
 // mainDefaults are what main takes for the settings mira.yaml leaves out;

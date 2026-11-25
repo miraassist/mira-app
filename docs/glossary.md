@@ -175,6 +175,15 @@ is used in a spec; a term that is not here is not a term yet.
 | radio station | Radiosender | A station that streams live and does not end by itself. With exposed Music Assistant players it plays through them as music (an item with `://radio/` in its `media_content_id`); without them Mira plays it from Home Assistant's Radio Browser on the room's speaker | Music Assistant's items of type `radio`; without Music Assistant the tool `radio_play` ([Radio](spec/radio.md)) | radio (alone, where unclear), more of the same (for it) |
 | ducking | Absenken | Mira lowering the Music Assistant players that play in a satellite's area while it is in a turn (from listening to idle, follow-up questions included), and setting them back afterwards ([Music](spec/music-players.md), part 7). Not the satellite's own lowering of its playback, which its firmware does | `music.Ducker` (new) | muting, Stummschalten, pausing |
 
+## Speculation (new, [Speculative turns](spec/speculative-turns.md))
+
+| English | German | Meaning | Code / database | Not |
+|---|---|---|---|---|
+| side channel | Side-Channel | An optional service beside the speech-to-text that reports what is being said while a satellite still listens: its pauses, its readings and the final transcript, as events | `sidechannel.Client`, setting `speculation.events_url`; the speech service's `/api/events` | STT (for it), stream |
+| reading | Lesung | A transcript of the audio up to a pause, made while the user may still go on; replaced by the next reading when they do (it goes stale) | `sidechannel.Event` of kind `reading`, `reading.stale` | partial, interim result |
+| speculative run | spekulativer Lauf | Mira's model rounds on a reading, before Home Assistant calls her: they only read, their answer is kept, not spoken. A turn whose own model request is the same takes it over | `conversation.speculation` (new) | pre-turn, shadow turn |
+| taking over | Übernehmen | A turn using a speculative run's round instead of calling the model: only when the turn's request is the same as the run's, byte for byte | `conversation.adopt` (new) | reuse, merging |
+
 ## Decided (2026-11-13)
 
 1. A device's usual behaviour is its **device profile** (Geräteprofil); the memory's is the **memory profile** (Gedächtnisprofil); "profile" alone is not used (changed the same day: first "habit").
