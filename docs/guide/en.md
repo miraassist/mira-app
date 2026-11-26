@@ -1691,7 +1691,7 @@ Otherwise:
 - **Mira not under "Discovered"?** Usually `--network host` is missing, or Mira is in another network. Then enter the address by hand (see step 3).
 - **The dialog asks for a pairing code?** This Mira was paired with another Home Assistant. Mira writes the code into its log as soon as the integration is removed there: `docker logs mira`, for the Home Assistant app under **Settings → Apps → Mira → Log**. It looks like this: `ABCD-EFGH-JKMN`.
   - Removing the integration and adding it again in the same Home Assistant needs no code.
-  - No code, because the old Home Assistant is gone: reset Mira's data, with `docker exec mira /app/mira reset` and a restart (`docker restart mira`); for the HA app with the option **Reset data** on the **Configuration** tab and a restart of the app. Memory and messages are gone then, `mira.yaml` stays.
+  - No code, because the old Home Assistant is gone: reset Mira's data, with `docker exec mira /app/mira reset` and a restart (`docker restart mira`); for the HA app with the option **Reset data at next start** on the **Configuration** tab and a restart of the app. Memory and messages are gone then, `mira.yaml` stays.
 - **Another model?** On Mira's page under **Models**, or Settings → Devices & services → Mira → **Configure** → **AI model (LLM)**.
 - **Repair "Mira has no access any more"?** Mira's token was revoked, or its user is no longer an administrator. Until you give her a new one, what Home Assistant refuses fails, such as new tasks and timers. Open the repair under **Settings → System → Repairs** and paste a new token, as when setting up.
 

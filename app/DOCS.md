@@ -31,7 +31,7 @@ consistent copy.
 - Removing the Mira integration and adding it again in the same Home Assistant needs no code.
 - Another Home Assistant needs the **pairing code**: it is in this app's **Log**, written when the integration was
   removed.
-- **Reset data** (Configuration tab): turn it on and restart the app. Mira deletes its data (memory, messages,
+- **Reset data at next start** (Configuration tab): turn it on and restart the app. Mira deletes its data (memory, messages,
   settings from Home Assistant) and keeps `mira.yaml`, with the AI model; then it pairs again without a code, like a
   new install. It resets once; turn the option off again afterwards.
 

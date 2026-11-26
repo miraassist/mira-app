@@ -39,7 +39,7 @@ with the repair from [Versions](versions.md) when the two drift apart.
   `--user nonroot` (Compose: `user: nonroot`); the image's data folder `/var/lib/mira` belongs to that user, so a
   named volume works as before. README and guide say so. No second image.
 - **Options in the app's page:** as few as possible: the setup goes through the integration as today (model,
-  pairing). [Fewer settings, one place.] One option, **Reset data** (`reset_data`, since 0.11.0): the app has no
+  pairing). [Fewer settings, one place.] One option, **Reset data at next start** (`reset_data`, since 0.11.0; named so since 2026-11-26, as it acts at the next start): the app has no
   terminal for `mira reset`, so the option does it at the next start, once until turned off and on again
   ([Setup](setup.md), Reset). The service reads it from Supervisor's `/data/options.json`. The pairing code for
   another Home Assistant is in the app's log.

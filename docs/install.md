@@ -94,7 +94,7 @@ back to the web UI and lets the Mira service go (`POST /v1/unpair`: it makes a n
 keeps the model). The administrator's token stays: it is theirs, revoked in their profile. Home Assistant keeps
 Mira's old access token in its storage, so the same HA pairs again without a code (also when the Mira service was
 away and did not let go); another HA needs the pairing code the Mira service writes into its log. `mira reset` (or
-the app's option "Reset data") deletes the Mira service's data, keeps `mira.yaml`, and it pairs like a new one.
+the app's option "Reset data at next start") deletes the Mira service's data, keeps `mira.yaml`, and it pairs like a new one.
 
 Mira's web UI is in Home Assistant's sidebar: the integration passes the page through Home Assistant (open, it holds
 no data) and its API calls through an authenticated proxy that adds the Mira service's token and the signed-in HA

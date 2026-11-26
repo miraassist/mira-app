@@ -1,6 +1,7 @@
 configuration:
   reset_data:
-    name: Reset data
+    name: Reset data at next start
     description: >-
-      At the next start Mira deletes its data (memory, messages, settings from Home Assistant, the AI model) and
-      keeps mira.yaml. Then add Mira in Home Assistant again, without a code. Turn it off again afterwards.
+      Turn it on and restart the app: Mira then deletes its data once (memory, messages, settings from Home Assistant)
+      and keeps mira.yaml with the AI model. Then add Mira in Home Assistant again, without a code, and turn the option
+      off again. While it stays on, later starts do nothing more.
