@@ -1,6 +1,6 @@
 # A setup that does not finish – spec
 
-Status 2026-11-26: decided (the maintainer), nothing built. Scenarios: [setup-recovery.feature](setup-recovery.feature)
+Status 2026-11-26: decided (the maintainer); step 1 built. Scenarios: [setup-recovery.feature](setup-recovery.feature)
 (SU-01 to SU-09). Found by issue 10 of miraassist/mira (moving to the app of 0.40.0) and reproduced on the test HA.
 Hangs on [Setup](setup.md) (the pairing, the kept token) and on [Reading what comes in](parsing.md) (the limited
 start, row 7).
@@ -98,7 +98,10 @@ file was corrected) led to an entry.
 ## Steps
 
 1. **The service** (decisions 1 and 3): the limited start's health says `limited` once Home Assistant's access is set;
-   its page says that the settings cannot be read, without the error. SU-01 to SU-04 in Go.
+   its page says that the settings cannot be read, without the error. SU-01 to SU-04 in Go. Built 2026-11-26:
+   `setup.Handler` has `Limited` and `HASet` (from `prepared.haFromSetup`), set by `limitedMux`; the tests run the
+   limited start as `runLimited` does at every start (`prepareFrom` with `config.Limited`), with a `mira.yaml` whose
+   token is set nowhere, as in issue 10.
 2. **The integration** (decision 2): the token kept as soon as the pairing answers; the dialog's sentence after a failed
    wait (de, en); the wait taking `limited` as started. SU-05 to SU-09 in pytest.
 3. **End to end on the test HA**, as reproduced on 2026-11-26 (a second service with a `mira.yaml` whose tokens are

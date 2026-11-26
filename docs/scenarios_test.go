@@ -34,6 +34,7 @@ var builtSteps = map[string][]int{
 	"MF": {1},                                      // docs/spec/main-in-file.md; step 2 in Go (MF-10 to 14) and pytest (MF-15)
 	"PC": {2, 3, 5, 6},                             // docs/spec/private-choices.md; step 1 was the check on the test HA
 	"PA": {1},                                      // docs/spec/parsing.md; step 4 is tested in pytest
+	"SU": {1},                                      // docs/spec/setup-recovery.md; step 2 is tested in pytest
 	"SP": {3},                                      // docs/spec/speaker-id.md
 	"BK": {1},                                      // docs/spec/backup.md; steps 2 and 3 are tested in pytest
 	"RA": {2, 3, 4},                                // docs/spec/radio.md, Steps

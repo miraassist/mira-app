@@ -58,6 +58,13 @@ type Handler struct {
 	Pairing bool
 	// SetupMode: Home Assistant or the model is missing; the service waits.
 	SetupMode bool
+	// Limited: the limited start, mira.yaml cannot be read. Its health says
+	// "limited" once Home Assistant's access is set (HASet), else "setup";
+	// its page says the settings cannot be read, never the error: it is open
+	// without a token (docs/spec/setup-recovery.md, decisions 1 and 3).
+	Limited bool
+	// HASet: Home Assistant's access is set (the setup in the database).
+	HASet bool
 	// Model: the model set (in the file or by setup); Home Assistant then
 	// need not ask for one.
 	Model string
@@ -287,10 +294,15 @@ func (h *Handler) status(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// health in setup mode: up, but waiting for setup.
+// health in setup mode: up, but waiting for setup; in the limited start,
+// once set up, "limited": the setup's wait ends, the problem is in the status.
 func (h *Handler) health(w http.ResponseWriter, r *http.Request) {
+	status := "setup"
+	if h.Limited && h.HASet {
+		status = "limited"
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"status": "setup", "id": h.ID, "version": h.Version, "open": h.open(r.Context()),
+		"status": status, "id": h.ID, "version": h.Version, "open": h.open(r.Context()),
 		"pairing": h.pending(r.Context()), "model": h.Model,
 	})
 }
@@ -691,22 +703,41 @@ func (h *Handler) page(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	fmt.Fprintf(w, setupPage, shown)
+	if h.Limited {
+		steps := ""
+		if !h.HASet {
+			steps = setupSteps
+		}
+		fmt.Fprintf(w, limitedPage, shown, steps)
+		return
+	}
+	fmt.Fprintf(w, setupPage, shown+setupSteps)
 }
 
 const codeHint = `<p>Diese Mira war schon mit einem Home Assistant gekoppelt. Ein anderes Home Assistant braucht den <b>Kopplungscode</b>: Er steht im Protokoll von Mira (<code>docker logs mira</code>, oder in Home Assistant im Protokoll der Mira-App).</p>
 <p><small>This Mira was paired before. Another Home Assistant needs the pairing code from Mira's log.</small></p>`
 
-const setupPage = `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Mira – Einrichtung</title>
+const pageHead = `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Mira – Einrichtung</title>
 <style>body{font-family:system-ui,sans-serif;max-width:34rem;margin:3rem auto;padding:0 1rem;line-height:1.5;color:#222}
 ol{padding-left:1.2rem}small{color:#666}
 @media (prefers-color-scheme:dark){body{background:#111;color:#eee}small{color:#aaa}}</style></head><body>
-<h1>Mira wartet auf die Einrichtung</h1>
-%s
-<ol><li>In Home Assistant: <b>Einstellungen → Geräte &amp; Dienste</b>. Mira steht unter <b>Entdeckt</b> → <b>Hinzufügen</b> (sonst: Integration hinzufügen → Mira).</li>
+`
+
+const setupSteps = `<ol><li>In Home Assistant: <b>Einstellungen → Geräte &amp; Dienste</b>. Mira steht unter <b>Entdeckt</b> → <b>Hinzufügen</b> (sonst: Integration hinzufügen → Mira).</li>
 <li>Das KI-Modell (LLM) wählen.</li><li>Bestätigen, welche Assistenten Mira verwenden. Fertig.</li></ol>
 <p><small>Mira is waiting to be set up: in Home Assistant, add Mira under Settings → Devices &amp; services, choose the AI model (LLM), and confirm the assistants.</small></p>
+`
+
+const setupPage = pageHead + `<h1>Mira wartet auf die Einrichtung</h1>
+%s
 </body></html>`
+
+// limitedPage names no error: the page is open without a token, and an
+// error of the file can quote a line of it, a secret too.
+const limitedPage = pageHead + `<h1>Mira kann ihre Einstellungen nicht lesen</h1>
+<p>Die Datei <code>mira.yaml</code> lässt sich nicht lesen. Welche Zeile und welcher Fehler, steht in Home Assistant unter <b>Einstellungen → Reparaturen</b> und im Protokoll der Mira-App. Sobald sich die Datei lesen lässt, startet Mira von selbst neu.</p>
+<p><small>Mira cannot read her settings: mira.yaml cannot be read. Repairs in Home Assistant and the Mira app's log name the line and the error; once the file reads, Mira starts anew by herself.</small></p>
+%s%s</body></html>`
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")

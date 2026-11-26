@@ -80,7 +80,7 @@ func runLimited(ctx context.Context, path string, cause error) error {
 func limitedMux(st *store.Store, p prepared, id, file string, cause error) http.Handler {
 	mux := api.NewMux()
 	(&setup.Handler{Store: st, Token: p.cfg.Server.Token, ID: id, Version: version, Pairing: p.pairing,
-		SetupMode: true, Model: p.model(), Restart: restart, Log: slog.Default(),
+		SetupMode: true, Limited: true, HASet: p.haFromSetup, Model: p.model(), Restart: restart, Log: slog.Default(),
 		Config: config.File{Path: p.path, Secrets: config.DefaultSecrets()}}).Register(mux)
 	problem := haconv.Problem{Source: "config", Name: "mira.yaml", Text: file + ": " + cause.Error()}
 	mux.Handle(api.Route{Method: http.MethodGet, Path: "/v1/status", Tag: api.TagIntegration,
