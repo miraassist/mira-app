@@ -1528,6 +1528,8 @@ paths:
                     type: boolean
                   version:
                     type: string
+                  limited:
+                    type: boolean
                 required:
                   - id
                   - model

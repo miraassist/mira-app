@@ -1,8 +1,8 @@
 # A setup that does not finish – spec
 
 Status 2026-11-26: decided (the maintainer); steps 1 and 2 built; step 3 run in part, with two findings (below,
-"Found in step 3"), one of them open. Scenarios: [setup-recovery.feature](setup-recovery.feature)
-(SU-01 to SU-09). Found by issue 10 of miraassist/mira (moving to the app of 0.40.0) and reproduced on the test HA.
+"Found in step 3"); step 4 (decision 6) answers the second, built. Scenarios: [setup-recovery.feature](setup-recovery.feature)
+(SU-01 to SU-12). Found by issue 10 of miraassist/mira (moving to the app of 0.40.0) and reproduced on the test HA.
 Hangs on [Setup](setup.md) (the pairing, the kept token) and on [Reading what comes in](parsing.md) (the limited
 start, row 7).
 
@@ -34,6 +34,7 @@ file was corrected) led to an entry.
 | 3 | Mira's page in the limited start | It says that Mira's settings cannot be read and where to see why, instead of "waiting to be set up" (3A) |
 | 4 | Decision 1, now that a first setup on a limited start ends at the pairing (found in step 3) | Kept: `limited` stays for a pairing or setup that sends no new model; the page helps in every case (4A). Not: the health's change taken back |
 | 5 | The pairing's error on a broken file ("Pairing did not work: Mira cannot write her AI model into …") | Stays as it is: it names the file, the line and the error (5A) |
+| 6 | The dialog on a limited start (found in step 3, 2) | `GET /v1/pair` of the limited start says `limited: true`; the dialog ends at once with the sentence that Mira cannot read her settings, what to do and that she is added again afterwards; nothing is paired (6A). For the first setup too, so that no one chooses a model first and fails at the pairing. Not: the sentence only for a paired service; not: only the guide. With it, decision 1 holds only for an integration before this step (it does not know the field); for a new one a limited start ends in the dialog, without an entry, which decision 1 had turned down because of fault 2: nothing is paired now, so fault 2 does not arise |
 
 ## What it does
 
@@ -108,7 +109,25 @@ file was corrected) led to an entry.
    removed) and then started limited: the summary shows the model as missing, offers no model branch (a paired service
    lists models only to its token) and no "Start using Mira", and says nothing about why. The same with the pairing
    code entered, and the same for this Home Assistant (rejoin, no code). Run on the test HA with a `mira.yaml` given an
-   unknown field after the removal. The way out today: correct the file, then add Mira again. Not decided yet.
+   unknown field after the removal. The way out today: correct the file, then add Mira again. Decision 6 (below).
+
+### The dialog on a limited start (decision 6)
+
+- `GET /v1/pair` of the limited start says `limited: true` (`PairState.Limited`, a new optional field; left out
+  elsewhere). No error text: the route is open without a token, as the health and the page.
+- The setup reads it where it reads the pairing state, after the address (`async_step_user`) and on a discovery
+  (`async_step_zeroconf`), before anything else (`_step_auth`): with `limited` it ends the dialog (abort `limited`,
+  de, en): "Mira cannot read her settings: the file mira.yaml cannot be read. The Mira app's log says what is wrong.
+  Correct the file; Mira then starts anew by herself. Afterwards add Mira here again." Nothing is called after it:
+  no pairing, no setup, no token kept.
+- Once the file is corrected, Mira starts anew (PA-08); `GET /v1/pair` no longer says `limited`, and adding Mira works
+  as for any service in setup mode: without a code for this Home Assistant when it holds a kept token or the rejoin
+  key, with the code from the log for another one.
+- **The interface:** an integration before this step does not know the field and behaves as in steps 1 and 2; a
+  service before this step does not send it, and a new integration behaves as in step 2. Neither side raises the
+  other's minimum.
+- **Costs:** none added; the field comes with the call the dialog makes anyway.
+- **Fails:** nothing new: `GET /v1/pair` failing is handled as now (the token's form, or "cannot connect").
 
 ## Costs
 
@@ -134,3 +153,10 @@ file was corrected) led to an entry.
    with a service that stays in setup mode (an old one) the wait ends after a minute and a new dialog needs no code; the
    integration of 0.40.0 with the new service finishes too. The release notes say what a user stuck like in issue 10
    does.
+4. **The dialog on a limited start** (decision 6): `limited` in `GET /v1/pair` (SU-10 in Go); the dialog's abort
+   after the address and on a discovery, for a new and a paired service (SU-11, SU-12 in pytest). Run on the test HA:
+   a first setup and a paired service, each on a limited start, then the file corrected and Mira added again. Built
+   2026-11-26 (`PairState.Limited`; in the integration the abort `limited` at the start of `_step_auth`, de, en). Run
+   on the test HA the same day: the first setup on a `mira.yaml` with unset variables ended at the address with the
+   sentence, no pairing in the service's log; a service set up, let go and restarted with an unknown field in its file
+   ended the same, and once the field was removed it was added again without a code (rejoin) in 2.0 s.

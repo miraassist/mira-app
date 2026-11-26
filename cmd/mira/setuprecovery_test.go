@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/miraassist/mira-app/internal/api"
 	"github.com/miraassist/mira-app/internal/clock"
 	"github.com/miraassist/mira-app/internal/config"
 	"github.com/miraassist/mira-app/internal/setup"
@@ -196,4 +197,38 @@ func TestSU04_TheLimitedStartsPageSaysTheSettingsCannotBeRead(t *testing.T) {
 	again, _ := l.serve(t)
 	_, page = call(t, again, "/", "")
 	check(page, false)
+}
+
+// SU-10 The limited start's pairing state says limited, without an error
+// text (docs/spec/setup-recovery.md, decision 6); a service in setup mode
+// with a readable file does not.
+func TestSU10_TheLimitedStartsPairingStateSaysLimited(t *testing.T) {
+	l := newLimitedStart(t)
+	srv, _ := l.serve(t)
+	code, body := call(t, srv, "/v1/pair", "")
+	var state struct {
+		Limited bool `json:"limited"`
+	}
+	if err := json.Unmarshal([]byte(body), &state); err != nil || code != http.StatusOK || !state.Limited {
+		t.Errorf("pairing state %d %s: %v", code, body, err)
+	}
+	for _, leak := range []string{unsetToken, "mira.yaml", "environment"} {
+		if strings.Contains(body, leak) {
+			t.Errorf("the pairing state, open without a token, carries %q: %s", leak, body)
+		}
+	}
+	st, err := store.Open(context.Background(), store.Options{Path: filepath.Join(t.TempDir(), "plain.db"), Clock: clock.Real().Now})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	plain := httptest.NewServer(func() http.Handler {
+		mux := api.NewMux()
+		(&setup.Handler{Store: st, SetupMode: true, Pairing: true, ID: "id-2"}).Register(mux)
+		return mux
+	}())
+	defer plain.Close()
+	if _, body := call(t, plain, "/v1/pair", ""); strings.Contains(body, "limited") {
+		t.Errorf("setup mode with a readable file says limited: %s", body)
+	}
 }

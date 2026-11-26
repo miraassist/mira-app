@@ -70,3 +70,23 @@ Feature: SU A setup that does not finish
     When "Start using Mira" is submitted
     Then no token is kept
     And the summary says the pairing did not work
+
+  @step4
+  Scenario: SU-10 The limited start's pairing state says limited
+    Given mira.yaml cannot be read
+    When the pairing state is asked without a token
+    Then it says limited, without an error text
+    And a service in setup mode with a readable file does not say limited
+
+  @step4
+  Scenario: SU-11 The dialog ends on a limited start after the address
+    Given a service whose pairing state says limited, never paired or paired before
+    When its address is entered
+    Then the dialog ends with the sentence that Mira cannot read her settings and what to do
+    And nothing is paired, set up or kept
+
+  @step4
+  Scenario: SU-12 The dialog ends on a discovered limited start
+    Given a service whose pairing state says limited announces itself
+    When the discovery is handled
+    Then the dialog ends with the same sentence, before anything else

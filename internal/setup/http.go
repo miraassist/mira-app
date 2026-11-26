@@ -132,6 +132,10 @@ type PairState struct {
 	Rejoin    bool   `json:"rejoin"`
 	SetupMode bool   `json:"setup_mode"`
 	Version   string `json:"version"`
+	// Limited: the limited start, mira.yaml cannot be read; the setup ends
+	// with what to do instead of pairing (docs/spec/setup-recovery.md,
+	// decision 6). No error text: the route is open without a token.
+	Limited bool `json:"limited,omitempty"`
 }
 
 // PairRequest is POST /v1/pair's body.
@@ -290,7 +294,7 @@ func (h *Handler) status(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, PairState{
 		ID: h.ID, Version: h.Version, Pairs: h.Pairing, Open: h.open(r.Context()),
 		Pairing: h.pending(r.Context()), SetupMode: h.SetupMode, Model: h.Model,
-		Rejoin: h.rejoin(r.Context()),
+		Rejoin: h.rejoin(r.Context()), Limited: h.Limited,
 	})
 }
 
