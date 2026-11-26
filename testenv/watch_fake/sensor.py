@@ -33,7 +33,7 @@ async def async_setup_platform(
     hass.data[DOMAIN]["settable"].extend(temperatures)
     phones = {unique_id: FakePhone(name, unique_id) for name, unique_id in PHONES}
     hass.data[DOMAIN]["phones"] = phones
-    add([meter, *plugs.values(), *temperatures, *phones.values()])
+    add([meter, *plugs.values(), *temperatures, *phones.values(), hass.data[DOMAIN]["washer"].power])
 
 
 

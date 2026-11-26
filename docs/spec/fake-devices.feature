@@ -168,3 +168,34 @@ Feature: FG Fake satellites that behave like the real ones
     Then the device registry has a device whose identifier is a number
     And the entity registry has an entity of that device whose unique_id is a number
     And a device whose name is a number comes only on request, and goes again
+
+  # --- A washing machine on a plug --------------------------------------------------------------------------
+
+  @step12
+  Scenario: FG-34 The user starts the washing machine and it runs its programme
+    Given the plug is on
+    When watch_fake.washer_start runs a programme of two steps
+    Then the power follows the steps and is 0 W after the last
+    And with the plug off watch_fake.washer_start fails and the power stays 0 W
+
+  @step12
+  Scenario: FG-35 The plug off holds the run, on again resumes it
+    Given a programme runs in its first step
+    When the plug is switched off
+    Then the power is 0 W at once and stays so past the programme's end
+    When the plug is switched on again
+    Then the power is the held step's at once and the programme ends after the rest it held
+
+  @step12
+  Scenario: FG-36 The plug off or on while nothing runs changes nothing
+    Given no programme runs
+    When the plug is switched off and on
+    Then the power stays 0 W
+
+  @step12
+  Scenario: FG-37 Home Assistant starts the loaded programme with the button
+    Given the user loaded a programme with watch_fake.washer_load
+    When button.fake_waschmaschine_start is pressed
+    Then the programme runs
+    And pressed without a loaded programme, or with the plug off, the button fails and nothing runs
+

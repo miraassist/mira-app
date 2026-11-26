@@ -74,6 +74,12 @@ are there for Mira's device watch ([Fake devices](../docs/spec/fake-devices.md),
 `watch_fake.water_stop`; `sensor.fake_aquarium_leistung` is set with `watch_fake.power` or follows a daily routine with
 `watch_fake.routine` (`windows`, `watts`).
 
+A washing machine on a plug, also in `watch_fake`, is there for mira-pro's skill `strom` ([Fake
+devices](../docs/spec/fake-devices.md), The washing machine on a plug): `watch_fake.washer_start` (`steps`) starts its
+programme at the machine; `switch.fake_waschmaschine_steckdose` off holds the run, on again resumes it;
+`sensor.fake_waschmaschine_leistung` shows its power; `button.fake_waschmaschine_start` starts a programme loaded with
+`watch_fake.washer_load`.
+
 A fake A2A agent, `testenv/a2a_fake`, is a remote agent for Mira's tests ([Fake devices](../docs/spec/fake-devices.md),
 The fake A2A agent): the container `mira-test-a2a` on port 8791 (`docker compose up -d a2a-fake`), its cards at
 `http://localhost:8791/<card>/.well-known/agent-card.json` (the root, `push-only`, `stream-only`, `neither`,

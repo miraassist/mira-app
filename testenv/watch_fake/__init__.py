@@ -19,6 +19,11 @@ which `watch_fake.program` runs through its steps ("600:80, 1200:2000, 300:0, 18
 seconds and watts each), then 0 W. `power`, `routine`, `cycle`, `program` and `past` take
 the plug's `entity_id` (default: the aquarium's for `power`, `routine` and `past`).
 
+A washing machine on a plug (washer.py), for mira-pro's skill strom: `switch.fake_waschmaschine_steckdose`,
+`sensor.fake_waschmaschine_leistung` and `button.fake_waschmaschine_start`. `watch_fake.washer_start` (`steps`) is
+the user starting it at the machine; the plug off holds the rest of the programme, on again resumes it;
+`watch_fake.washer_load` (`steps`) loads a programme the button starts.
+
 The watched group (house.py), for Mira's group watch: floors and areas, windows and doors, motion sensors,
 temperatures and lights in them, and a phone per person. `watch_fake.set` sets one of them (`entity_id`, `state`:
 on, off, a temperature, unavailable or unknown).
@@ -44,6 +49,7 @@ from homeassistant.util import dt as dt_util
 
 from .devices import add_number_named, register_odd_devices, remove_number_named
 from .house import PHONES, ensure_structure
+from .washer import DEFAULT_STEPS, Washer, steps_of
 
 DOMAIN = "watch_fake"
 CONFIG_SCHEMA = cv.empty_config_schema(DOMAIN)
@@ -59,6 +65,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         return True
     devices: dict = hass.data.setdefault(DOMAIN, {"settable": [], "devices": []})
     ensure_structure(hass)
+    devices["washer"] = washer = Washer(hass)
 
     async def water_run(call: ServiceCall) -> None:
         devices["meter"].run(call.data["litres"], call.data["every"], call.data.get("for"))
@@ -85,6 +92,12 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     async def program(call: ServiceCall) -> None:
         steps = [(float(sec), float(w)) for sec, w in (part.split(":") for part in call.data["steps"].split(","))]
         plug(call, "dishwasher").program(steps)
+
+    async def washer_start(call: ServiceCall) -> None:
+        washer.start(steps_of(call.data["steps"]))
+
+    async def washer_load(call: ServiceCall) -> None:
+        washer.load(steps_of(call.data["steps"]))
 
     async def past(call: ServiceCall) -> None:
         await _write_past(hass, plug(call, "plug").entity_id, call.data)
@@ -127,6 +140,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         ),
     )
     hass.services.async_register(DOMAIN, "program", program, vol.Schema({**entity, vol.Required("steps"): STEPS}))
+    washer_steps = vol.Schema({vol.Optional("steps", default=DEFAULT_STEPS): STEPS})
+    hass.services.async_register(DOMAIN, "washer_start", washer_start, washer_steps)
+    hass.services.async_register(DOMAIN, "washer_load", washer_load, washer_steps)
     hass.services.async_register(
         DOMAIN,
         "past",
@@ -179,7 +195,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     )
     if not hass.config_entries.async_entries(DOMAIN):
         hass.async_create_task(hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_IMPORT}, data={}))
-    for platform in (Platform.SENSOR, Platform.BINARY_SENSOR, Platform.LIGHT):
+    for platform in (Platform.SENSOR, Platform.BINARY_SENSOR, Platform.LIGHT, Platform.SWITCH, Platform.BUTTON):
         hass.async_create_task(async_load_platform(hass, platform, DOMAIN, {}, config))
     for _name, phone in PHONES:
         hass.async_create_task(
