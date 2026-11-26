@@ -149,6 +149,20 @@ program:
       example: "600:80, 1200:2000, 300:0, 1800:80"
       selector:
         text:
+washer_start:
+  fields:
+    steps:
+      default: "300:150, 1200:2000, 1500:150, 600:500"
+      example: "300:150, 1200:2000, 1500:150, 600:500"
+      selector:
+        text:
+washer_load:
+  fields:
+    steps:
+      default: "300:150, 1200:2000, 1500:150, 600:500"
+      example: "300:150, 1200:2000, 1500:150, 600:500"
+      selector:
+        text:
 set:
   fields:
     entity_id:

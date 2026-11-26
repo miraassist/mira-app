@@ -1,6 +1,6 @@
 # Fake satellites that behave like the real ones – Spec
 
-Status 2026-11-23: steps 1–11 built (step 11: odd registry entries, 2026-11-23; step 10: speaking as the Show does, 2026-11-18; step 9: a question, 2026-11-17) (step 5: the watched devices, extended with the device watch's step 7; step 7: the answering machine, 2026-11-14; step 8: the fake A2A agent, 2026-11-14); the Show's contract recorded anew from TECHO5 v1.6.18 (with `media_title` and `media_station`); the Echo's stays as it is (no screen). A contract is never recorded from a development build (decided 2026-10-30). Scenarios: [fake-devices.feature](fake-devices.feature). Builds on the
+Status 2026-11-26: steps 1–11 built, step 12 (a washing machine on a plug) built 2026-11-26 (step 11: odd registry entries, 2026-11-23; step 10: speaking as the Show does, 2026-11-18; step 9: a question, 2026-11-17) (step 5: the watched devices, extended with the device watch's step 7; step 7: the answering machine, 2026-11-14; step 8: the fake A2A agent, 2026-11-14); the Show's contract recorded anew from TECHO5 v1.6.18 (with `media_title` and `media_station`); the Echo's stays as it is (no screen). A contract is never recorded from a development build (decided 2026-10-30). Scenarios: [fake-devices.feature](fake-devices.feature). Builds on the
 fake TECHO5 devices ([testenv/README.md](../../testenv/README.md), Fake TECHO5 devices) and on
 [How a TECHO5 satellite behaves](satellite.md#how-a-techo5-satellite-behaves).
 
@@ -119,6 +119,31 @@ configuration) brings four sensors, without a device, exposed to Assist by `test
   first recorded state, and its hourly statistics (mean, min, max) of the last `stats_days` days
   (`async_import_statistics`), both following the windows or the cycle. The states go straight into the
   recorder's tables (Home Assistant has no action for a past state); for the test HA only.
+
+### The washing machine on a plug (`watch_fake`, for mira-pro's electricity prices)
+
+mira-pro's skill `strom` starts a device at the cheapest time ([miraassist/mira-partner](https://github.com/miraassist/mira-partner),
+`docs/spec/strom.md`). Many washing machines resume a programme after their power was cut: the user loads, picks and
+starts it, mira-pro switches the plug off at once and on again at the time, and the machine runs to its end (decided
+2026-11-26). The test HA has no such device. `watch_fake` brings one, in the Keller, without a device:
+
+- **The plug's switch** `switch.fake_waschmaschine_steckdose` ("Fake Waschmaschine Steckdose"): on and off as Home
+  Assistant switches it (`switch.turn_on`, `turn_off`); it keeps its state over a restart, on at first.
+- **The machine's power** `sensor.fake_waschmaschine_leistung` ("Fake Waschmaschine Leistung", device class `power`,
+  state class `measurement`, watts): 0 W while nothing runs.
+- **The user starts it at the machine**: `watch_fake.washer_start` (`steps`, seconds and watts each as for
+  `program`, default `300:150, 1200:2000, 1500:150, 600:500`: an hour) runs the programme through its steps, then
+  0 W. With the plug off the machine has no power: the action fails saying so, and nothing runs.
+- **The plug off during a run**: the power falls to 0 W at once and the machine holds the rest of its programme (the
+  rest of the running step and the steps after it). **The plug on again**: the machine resumes the rest at once. The
+  plug off or on while nothing runs or is held changes nothing.
+- **Home Assistant starts it** (a start entity, as a machine with remote start has):
+  `button.fake_waschmaschine_start` ("Fake Waschmaschine Start") starts the programme the user loaded with
+  `watch_fake.washer_load` (`steps`, as `washer_start`). Pressed without a programme loaded, or with the plug off, it
+  fails saying so (as Home Connect refuses a start without a programme), and nothing runs.
+- Its past runs are real runs: a test runs `washer_start` first and lets it end (the 5-minute statistics are Home
+  Assistant's own); the fake writes no past. The programme and the held rest live in memory: a restart of the test HA
+  ends them.
 
 ### The watched group (`watch_fake`, for the [Group watch](group-watch.md))
 
@@ -260,3 +285,6 @@ turn at the conversation agent.
     text itself (with a warning that it refuses them from 2026.12; checked 2026-11-23), so they never reach Mira as
     numbers. A further kind found in a user's Home Assistant joins this list. Tested in pytest (FG-33); Mira's
     reading of them in Go (AD-06, HU-05).
+12. **A washing machine on a plug** (`watch_fake`, 2026-11-26, for mira-pro's skill `strom`): the plug's switch, the
+    machine's power, the start at the machine, holding and resuming with the plug, the start button with a loaded
+    programme. Tested in pytest (FG-34 to FG-37).
