@@ -1,0 +1,7 @@
+fake_select:
+  fields:
+    steps:
+      required: true
+      example: "300:150, 1800:2000, 900:600"
+      selector:
+        text:

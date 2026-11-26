@@ -1,0 +1,12 @@
+{
+  "domain": "home_connect",
+  "name": "Home Connect fake (test only)",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/miraassist/mira-app/blob/main/docs/spec/fake-devices.md",
+  "integration_type": "hub",
+  "iot_class": "local_push",
+  "requirements": [],
+  "version": "0.1.0"
+}

@@ -29,6 +29,9 @@ services:
       - ./watch_fake:/config/custom_components/watch_fake:ro
       # Mira FRITZ!Box's answering machine, faked under its domain (docs/spec/fake-devices.md).
       - ./fritz_fake:/config/custom_components/mira_fritz:ro
+      # A Home Connect and a Miele appliance, faked under their domains (docs/spec/fake-devices.md).
+      - ./home_connect_fake:/config/custom_components/home_connect:ro
+      - ./miele_fake:/config/custom_components/miele:ro
     restart: "no"
 
   # A broker of its own for test devices (a Tasmota lamp, say), so they never

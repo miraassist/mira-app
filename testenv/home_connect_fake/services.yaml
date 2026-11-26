@@ -1,0 +1,34 @@
+start_selected_program:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: home_connect
+    b_s_h_common_option_start_in_relative:
+      selector:
+        number:
+          min: 0
+          max: 86340
+          unit_of_measurement: s
+          mode: box
+    b_s_h_common_option_finish_in_relative:
+      selector:
+        number:
+          min: 0
+          max: 86340
+          unit_of_measurement: s
+          mode: box
+fake_select:
+  fields:
+    steps:
+      required: true
+      example: "600:300, 2400:2500, 600:200"
+      selector:
+        text:
+fake_remote_start:
+  fields:
+    allowed:
+      required: true
+      selector:
+        boolean:

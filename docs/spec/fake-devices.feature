@@ -199,3 +199,33 @@ Feature: FG Fake satellites that behave like the real ones
     Then the programme runs
     And pressed without a loaded programme, or with the plug off, the button fails and nothing runs
 
+  # --- A Home Connect and a Miele appliance ---------------------------------------------------------------
+
+  @step13
+  Scenario: FG-38 Home Connect starts the picked programme now or after a delay
+    Given a programme picked with home_connect.fake_select and remote start allowed
+    When home_connect.start_selected_program is called with the device and start_in_relative 60
+    Then the power stays 0 W for 60 seconds, then follows the programme
+    And with finish_in_relative the programme ends at the finish
+    And without a delay it runs at once
+
+  @step13
+  Scenario: FG-39 Home Connect refuses as Home Assistant does
+    Then without a programme picked the action fails with "No program to start"
+    And with remote start not allowed it fails with "Error starting program"
+    And with another device id it fails with "not found"
+    And nothing runs
+
+  @step13
+  Scenario: FG-40 Miele's start button is there only while a programme is picked
+    Given no programme picked
+    Then the start button is unavailable and a press does nothing and fails not
+    When a programme is picked with miele.fake_select
+    Then the button is available and a press runs the programme
+    And while it runs the button is unavailable again
+
+  @step13
+  Scenario: FG-41 Both appliances are devices of their integrations in the Keller
+    Then the Fernstart, the start button and the power sensors belong to the devices Fake Trockner and Fake Waschtrockner
+    And the entities' integrations are home_connect and miele
+

@@ -1,6 +1,6 @@
 # Fake satellites that behave like the real ones – Spec
 
-Status 2026-11-26: steps 1–11 built, step 12 (a washing machine on a plug) built 2026-11-26 (step 11: odd registry entries, 2026-11-23; step 10: speaking as the Show does, 2026-11-18; step 9: a question, 2026-11-17) (step 5: the watched devices, extended with the device watch's step 7; step 7: the answering machine, 2026-11-14; step 8: the fake A2A agent, 2026-11-14); the Show's contract recorded anew from TECHO5 v1.6.18 (with `media_title` and `media_station`); the Echo's stays as it is (no screen). A contract is never recorded from a development build (decided 2026-10-30). Scenarios: [fake-devices.feature](fake-devices.feature). Builds on the
+Status 2026-11-26: steps 1–11 built, step 12 (a washing machine on a plug) and step 13 (a Home Connect and a Miele appliance) built 2026-11-26 (step 11: odd registry entries, 2026-11-23; step 10: speaking as the Show does, 2026-11-18; step 9: a question, 2026-11-17) (step 5: the watched devices, extended with the device watch's step 7; step 7: the answering machine, 2026-11-14; step 8: the fake A2A agent, 2026-11-14); the Show's contract recorded anew from TECHO5 v1.6.18 (with `media_title` and `media_station`); the Echo's stays as it is (no screen). A contract is never recorded from a development build (decided 2026-10-30). Scenarios: [fake-devices.feature](fake-devices.feature). Builds on the
 fake TECHO5 devices ([testenv/README.md](../../testenv/README.md), Fake TECHO5 devices) and on
 [How a TECHO5 satellite behaves](satellite.md#how-a-techo5-satellite-behaves).
 
@@ -145,6 +145,37 @@ starts it, mira-pro switches the plug off at once and on again at the time, and 
   Assistant's own); the fake writes no past. The programme and the held rest live in memory: a restart of the test HA
   ends them.
 
+### A Home Connect and a Miele appliance (`testenv/home_connect_fake`, `testenv/miele_fake`)
+
+mira-pro's skill `strom` starts an appliance that Home Assistant can start: Home Connect's by its action, Miele's by its
+start button (`docs/spec/strom.md` in mira-partner, decision 21), and knows the way by the integration of the entity
+the model passes. The test HA has neither. Two fakes, mounted under the integrations' own domains as the answering
+machine is (`custom_components/home_connect` and `custom_components/miele`, `home_connect:` and `miele:` in the
+configuration), with what mira-pro uses of them, read in Home Assistant 2026.11's sources (2026-11-26). Each makes its
+config entry itself (an import flow) and one device in the Keller; each device has a power sensor `Leistung`, which a
+real one has from its plug. Everything lives in memory.
+
+- **Home Connect** (`home_connect`), the device "Fake Trockner":
+  - `binary_sensor.fake_trockner_fernstart` ("Fernstart", Home Connect's `remote_start`): on while remote start is
+    allowed at the appliance; `home_connect.fake_remote_start` (`allowed`) sets it, on at first.
+  - `home_connect.fake_select` (`steps`, as `watch_fake.program`; empty: none) is the user picking a programme at the
+    appliance; it stays picked after a run.
+  - `home_connect.start_selected_program` as Home Assistant's: `device_id` (required),
+    `b_s_h_common_option_start_in_relative` and `b_s_h_common_option_finish_in_relative` (seconds). It starts the
+    picked programme now, or after the delay, which the appliance holds (a finish time: the delay is the finish less
+    the programme's length, at least 0). As Home Assistant's: another device id fails with "Appliance for device ID …
+    not found"; no programme picked with "No program to start"; remote start not allowed with "Error starting
+    program …: …" (the fake's wording after the colon). A start while one waits or runs replaces it.
+  - `sensor.fake_trockner_leistung`: the running step's watts, else 0 W.
+- **Miele** (`miele`), the device "Fake Waschtrockner":
+  - `button.fake_waschtrockner_start` ("Start", Miele's `start`): available only while the appliance offers the
+    start, that is while a programme is picked; pressed, it runs the programme. As in Home Assistant, a press of an
+    unavailable button does nothing and fails not (Home Assistant skips unavailable entities, `helpers/service.py`).
+    Miele's is disabled by default; the fake's is enabled.
+  - `miele.fake_select` (`steps`; empty: none) is the user picking a programme with remote start on; a press uses it
+    up (the button is unavailable again while it runs).
+  - `sensor.fake_waschtrockner_leistung`: the running step's watts, else 0 W.
+
 ### The watched group (`watch_fake`, for the [Group watch](group-watch.md))
 
 The fake house a group watch watches, made by `watch_fake` at its setup (test only):
@@ -288,3 +319,6 @@ turn at the conversation agent.
 12. **A washing machine on a plug** (`watch_fake`, 2026-11-26, for mira-pro's skill `strom`): the plug's switch, the
     machine's power, the start at the machine, holding and resuming with the plug, the start button with a loaded
     programme. Tested in pytest (FG-34 to FG-37).
+13. **A Home Connect and a Miele appliance** (`testenv/home_connect_fake`, `testenv/miele_fake`, 2026-11-26, for
+    mira-pro's skill `strom`): Home Connect's `start_selected_program` with its delays and refusals, Miele's start
+    button available only while a programme is picked; each with its power. Tested in pytest (FG-38 to FG-41).

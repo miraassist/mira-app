@@ -80,6 +80,12 @@ programme at the machine; `switch.fake_waschmaschine_steckdose` off holds the ru
 `sensor.fake_waschmaschine_leistung` shows its power; `button.fake_waschmaschine_start` starts a programme loaded with
 `watch_fake.washer_load`.
 
+A Home Connect and a Miele appliance, faked under their integrations' domains (`testenv/home_connect_fake`,
+`testenv/miele_fake`), are there for the same skill ([Fake devices](../docs/spec/fake-devices.md), A Home Connect and a
+Miele appliance): the "Fake Trockner" starts with `home_connect.start_selected_program` once a programme is picked
+(`home_connect.fake_select`) and remote start is allowed (`home_connect.fake_remote_start`); the "Fake
+Waschtrockner"'s `button.fake_waschtrockner_start` is there while a programme is picked (`miele.fake_select`).
+
 A fake A2A agent, `testenv/a2a_fake`, is a remote agent for Mira's tests ([Fake devices](../docs/spec/fake-devices.md),
 The fake A2A agent): the container `mira-test-a2a` on port 8791 (`docker compose up -d a2a-fake`), its cards at
 `http://localhost:8791/<card>/.well-known/agent-card.json` (the root, `push-only`, `stream-only`, `neither`,

@@ -33,6 +33,11 @@ watch_fake:
 # Mira FRITZ!Box's answering machine, faked (testenv/fritz_fake, mounted as mira_fritz).
 mira_fritz:
 
+# A Home Connect and a Miele appliance, faked (testenv/home_connect_fake and testenv/miele_fake, mounted under
+# their domains).
+home_connect:
+miele:
+
 # Mira's tasks are automations here, like in every UI-managed installation.
 automation: !include automations.yaml
 
