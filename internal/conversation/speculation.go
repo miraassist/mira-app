@@ -349,6 +349,11 @@ func (e *Engine) run(ctx context.Context, r *specRun) {
 	switch {
 	case err == nil:
 		r.finish("done")
+		r.mu.Lock()
+		rounds := len(r.rounds)
+		r.mu.Unlock()
+		// A trace that the run is waiting to be taken, nothing more to do.
+		e.log.Debug("speculative run ready", "device", r.device, "text", excerpt.Of(r.text), "rounds", rounds)
 	case ctx.Err() != nil:
 		r.finish("ended")
 	case errors.As(err, &no):

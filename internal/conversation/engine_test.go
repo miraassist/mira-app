@@ -55,7 +55,7 @@ type harness struct {
 	host   *mcp.Host
 	store  *store.Store
 	clock  *clock
-	// logs holds the engine's log at info level.
+	// logs holds the engine's log at debug level.
 	logs *logcap.Lines
 	// identify, when set, says who speaks instead of the default below.
 	identify func(context.Context, conversation.Request) (string, string)
@@ -164,7 +164,7 @@ func newHarnessTools(t *testing.T, mutate func(*config.Config), extra []tools.In
 		Guard:           tools.NewGuard(i18n.DE, cfg.Security, h.store, houseSnapshot, hooks.Load("", i18n.DE, nil)),
 		Structure:       houseSnapshot,
 		StructurePrompt: func() string { return h.housePrompt },
-		Logger:          slog.New(slog.NewTextHandler(h.logs, nil)),
+		Logger:          slog.New(slog.NewTextHandler(h.logs, &slog.HandlerOptions{Level: slog.LevelDebug})),
 		Clock:           h.clock.Now,
 		Location:        time.UTC,
 		Languages:       harnessLanguages,

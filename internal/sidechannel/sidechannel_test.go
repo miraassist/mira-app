@@ -41,11 +41,7 @@ func (g *got) await(t *testing.T, n int) {
 		if have >= n {
 			return
 		}
-		select {
-		case <-g.more:
-		case <-time.After(5 * time.Second): // real time: a test's own bound on a broken client
-			t.Fatalf("got %d events, want %d", have, n)
-		}
+		<-g.more // go test -timeout names a broken client (docs/spec/tests.md, rule 1)
 	}
 }
 

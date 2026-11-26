@@ -45,15 +45,6 @@ func warm(t *testing.T, h *harness) {
 	h.llm.Forget()
 }
 
-func await(t *testing.T, ch <-chan struct{}, what string) {
-	t.Helper()
-	select {
-	case <-ch:
-	case <-time.After(5 * time.Second): // real time: a test's own bound on a hang
-		t.Fatalf("no %s", what)
-	}
-}
-
 func requestsWith(h *harness, text string) int {
 	n := 0
 	for _, r := range h.llm.Requests() {
@@ -70,7 +61,7 @@ func TestSC06_AFinishedSoundingReadingStartsARun(t *testing.T) {
 	taken := make(chan struct{})
 	h.llm.Push(fakellm.Step{Content: "Es ist 7:12 Uhr.", Taken: taken})
 	h.engine.Speculate(reading("s1", 1, "Wie spät ist es?", 0.8), sat)
-	await(t, taken, "run")
+	<-taken
 	layer7 := lastContent(h.llm.Last().Request.Messages)
 	if !strings.Contains(layer7, "Wie spät ist es?") || !strings.Contains(layer7, "Küche") {
 		t.Fatalf("the run's turn:\n%s", layer7)
@@ -83,7 +74,7 @@ func TestSC20_EveryReadingStartsARun(t *testing.T) {
 	taken := make(chan struct{})
 	h.llm.Push(fakellm.Step{Content: "Welches Zimmer?", Taken: taken})
 	h.engine.Speculate(reading("s1", 1, "Schalte das Licht im", 0.2), sat)
-	await(t, taken, "run")
+	<-taken
 	if requestsWith(h, "Schalte das Licht im") != 1 {
 		t.Fatal("no run on the unfinished reading")
 	}
@@ -96,10 +87,10 @@ func TestSC08_AStaleReadingEndsItsRun(t *testing.T) {
 	defer close(hold)
 	h.llm.Push(fakellm.Step{Content: "Welches Zimmer?", Taken: taken, Hold: hold})
 	h.engine.Speculate(reading("s1", 1, "Schalte das Licht im", 0.8), sat)
-	await(t, taken, "run")
+	<-taken
 	ended := h.logs.Await("speculation", "ended=stale")
 	h.engine.Speculate(sidechannel.Event{Kind: sidechannel.ReadingStale, Turn: "s1", Rev: 1}, sat)
-	await(t, ended, "log line of the stale run")
+	<-ended
 
 	// Nothing is kept: the turn asks the model itself.
 	h.llm.Push(fakellm.Step{Content: "Licht ist an."})
@@ -113,9 +104,9 @@ func TestSC09_ARunStopsAtAToolThatDoesNotOnlyRead(t *testing.T) {
 	h := newHarness(t)
 	warm(t, h)
 	h.llm.Push(fakellm.Step{ToolCalls: []llm.ToolCall{fakellm.ToolCall("c1", "ha__HassTurnOn", `{"name":"Küchenlicht"}`)}})
+	ready := h.logs.Await("speculative run ready")
 	h.engine.Speculate(reading("s1", 1, "Mach das Licht in der Küche an", 0.8), sat)
-	waitRequests(t, h, 1)
-	time.Sleep(50 * time.Millisecond) // real time: room for a wrong second round or tool call
+	<-ready
 	if n := len(h.haCalls("HassTurnOn")); n != 0 {
 		t.Fatalf("the run turned the light on %d times", n)
 	}
@@ -131,8 +122,9 @@ func TestSC10_ARunRunsAReadOnlyTool(t *testing.T) {
 		fakellm.Step{ToolCalls: []llm.ToolCall{fakellm.ToolCall("c1", "ha__GetLiveContext", `{}`)}},
 		fakellm.Step{Content: "Das Küchenlicht ist aus."},
 	)
+	ready := h.logs.Await("speculative run ready")
 	h.engine.Speculate(reading("s1", 1, "Ist das Licht in der Küche an?", 0.8), sat)
-	waitRequests(t, h, 2)
+	<-ready
 	if n := len(h.haCalls("GetLiveContext")); n != 1 {
 		t.Fatalf("GetLiveContext ran %d times", n)
 	}
@@ -155,7 +147,7 @@ func TestSC11_NoRunWhileAConfirmationWaits(t *testing.T) {
 	h.llm.Forget()
 	skipped := h.logs.Await("speculation", "ended=\"skipped: a confirmation waits\"")
 	h.engine.Speculate(reading("s1", 1, "Ja", 0.9), sat)
-	await(t, skipped, "log line")
+	<-skipped
 	if has, err := h.store.HasConfirmation(ctx, "voice:c1"); err != nil || !has {
 		t.Fatalf("the confirmation is gone (%v)", err)
 	}
@@ -168,8 +160,9 @@ func TestSC12_TheSameRequestTakesTheRunsRound(t *testing.T) {
 	h := newHarness(t)
 	warm(t, h)
 	h.llm.Push(fakellm.Step{Content: "Es ist 7:12 Uhr."})
+	ready := h.logs.Await("speculative run ready")
 	h.engine.Speculate(reading("s1", 1, "Wie spät ist es?", 0.8), sat)
-	waitRequests(t, h, 1)
+	<-ready
 
 	var mu sync.Mutex
 	var streamed strings.Builder
@@ -190,21 +183,22 @@ func TestSC12_TheSameRequestTakesTheRunsRound(t *testing.T) {
 		t.Fatalf("streamed %q", got)
 	}
 	mu.Unlock()
-	await(t, taken, "log line of the taken run")
+	<-taken
 }
 
 func TestSC13_ADifferentTextCallsTheModel(t *testing.T) {
 	h := newHarness(t)
 	warm(t, h)
 	h.llm.Push(fakellm.Step{Content: "Welches Zimmer?"}, fakellm.Step{Content: "Licht ist an."})
+	ready := h.logs.Await("speculative run ready")
 	h.engine.Speculate(reading("s1", 1, "Schalte das Licht im", 0.8), sat)
-	waitRequests(t, h, 1)
+	<-ready
 	ended := h.logs.Await("speculation", "ended=no_match")
 	resp := atSatellite(t, h, "c1", "Schalte das Licht im Wohnzimmer an", nil)
 	if resp.Text != "Licht ist an." || len(h.llm.Requests()) != 2 {
 		t.Fatalf("answer %q after %d requests", resp.Text, len(h.llm.Requests()))
 	}
-	await(t, ended, "no_match line")
+	<-ended
 }
 
 func TestSC14_ATakenRoundsWritingCallRunsInTheTurn(t *testing.T) {
@@ -214,8 +208,9 @@ func TestSC14_ATakenRoundsWritingCallRunsInTheTurn(t *testing.T) {
 		fakellm.Step{ToolCalls: []llm.ToolCall{fakellm.ToolCall("c1", "ha__HassTurnOn", `{"name":"Küchenlicht"}`)}},
 		fakellm.Step{Content: "Das Küchenlicht ist an."},
 	)
+	ready := h.logs.Await("speculative run ready")
 	h.engine.Speculate(reading("s1", 1, "Mach das Licht in der Küche an", 0.8), sat)
-	waitRequests(t, h, 1)
+	<-ready
 	resp := atSatellite(t, h, "c1", "Mach das Licht in der Küche an", nil)
 	if resp.Text != "Das Küchenlicht ist an." {
 		t.Fatalf("answer %q", resp.Text)
@@ -234,10 +229,10 @@ func TestSC15_TheTurnWaitsForARoundOnItsWay(t *testing.T) {
 	taken, hold := make(chan struct{}), make(chan struct{})
 	h.llm.Push(fakellm.Step{Content: "Es ist 7:12 Uhr.", Taken: taken, Hold: hold})
 	h.engine.Speculate(reading("s1", 1, "Wie spät ist es?", 0.8), sat)
-	await(t, taken, "run")
+	<-taken
 	got := make(chan conversation.Response)
 	go func() { got <- atSatellite(t, h, "c1", "Wie spät ist es?", nil) }()
-	await(t, h.logs.Await("turn"), "the turn")
+	<-h.logs.Await("turn")
 	close(hold)
 	resp := <-got
 	if resp.Text != "Es ist 7:12 Uhr." || len(h.llm.Requests()) != 1 {
@@ -257,8 +252,9 @@ func TestSC16_AnotherPersonsRequestIsNotTaken(t *testing.T) {
 	warm(t, h) // anna's voice at the satellite
 	voice = "ben"
 	h.llm.Push(fakellm.Step{Content: "Es ist 7:12 Uhr, Anna."}, fakellm.Step{Content: "Es ist 7:12 Uhr, Ben."})
+	ready := h.logs.Await("speculative run ready")
 	h.engine.Speculate(reading("s1", 1, "Wie spät ist es?", 0.8), sat)
-	waitRequests(t, h, 1)
+	<-ready
 	if l := lastContent(h.llm.Last().Request.Messages); !strings.Contains(l, "anna") {
 		t.Fatalf("the run did not guess anna:\n%s", l)
 	}
@@ -279,24 +275,13 @@ func TestSC17_ATurnWaitingForTheModelsPlaceEndsTheRun(t *testing.T) {
 	defer close(hold)
 	h.llm.Push(fakellm.Step{Content: "Es ist 7:12 Uhr.", Taken: taken, Hold: hold}, fakellm.Step{Content: "Hallo."})
 	h.engine.Speculate(reading("s1", 1, "Wie spät ist es?", 0.8), sat)
-	await(t, taken, "run")
+	<-taken
 	yielded := h.logs.Await("speculation", "ended=yielded")
 	resp := h.say(t, config.ChannelTelegram, "42", "Hallo")
 	if resp.Text != "Hallo." {
 		t.Fatalf("answer %q", resp.Text)
 	}
-	await(t, yielded, "the run's yield")
-}
-
-// waitRequests waits until the model has had n requests.
-func waitRequests(t *testing.T, h *harness, n int) {
-	t.Helper()
-	for i := 0; len(h.llm.Requests()) < n; i++ {
-		if i == 1000 {
-			t.Fatalf("%d requests, want %d", len(h.llm.Requests()), n)
-		}
-		<-time.After(5 * time.Millisecond) // real time: polling the fake model's record, at most 5 s
-	}
+	<-yielded
 }
 
 func TestSC18_AReadingOfTheWakeWordsTailStartsNothing(t *testing.T) {
@@ -308,7 +293,7 @@ func TestSC18_AReadingOfTheWakeWordsTailStartsNothing(t *testing.T) {
 	tail.AudioS = 0.6
 	h.engine.Speculate(tail, sat)
 	h.engine.Speculate(reading("s1", 2, "Wie spät ist es?", 0.9), sat)
-	await(t, taken, "run")
+	<-taken
 	if n := requestsWith(h, "irá."); n != 0 {
 		t.Fatalf("the wake word's tail started %d runs", n)
 	}
@@ -318,11 +303,12 @@ func TestSC19_ADifferingRequestSaysWhere(t *testing.T) {
 	h := newHarness(t)
 	warm(t, h)
 	h.llm.Push(fakellm.Step{Content: "Welches Zimmer?"}, fakellm.Step{Content: "Licht ist an."})
+	ready := h.logs.Await("speculative run ready")
 	h.engine.Speculate(reading("s1", 1, "Schalte das Licht im", 0.8), sat)
-	waitRequests(t, h, 1)
+	<-ready
 	differed := h.logs.Await("speculation request differed", "round=0", "Schalte das Licht im Wohnzimmer")
 	atSatellite(t, h, "c1", "Schalte das Licht im Wohnzimmer an", nil)
-	await(t, differed, "the line saying where the requests differ")
+	<-differed
 }
 
 func TestSC21_TheSatellitesVoiceIsKeptAcrossARestart(t *testing.T) {
@@ -339,8 +325,9 @@ func TestSC21_TheSatellitesVoiceIsKeptAcrossARestart(t *testing.T) {
 		return "anna", prompt.ByVoice
 	}
 	h.llm.Push(fakellm.Step{Content: "Es ist 7:12 Uhr, Anna."})
+	ready := h.logs.Await("speculative run ready")
 	h.engine.Speculate(reading("s1", 1, "Wie spät ist es?", 0.9), sat)
-	waitRequests(t, h, 1)
+	<-ready
 	resp := atSatellite(t, h, "c1", "Wie spät ist es?", nil)
 	if resp.Text != "Es ist 7:12 Uhr, Anna." || len(h.llm.Requests()) != 1 {
 		t.Fatalf("answer %q after %d requests: the kept voice was not used", resp.Text, len(h.llm.Requests()))

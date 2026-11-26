@@ -128,7 +128,8 @@ One log line per run: `speculation` with the side-channel turn, the device, the 
 rounds ended (`done`: an answer or a call that does not only read). A failed run's error has a line of its own; each
 round a turn took logs `model round taken from a speculative run`; a turn whose request differs from a run's logs
 `speculation request differed` with the round and the first message that differs, both texts from where they part
-(or the tools and settings).
+(or the tools and settings). A run whose rounds are done logs `speculative run ready` with the number of rounds
+at debug: the trace that it only waits to be taken (and the signal a test waits for).
 
 ### 4. What the model is told
 
