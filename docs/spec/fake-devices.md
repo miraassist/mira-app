@@ -122,8 +122,8 @@ configuration) brings four sensors, without a device, exposed to Assist by `test
 
 ### The washing machine on a plug (`watch_fake`, for mira-pro's electricity prices)
 
-mira-pro's skill `strom` starts a device at the cheapest time ([miraassist/mira-partner](https://github.com/miraassist/mira-partner),
-`docs/spec/strom.md`). Many washing machines resume a programme after their power was cut: the user loads, picks and
+mira-pro's skill `strom` starts a device at the cheapest time (its spec in
+[miraassist/mira-partner](https://github.com/miraassist/mira-partner)). Many washing machines resume a programme after their power was cut: the user loads, picks and
 starts it, mira-pro switches the plug off at once and on again at the time, and the machine runs to its end (decided
 2026-11-26). The test HA has no such device. `watch_fake` brings one, in the Keller, without a device:
 
@@ -152,7 +152,7 @@ starts it, mira-pro switches the plug off at once and on again at the time, and 
 ### A Home Connect and a Miele appliance (`testenv/home_connect_fake`, `testenv/miele_fake`)
 
 mira-pro's skill `strom` starts an appliance that Home Assistant can start: Home Connect's by its action, Miele's by its
-start button (`docs/spec/strom.md` in mira-partner, decision 21), and knows the way by the integration of the entity
+start button (the spec of `strom` in mira-partner, decision 21), and knows the way by the integration of the entity
 the model passes. The test HA has neither. Two fakes, mounted under the integrations' own domains as the answering
 machine is (`custom_components/home_connect` and `custom_components/miele`, `home_connect:` and `miele:` in the
 configuration), with what mira-pro uses of them, read in Home Assistant 2026.11's sources (2026-11-26). Each makes its
