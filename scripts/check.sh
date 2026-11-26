@@ -17,6 +17,7 @@ cd "$repo"
 export MIRA_INTEGRATION="${MIRA_INTEGRATION:-$repo/../mira}"
 if [[ ! -f "$MIRA_INTEGRATION/custom_components/mira/manifest.json" ]]; then
 	echo "no integration at $MIRA_INTEGRATION: the interface is not checked (set MIRA_INTEGRATION)"
+	unset MIRA_INTEGRATION # the test skips instead of failing on a missing file
 fi
 # staticcheck 2026.2.2; the same version as in .github/workflows/ci.yml.
 staticcheck_version=v0.8.2
