@@ -60,6 +60,10 @@ app's log. Now:
 3. The file is watched as the hooks' folder is (its time, on the clock): once it changes and reads, the service starts
    anew (as after the setup, `restart`).
 
+A limited start that is set up for the first time (no entry yet) could not finish its setup: its health said `setup`
+for ever. Decided 2026-11-26: it says `limited` once Home Assistant's access is set
+([A setup that does not finish](setup-recovery.md)).
+
 **Fails:** the store cannot be opened either → the service ends as before (nothing to serve); the file stays broken →
 the repair stays, the log has the error once per change of the file.
 

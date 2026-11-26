@@ -36,7 +36,7 @@ can help at all, each built anew. This spec makes one rule for all of them and o
 | 8 | A task's draft refused by Home Assistant (`internal/tasks`) | – | – | a correction with the reason, once; not a retry | no change |
 | 9 | The integration's proxy to Mira's page (`panel.py`) | a connection never made | everything else | 4 attempts, fixed 1 s (the service restarts) | the same: no change |
 | 10 | Mira's page (`index.html`, `api()`) | the service unreachable | everything else | 10 attempts, fixed 3 s | the same: no change |
-| 11 | Setup waits for the new service (`config_flow.py`, `_wait_ready`) | a connection failure | a refused token (`MiraAuthError`), another answer of the service | 60 attempts, fixed 1 s | every `MiraError` tried again, also a refused token |
+| 11 | Setup waits for the new service (`config_flow.py`, `_wait_ready`) | a connection failure | a refused token (`MiraAuthError`), another answer of the service; a status other than `setup` (also `limited`, [A setup that does not finish](setup-recovery.md)) ends the wait as started | 60 attempts, fixed 1 s | every `MiraError` tried again, also a refused token |
 | 12 | Joining a device's Wi-Fi through the Supervisor (`internal/wifi`) | the Supervisor's answer failed | – | polling within its 20 s, as before | the failed answer is dropped without a word: now a warning at the first one |
 
 Not retries, and left as they are: the model fallback (another model, [Models](models.md)); periodic jobs (the assist

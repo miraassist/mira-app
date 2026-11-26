@@ -175,6 +175,15 @@ is used in a spec; a term that is not here is not a term yet.
 | radio station | Radiosender | A station that streams live and does not end by itself. With exposed Music Assistant players it plays through them as music (an item with `://radio/` in its `media_content_id`); without them Mira plays it from Home Assistant's Radio Browser on the room's speaker | Music Assistant's items of type `radio`; without Music Assistant the tool `radio_play` ([Radio](spec/radio.md)) | radio (alone, where unclear), more of the same (for it) |
 | ducking | Absenken | Mira lowering the Music Assistant players that play in a satellite's area while it is in a turn (from listening to idle, follow-up questions included), and setting them back afterwards ([Music](spec/music-players.md), part 7). Not the satellite's own lowering of its playback, which its firmware does | `music.Ducker` (new) | muting, Stummschalten, pausing |
 
+## Setup (new, [A setup that does not finish](spec/setup-recovery.md))
+
+| English | German | Meaning | Code / database | Not |
+|---|---|---|---|---|
+| pairing | Kopplung | The service handing its integration's token to one Home Assistant, at "Start using Mira" (`POST /v1/pair`); afterwards it is paired and refuses others without a pairing code | `setup.Pair`, the setup in the database | registration, linking |
+| setup mode | Einrichtungsmodus | The service waiting to be set up: Home Assistant's access or the model is missing; only the pairing, the setup and a page that says what to do | `runSetupMode`, `setup.Handler.SetupMode`, `/v1/health` status `setup` | — |
+| limited start | eingeschränkter Start | The service started with a `mira.yaml` that cannot be read: the setup mode's server plus the problem in its status and a sentence for every turn; it starts anew once the file reads | `runLimited`, `/v1/health` status `limited` (new) | safe mode, fallback |
+| kept token | aufbewahrter Token | The integration's token of a service, kept in Home Assistant's storage outside the config entry: proves later, without a code, that this Home Assistant is the one the service was paired with | `mira.rejoin` (`keep_rejoin`, `rejoin_token`) | rejoin token (as a term) |
+
 ## Speculation (new, [Speculative turns](spec/speculative-turns.md))
 
 | English | German | Meaning | Code / database | Not |
