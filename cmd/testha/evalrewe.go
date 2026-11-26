@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -24,8 +25,6 @@ import (
 // fake on this machine, with a config folder of the run's own.
 
 const (
-	// reweFakeAddr is where korb-fake listens during an eval run.
-	reweFakeAddr = "127.0.0.1:8792"
 	// reweList is the shopping list of the REWE scenarios, a list of its
 	// own in the test HA (cmd/testha/lists.go), so the scenarios do not
 	// meet the examples on Einkauf.
@@ -78,6 +77,7 @@ func (sc Scenario) usesRewe() bool {
 // cannot run (a binary missing); they fail their setup with it.
 type reweEnv struct {
 	korb, fake string
+	addr       string // where korb-fake listens: a free port, chosen once per run
 	dir        string // the run's folder: wrapper, konto
 	konto      string
 	marketID   string
@@ -89,6 +89,12 @@ type reweEnv struct {
 // starts as its programm.
 func newReweEnv(tmp string) *reweEnv {
 	e := &reweEnv{dir: filepath.Join(tmp, "rewe")}
+	addr, err := freeAddr()
+	if err != nil {
+		e.err = fmt.Errorf("korb-fake: no free port: %w", err)
+		return e
+	}
+	e.addr = addr
 	var missing []string
 	for _, b := range []struct {
 		name string
@@ -118,6 +124,17 @@ func newReweEnv(tmp string) *reweEnv {
 	return e
 }
 
+// freeAddr is a port of 127.0.0.1 no one listens on now; korb-fake takes
+// it a moment later (taken meanwhile, its start fails with the address).
+func freeAddr() (string, error) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return "", err
+	}
+	defer ln.Close()
+	return ln.Addr().String(), nil
+}
+
 func (e *reweEnv) wrapper() string { return filepath.Join(e.dir, "korb") }
 
 // wrapperScript points the skill's korb at the fake: Mira gives a stdio
@@ -125,7 +142,7 @@ func (e *reweEnv) wrapper() string { return filepath.Join(e.dir, "korb") }
 // address, so the address goes in here.
 func (e *reweEnv) wrapperScript() string {
 	return fmt.Sprintf("#!/bin/sh\nexport KORB_API_URL=%s KORB_AUTH_URL=%s\nexec %s \"$@\"\n",
-		shellQuote("http://"+reweFakeAddr+"/api"), shellQuote("http://"+reweFakeAddr), shellQuote(e.korb))
+		shellQuote("http://"+e.addr+"/api"), shellQuote("http://"+e.addr), shellQuote(e.korb))
 }
 
 func shellQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'" }
@@ -168,7 +185,7 @@ func (e *reweEnv) start(ctx context.Context, s *SetupRewe) error {
 			return err
 		}
 	}
-	cmd := exec.Command(e.fake, "-addr", reweFakeAddr)
+	cmd := exec.Command(e.fake, "-addr", e.addr)
 	out, err := cmd.StdoutPipe()
 	if err != nil {
 		return err
@@ -181,7 +198,7 @@ func (e *reweEnv) start(ctx context.Context, s *SetupRewe) error {
 	id, err := fakeMarket(out)
 	if err != nil {
 		e.stop()
-		return fmt.Errorf("korb-fake on %s: %w", reweFakeAddr, err)
+		return fmt.Errorf("korb-fake on %s: %w", e.addr, err)
 	}
 	e.marketID = id
 	go func() { _, _ = bufio.NewReader(out).WriteTo(discard{}) }()
@@ -299,8 +316,8 @@ func (e *reweEnv) run(ctx context.Context, args ...string) ([]byte, error) {
 
 func (e *reweEnv) korbEnv() []string {
 	env := []string{
-		"KORB_API_URL=http://" + reweFakeAddr + "/api",
-		"KORB_AUTH_URL=http://" + reweFakeAddr,
+		"KORB_API_URL=http://" + e.addr + "/api",
+		"KORB_AUTH_URL=http://" + e.addr,
 		"KORB_CONFIG_DIR=" + e.konto,
 		"KORB_CERT_DIR=",
 	}

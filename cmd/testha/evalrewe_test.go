@@ -25,7 +25,7 @@ skills:
 		t.Fatal("the test config's rewe stays in a run without korb")
 	}
 
-	e := &reweEnv{korb: "/opt/korb's/korb", dir: "/tmp/run/rewe", konto: "/tmp/run/skill-data/rewe"}
+	e := &reweEnv{korb: "/opt/korb's/korb", dir: "/tmp/run/rewe", konto: "/tmp/run/skill-data/rewe", addr: "127.0.0.1:8792"}
 	withRewe(cfg, e)
 	got := cfg["skills"].(map[string]any)["rewe"].(map[string]any)
 	if got["programm"] != "/tmp/run/rewe/korb" || got["konto"] != nil || got["liste"] != reweListName {
@@ -44,7 +44,7 @@ func TestEvalReweKorbNeverSeesTheRealAccount(t *testing.T) {
 	t.Setenv("KORB_CONFIG_DIR", "/home/someone/.config/korb")
 	t.Setenv("KORB_API_URL", "https://mobile-clients-api.rewe.de/api")
 	t.Setenv("KORB_CERT_DIR", "/home/someone/certs")
-	e := &reweEnv{konto: "/tmp/run/rewe/konto"}
+	e := &reweEnv{konto: "/tmp/run/rewe/konto", addr: "127.0.0.1:8792"}
 	env := strings.Join(e.korbEnv(), "\n")
 	for _, bad := range []string{"/home/someone", "rewe.de"} {
 		if strings.Contains(env, bad) {
