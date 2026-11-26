@@ -1,6 +1,7 @@
 # A setup that does not finish – spec
 
-Status 2026-11-26: decided (the maintainer); steps 1 and 2 built. Scenarios: [setup-recovery.feature](setup-recovery.feature)
+Status 2026-11-26: decided (the maintainer); steps 1 and 2 built; step 3 run in part, with two findings (below,
+"Found in step 3"), one of them open. Scenarios: [setup-recovery.feature](setup-recovery.feature)
 (SU-01 to SU-09). Found by issue 10 of miraassist/mira (moving to the app of 0.40.0) and reproduced on the test HA.
 Hangs on [Setup](setup.md) (the pairing, the kept token) and on [Reading what comes in](parsing.md) (the limited
 start, row 7).
@@ -31,6 +32,8 @@ file was corrected) led to an entry.
 | 1 | What the setup does with a limited start | It finishes: the limited start says `status: limited` in its health once Home Assistant's access is set, the setup takes that as started and makes the entry; the repair "Mira's settings cannot be read" names the file, the line and the error (1A). Not: the dialog shows the error and makes no entry (that leaves fault 2) |
 | 2 | The way out of a pairing without an entry | The integration keeps the token as soon as the pairing answers, as a kept token (`mira.rejoin`); a new dialog finds it and needs no code (2A). Not: a pairing in two phases on the service's side (more code on both sides); not: an entry made anyway on a failure (does not help when the dialog is closed) |
 | 3 | Mira's page in the limited start | It says that Mira's settings cannot be read and where to see why, instead of "waiting to be set up" (3A) |
+| 4 | Decision 1, now that a first setup on a limited start ends at the pairing (found in step 3) | Kept: `limited` stays for a pairing or setup that sends no new model; the page helps in every case (4A). Not: the health's change taken back |
+| 5 | The pairing's error on a broken file ("Pairing did not work: Mira cannot write her AI model into …") | Stays as it is: it names the file, the line and the error (5A) |
 
 ## What it does
 
@@ -39,7 +42,8 @@ file was corrected) led to an entry.
 - `/v1/health` of the limited start says `status: limited` once Home Assistant's access is set (from the setup in the
   database: the address and the token); while it is missing, `status: setup` as now. So a limited start that still
   waits for its setup is set up as any service in setup mode (the summary, the model, "Start using Mira"); only the
-  wait after "Start using Mira" ends at once.
+  wait after "Start using Mira" ends at once. A model chosen in the dialog cannot be written into the broken file, so
+  this wait is reached only when no model is sent (found in step 3, decision 4).
 - The health carries no error text: it is answered without a token in the setup mode, and a YAML error can quote a
   line of the file, a secret too. The problem with the file, the line and the error stays in `/v1/status`, which needs
   the token, as now (parsing.md, row 7).
@@ -86,6 +90,25 @@ file was corrected) led to an entry.
   pairing code, the hint where to find it, as now.
 - No error text, for the reason of decision 1: the page is open without a token.
 - **Fails:** nothing new; the page is built from what the limited start has.
+
+## Found in step 3 (2026-11-26)
+
+1. **A first setup on a limited start ends at the pairing.** Since the setup writes the chosen model into `mira.yaml`
+   ([The main model in mira.yaml](main-in-file.md), after 0.40.0), the service refuses the pairing when the file
+   cannot be read: `POST /v1/pair` answers 422, the summary says "Pairing did not work: Mira cannot write her AI model
+   into …/mira.yaml: …" with the file, the line and the error, and nothing is paired or kept. The limited start knows
+   no model (its config is only addresses), so the dialog always asks for one and always sends it. Run on the test HA:
+   a `mira.yaml` with unset variables and one with an unknown field, both refused in 0.2 s. Issue 10's case therefore
+   does not arise any more with the service after 0.40.0; it arises with the service of 0.40.0, where decision 2 helps
+   (run: the wait ended after 60 s with the new sentence, the token was kept, and after the file was corrected Mira was
+   added again without a code in 1.9 s). `limited` (decision 1) is reached only when the pairing or the setup sends no
+   model: when the service knows its model from the setup in its database (an installation from before the model moved
+   into the file, whose file broke before it moved) (decision 4).
+2. **Open: a paired service on a limited start cannot be added again.** A service that was set up, let go (its entry
+   removed) and then started limited: the summary shows the model as missing, offers no model branch (a paired service
+   lists models only to its token) and no "Start using Mira", and says nothing about why. The same with the pairing
+   code entered, and the same for this Home Assistant (rejoin, no code). Run on the test HA with a `mira.yaml` given an
+   unknown field after the removal. The way out today: correct the file, then add Mira again. Not decided yet.
 
 ## Costs
 
