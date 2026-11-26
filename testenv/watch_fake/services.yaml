@@ -156,6 +156,20 @@ washer_start:
       example: "300:150, 1200:2000, 1500:150, 600:500"
       selector:
         text:
+washer_past:
+  fields:
+    steps:
+      default: "300:150, 1200:2000, 1500:150, 600:500"
+      selector:
+        text:
+    hours_ago:
+      default: 3
+      selector:
+        number:
+          min: 0.5
+          max: 216
+          unit_of_measurement: h
+          mode: box
 washer_load:
   fields:
     steps:

@@ -49,7 +49,7 @@ from homeassistant.util import dt as dt_util
 
 from .devices import add_number_named, register_odd_devices, remove_number_named
 from .house import PHONES, ensure_structure
-from .washer import DEFAULT_STEPS, Washer, steps_of
+from .washer import DEFAULT_STEPS, Washer, past_rows, steps_of
 
 DOMAIN = "watch_fake"
 CONFIG_SCHEMA = cv.empty_config_schema(DOMAIN)
@@ -99,6 +99,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     async def washer_load(call: ServiceCall) -> None:
         washer.load(steps_of(call.data["steps"]))
 
+    async def washer_past(call: ServiceCall) -> None:
+        end = dt_util.utcnow() - timedelta(hours=call.data["hours_ago"])
+        await _write_short_term(hass, washer.power.entity_id, past_rows(steps_of(call.data["steps"]), end))
+
     async def past(call: ServiceCall) -> None:
         await _write_past(hass, plug(call, "plug").entity_id, call.data)
 
@@ -143,6 +147,17 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     washer_steps = vol.Schema({vol.Optional("steps", default=DEFAULT_STEPS): STEPS})
     hass.services.async_register(DOMAIN, "washer_start", washer_start, washer_steps)
     hass.services.async_register(DOMAIN, "washer_load", washer_load, washer_steps)
+    hass.services.async_register(
+        DOMAIN,
+        "washer_past",
+        washer_past,
+        vol.Schema(
+            {
+                vol.Optional("steps", default=DEFAULT_STEPS): STEPS,
+                vol.Optional("hours_ago", default=3): vol.All(vol.Coerce(float), vol.Range(min=0.5, max=24 * 9)),
+            }
+        ),
+    )
     hass.services.async_register(
         DOMAIN,
         "past",
@@ -237,6 +252,42 @@ def _cycle_on(cycle: tuple[int, int], at: datetime) -> bool:
     on, off = cycle
     minute = int(at.timestamp() // 60)
     return minute % (on + off) < on
+
+
+async def _write_short_term(hass: HomeAssistant, statistic_id: str, rows: list[dict]) -> None:
+    """Write 5-minute statistics into the recorder's short-term table (the test HA only; Home Assistant has no action
+    for them)."""
+    from homeassistant.components.recorder import get_instance
+    from homeassistant.components.recorder.db_schema import StatisticsMeta, StatisticsShortTerm
+    from homeassistant.helpers.recorder import session_scope
+
+    instance = get_instance(hass)
+
+    def write() -> None:
+        with session_scope(session=instance.get_session()) as session:
+            metadata_id = session.query(StatisticsMeta.id).filter(StatisticsMeta.statistic_id == statistic_id).scalar()
+            if metadata_id is None:
+                raise ValueError(
+                    f"{statistic_id} has no statistics yet: Home Assistant compiles them 5 minutes after it records a state"
+                )
+            now = dt_util.utcnow().timestamp()
+            for row in rows:
+                start = row["start"].timestamp()
+                session.query(StatisticsShortTerm).filter(
+                    StatisticsShortTerm.metadata_id == metadata_id, StatisticsShortTerm.start_ts == start
+                ).delete()
+                session.add(
+                    StatisticsShortTerm(
+                        metadata_id=metadata_id,
+                        start_ts=start,
+                        created_ts=now,
+                        mean=row["mean"],
+                        min=row["min"],
+                        max=row["max"],
+                    )
+                )
+
+    await instance.async_add_executor_job(write)
 
 
 async def _write_past(hass: HomeAssistant, entity_id: str, data: dict) -> None:

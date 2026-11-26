@@ -199,6 +199,11 @@ Feature: FG Fake satellites that behave like the real ones
     Then the programme runs
     And pressed without a loaded programme, or with the plug off, the button fails and nothing runs
 
+  @step12
+  Scenario: FG-42 A past run of the washing machine in the 5-minute statistics
+    When watch_fake.washer_past is called with two steps and 3 hours ago
+    Then its rows are on the full 5 minutes, end 3 hours ago, and carry each step's watts as mean, min and max
+
   # --- A Home Connect and a Miele appliance ---------------------------------------------------------------
 
   @step13

@@ -120,3 +120,22 @@ async def test_FG37_home_assistant_starts_the_loaded_programme(hass, washer, fre
     # The loaded programme ran: pressed again, nothing is loaded.
     with pytest.raises(HomeAssistantError, match="no programme loaded"):
         await act(hass, "button", "press", entity_id=START)
+
+
+async def test_FG42_a_past_runs_5_minute_rows(hass, washer, freezer):
+    from custom_components.watch_fake.washer import past_rows
+
+    end = datetime(2026, 11, 26, 12, 3, tzinfo=dt_util.UTC)
+    rows = past_rows([(600, 2000.0), (300, 300.0)], end)
+    # Ends on the full 5 minutes before end (12:00), starts 15 minutes earlier.
+    assert [r["start"].strftime("%H:%M") for r in rows] == ["11:45", "11:50", "11:55"]
+    assert [(r["mean"], r["min"], r["max"]) for r in rows] == [
+        (2000.0, 2000.0, 2000.0),
+        (2000.0, 2000.0, 2000.0),
+        (300.0, 300.0, 300.0),
+    ]
+    # A step that does not end on 5 minutes: the row in between carries both.
+    rows = past_rows([(450, 2000.0), (150, 300.0)], end)
+    assert [r["start"].strftime("%H:%M") for r in rows] == ["11:50", "11:55"]
+    assert (rows[1]["min"], rows[1]["max"]) == (300.0, 2000.0)
+    assert rows[1]["mean"] == 1150.0

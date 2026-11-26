@@ -141,8 +141,12 @@ starts it, mira-pro switches the plug off at once and on again at the time, and 
   `button.fake_waschmaschine_start` ("Fake Waschmaschine Start") starts the programme the user loaded with
   `watch_fake.washer_load` (`steps`, as `washer_start`). Pressed without a programme loaded, or with the plug off, it
   fails saying so (as Home Connect refuses a start without a programme), and nothing runs.
-- Its past runs are real runs: a test runs `washer_start` first and lets it end (the 5-minute statistics are Home
-  Assistant's own); the fake writes no past. The programme and the held rest live in memory: a restart of the test HA
+- **A past run** for a test that plans with the machine's runs (mira-pro's `strom` reads the power's 5-minute
+  statistics of ten days): `watch_fake.washer_past` (`steps`, as `washer_start`; `hours_ago`, default 3: when the run
+  ended) writes the run's 5-minute statistics (mean, min, max per 5 minutes) into the recorder's short-term
+  statistics, which Home Assistant has no action for (the rows straight into its table, as `past` writes states; for
+  the test HA only). Home Assistant keeps them for its `purge_keep_days` (10 by default). The machine's power must
+  have been recorded once (its statistics' metadata), else the action fails saying so. The programme and the held rest live in memory: a restart of the test HA
   ends them.
 
 ### A Home Connect and a Miele appliance (`testenv/home_connect_fake`, `testenv/miele_fake`)
@@ -318,7 +322,8 @@ turn at the conversation agent.
     reading of them in Go (AD-06, HU-05).
 12. **A washing machine on a plug** (`watch_fake`, 2026-11-26, for mira-pro's skill `strom`): the plug's switch, the
     machine's power, the start at the machine, holding and resuming with the plug, the start button with a loaded
-    programme. Tested in pytest (FG-34 to FG-37).
+    programme. Tested in pytest (FG-34 to FG-37). Its past run (`watch_fake.washer_past`, 2026-11-26): the rows in pytest
+    (FG-42), their writing by mira-pro's end-to-end test of `strom`, which uses them.
 13. **A Home Connect and a Miele appliance** (`testenv/home_connect_fake`, `testenv/miele_fake`, 2026-11-26, for
     mira-pro's skill `strom`): Home Connect's `start_selected_program` with its delays and refusals, Miele's start
     button available only while a programme is picked; each with its power. Tested in pytest (FG-38 to FG-41).

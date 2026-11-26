@@ -5,7 +5,7 @@ programme, the held rest and a loaded programme live in memory, as the dishwashe
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from homeassistant.components.button import ButtonEntity
@@ -28,6 +28,31 @@ DEFAULT_STEPS = "300:150, 1200:2000, 1500:150, 600:500"
 def steps_of(text: str) -> list[tuple[float, float]]:
     """The steps of "300:150, 1200:2000" (validated by the actions' schema)."""
     return [(float(sec), float(w)) for sec, w in (part.split(":") for part in text.split(","))]
+
+
+def past_rows(steps: list[tuple[float, float]], end: datetime) -> list[dict]:
+    """A past run's 5-minute statistics ending at end (on the full 5 minutes): each 5 minutes' mean, min and max of
+    the steps' watts, as Home Assistant compiles them."""
+    end = end.replace(second=0, microsecond=0) - timedelta(minutes=end.minute % 5)
+    total = sum(seconds for seconds, _ in steps)
+    start = end - timedelta(seconds=total)
+    start -= timedelta(minutes=start.minute % 5, seconds=start.second, microseconds=start.microsecond)
+
+    def watts_at(t: datetime) -> float:
+        offset = (t - (end - timedelta(seconds=total))).total_seconds()
+        for seconds, watts in steps:
+            if 0 <= offset < seconds:
+                return watts
+            offset -= seconds
+        return 0.0
+
+    rows = []
+    t = start
+    while t < end:
+        values = [watts_at(t + timedelta(seconds=s)) for s in range(0, 300, 10)]
+        rows.append({"start": t, "mean": sum(values) / len(values), "min": min(values), "max": max(values)})
+        t += timedelta(minutes=5)
+    return rows
 
 
 class Washer:
