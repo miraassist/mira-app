@@ -3,6 +3,12 @@
 The HA app has the version of the Mira service; what changed is in the release notes:
 <https://github.com/miraassist/mira-app/releases>
 
+## 0.41.1
+
+- **Departures** (skill `fahrplan`): buses and trams of every network the timetable service knows, also VBN (Bremen
+  and Oldenburg) and the other HAFAS networks; Mira sees all of the next departures now, not only the first. An
+  unknown network or a stop that is not found is said, with how to write it.
+
 ## 0.41.0
 
 - **Moved to this app with 0.40.0 and stuck in the setup?** The keys of your AI models were not in `mira.yaml` (only
