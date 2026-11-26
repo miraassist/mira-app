@@ -29,7 +29,6 @@ Feature: FP Departures
     Given the setting verbund is VWG
     When the tool is asked
     Then it fails with the sentence that the network is unknown, naming the known ones, without asking dbf
-    And with decision 2A, Repairs says the same from the skill's start
 
   @step1
   Scenario: FP-05 A stop that is not found says how to write it

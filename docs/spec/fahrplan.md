@@ -1,6 +1,7 @@
 # Departures (skill `fahrplan`) – Spec
 
-Status 2026-11-26: proposed, decisions 1 and 3 to 6 to be confirmed by the maintainer, decision 2 open; nothing built. Scenarios:
+Status 2026-11-26: decided (the maintainer: 1 and 3 to 6 as proposed, 2B); steps 1 and 2 built, step 3 run against dbf
+(the run through the test Mira is open while the test HA is busy). Scenarios:
 [fahrplan.feature](fahrplan.feature) (FP-01 to FP-10).
 
 ## Goal
@@ -41,12 +42,12 @@ answer. The code passes data, the model only words it. Not chosen: `web_page` sh
 large JSON for every skill (it cannot know which part of an unknown structure matters, and would cut silently); only
 changing the skill's text (even three departures of `efa` are far above 6000 characters).
 
-## Decisions (proposed 2026-11-26, to be confirmed)
+## Decisions (2026-11-26, the maintainer)
 
-| # | Question | Proposal |
+| # | Question | Decision |
 |---|---|---|
 | 1 | Which networks | The setting `verbund` takes a network as dbf names it, EFA or HAFAS; the tool knows both lists (above) and asks with `efa=` or `hafas=`. Empty: trains only, as now |
-| 2 | An unknown network ("VWG") | Open, two ways: **A** a new building block for every skill, `enum` on a setting (the allowed values): a value outside it is a problem of the skill at its start (Repairs) naming the allowed ones, and the page can offer a choice; skill settings know no such list today (`skills.Setting`: description, required, secret). **B** only the tool: it fails at the call with the known networks, and Mira says it. Either way not: a default network (that is what dbf does, with wrong answers) |
+| 2 | An unknown network ("VWG") | The tool fails at the call with the known networks, and Mira says it (2B). Not: a new building block `enum` for skill settings with a problem at the start (2A, more than this case needs); not: a default network (that is what dbf does, with wrong answers) |
 | 3 | A stop that is not found (empty `efa` list, "name list", "stop invalid", "LOCATION", "Ambiguous station name") | The tool's error says what was asked and what to do: the name as the network writes it (for VBN, say, "Oldenburg(Oldb) Pulverturm", as in the network's app or timetable). Mira says it and offers no departures. No guessing of other spellings |
 | 4 | What the tool returns | At most 20 departures from now on, each: `art` (Bus, Straßenbahn, S-Bahn, RE, ICE …), `linie`, `ziel`, `in_minuten`, `uhrzeit` (HH:MM, the planned time), `verspaetung` (minutes, missing without real time), `ausfall` (only when cancelled), `gleis`; for trains also `ueber` (up to four stops on the way) and `hinweise` (up to two reasons for a delay). Plus `haltestelle` (as asked) and `netz`. No routes |
 | 5 | "… nach Stuttgart?" | The tool takes an optional `richtung`; it keeps departures whose `ziel` or `ueber` contains it (ignoring case). Nothing left → an empty list with a sentence that no departure goes there among the next ones. Code filters, the model words |
@@ -64,8 +65,7 @@ changing the skill's text (even three departures of `efa` are far above 6000 cha
    delay or cancellation first; more on request.
 
 **Fails:**
-- The network is unknown → the tool's error with the known networks (decision 2); with 2A also the skill's problem in
-  Repairs from the start.
+- The network is unknown → the tool's error with the known networks (decision 2), without asking dbf.
 - The stop is not found (point 3 above) → the tool's error with what was asked and how the name must be written
   (decision 3).
 - dbf answers another status or no JSON, or does not answer within 20 s → the tool's error with the status and the
@@ -85,10 +85,15 @@ service of a private person, unofficial: it may change or refuse; then the tool'
 ## Steps
 
 1. **The tool** `abfahrten` in `skills/fahrplan/tools.star`, the `api` section for dbf, the three formats, the
-   networks' lists, the errors (with 2A first `enum` for skill settings and its problem at the start). FP-01 to FP-08 in Go, against a fake
+   networks' lists, the errors. FP-01 to FP-08 in Go, against a fake
    dbf with the answers recorded on 2026-11-26.
 2. **The skill's text and settings**: the instructions to use the tool, the setting `verbund` with examples ("VBN für
    Bremen und Oldenburg", "KVV", "MVV") and `haltestelle` with the name as the network writes it; the guide (de, en).
    FP-09, FP-10.
 3. **Run** against dbf itself with the reported stop (VBN, "Oldenburg(Oldb) Pulverturm"), a train station and an
    unknown network; through Mira's conversation API on the test Mira when the test HA is free.
+   Run 2026-11-26 against dbf: VBN "Oldenburg(Oldb) Pulverturm" gave 20 departures in 2346 characters (the lines 304,
+   311, 314, 315, 321, 322, 324, 380, delays, one cancellation), with `richtung` "ZOB" only those; "Karlsruhe Hbf"
+   trains with stops on the way; "VWG" the error with the known networks; "Oldenburg Pulverturm" with VBN the error
+   saying how to write the stop. Seen: for trains `art` is the train's first word, for the regional trains of Karlsruhe
+   the operator ("AVG" of "AVG S7"); the line says the rest.
