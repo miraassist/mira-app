@@ -289,7 +289,7 @@ Die Stimmerkennung ist **freiwillig**. Ohne sie läuft Mira wie bisher; auf dein
 
 **Einrichten** (für den, der Mira betreibt). Die Stimmerkennung ist ein eigener kleiner Dienst, ein Container (`ghcr.io/miraassist/speaker-id`). Er sitzt vor deiner Spracherkennung (etwa faster-whisper), reicht das Audio unverändert weiter und erkennt nebenbei die Stimme; er braucht keine Grafikkarte.
 
-1. In einem leeren Ordner die [compose.yaml](https://raw.githubusercontent.com/miraassist/mira/main/services/speaker-id/compose.yaml) speichern und daneben eine `.env` mit einem langen, zufälligen Token anlegen (`SPEAKER_TOKEN=…`), dazu bei Bedarf `SPEAKER_UPSTREAM=tcp://<whisper>:10300`, die Adresse deiner bisherigen Spracherkennung. Dann `docker compose up -d`. Beim ersten Start lädt der Dienst sein Modell (etwa 25 MB). Die Stimmabdrücke liegen danach in `~/.local/share/speaker-id` (`SPEAKER_ID_DATA` ändert das).
+1. In einem leeren Ordner die [compose.yaml](https://raw.githubusercontent.com/miraassist/mira-app/main/services/speaker-id/compose.yaml) speichern und daneben eine `.env` mit einem langen, zufälligen Token anlegen (`SPEAKER_TOKEN=…`), dazu bei Bedarf `SPEAKER_UPSTREAM=tcp://<whisper>:10300`, die Adresse deiner bisherigen Spracherkennung. Dann `docker compose up -d`. Beim ersten Start lädt der Dienst sein Modell (etwa 25 MB). Die Stimmabdrücke liegen danach in `~/.local/share/speaker-id` (`SPEAKER_ID_DATA` ändert das).
 2. In Home Assistant: Einstellungen → Geräte & Dienste → **Wyoming Protocol** hinzufügen, Adresse des Dienstes, Port **10310**. Dann unter Einstellungen → Sprachassistenten im Assistenten mit Mira als **Spracherkennung** den neuen Eintrag **speaker-id** wählen. Der Text bleibt derselbe wie vorher.
 3. In Miras `mira.yaml`:
 
@@ -631,6 +631,12 @@ in einem Satz, dass der Kaffee läuft.
 - Was in Home Assistant nur mit Ja geschaltet wird (Schlösser, Alarm, das Label „Mira: nachfragen“), fragt auch hier nach.
 
 Die mitgelieferten Skills `wecker`, `termin` und `todo` sind weitere Beispiele.
+
+**Mehr für ein Ziel:**
+- **Abschluss mit einem Werkzeug des Skills:** `finish: { tool: <skill>__<werkzeug> }` ruft dieses Werkzeug des Skills auf (das seines MCP-Servers oder ein Starlark-Werkzeug), mit den Feldern als Argumente, nach ihren Namen. Das Ja der Person ist die Bestätigung des Werkzeugs; seine Antwort ist die Nachricht des Vorgangs. Der Aufruf sagt in seinem `_meta`, dass er der Abschluss eines Vorgangs ist (`io.mira-assist/thread`), was ein Aufruf des Modells nie tut; so kann ein Server einen Schritt erst nach dem Ja zulassen.
+- **Vorschläge zur Auswahl:** `chosen: <feld>` nennt das Feld, in das ein gewählter Vorschlag kommt; die Vorschläge sind die Zeilen des Felds `proposals`. Einen zu wählen ist das Ja der Person.
+- **Privat nachfragen:** Mit `private: true` wird der Vorschlag nicht im Raum gesagt, sondern geht als private Nachricht an die Person des Vorgangs, in Telegram und der Companion-App mit Knöpfen: Ja und Nein, oder einer je Vorschlag. Ein Tipp antwortet; eine getippte Antwort geht auch. `labels` benennt die Knöpfe je Sprache (`de`, `en`): `yes`, `no`, `choose` (mit `{n}` für die Nummer des Vorschlags), `other` (die Person sagt, was stattdessen), `dismiss`, `ask` (die Frage nach `other`). Ohne privaten Kanal fragt Mira wie gewohnt im Gespräch.
+- **Eine eigene Art für Miras Postfach:** Ein Skill mit `takes: <art>` bekommt, was die Auswertung der Mails und Dokumente als diese Art findet (siehe „Miras Postfach“); sein eigenes `inbox.extract` sagt, woran diese Art zu erkennen ist, und kommt zur Auswertung dazu.
 
 ### Ein Ablauf Schritt für Schritt
 
@@ -1710,6 +1716,9 @@ Der Dialog sagt, was nicht stimmt, und du kannst es gleich dort korrigieren:
 - **„Dieses Token kennt Home Assistant nicht“**: Das Token ist nicht vollständig kopiert oder schon widerrufen. Erstelle ein neues und füge es ein.
 - **„Das ist kein langlebiges Zugriffstoken“**: Das Token muss unter **Langlebige Zugriffstoken** erstellt sein.
 - **„Dieses Token gehört keinem Administrator“**: Erstelle das Token im Profil eines Administrators.
+- **„Mira kann ihre Einstellungen nicht lesen“**: In ihrer `mira.yaml` ist ein Fehler. Welche Zeile, steht in Miras Protokoll (`docker logs mira`, bei der HA-App unter Einstellungen → Apps → Mira → **Protokoll**). Korrigiere die Datei; Mira startet dann von selbst neu. Danach Mira erneut hinzufügen.
+- **„Mira cannot write her AI model into … mira.yaml“**: Die Datei ist schreibgeschützt (bei Docker: den Ordner einbinden, nicht die Datei) oder nicht lesbar. Mach sie beschreibbar oder korrigiere sie, dann noch einmal **Mira jetzt nutzen**.
+- **„Mira ist gekoppelt, startet aber nicht“**: Warum, steht in Miras Protokoll. Behebe das, dann Mira erneut hinzufügen; ein Kopplungscode ist nicht nötig.
 
 Und sonst:
 - **Mira steht nicht unter „Entdeckt“?** Meist fehlt `--network host`, oder Mira steht in einem anderen Netz. Dann gibst du die Adresse von Hand ein (siehe Schritt 3).
@@ -1727,7 +1736,7 @@ Für Fortgeschrittenes (mehrere Modelle, weitere MCP-Server, Skills mit Einstell
 
 Mira besteht aus zwei Teilen: der **Integration** in Home Assistant und dem **Mira-Service** (die HA-App oder dein Container). Jeder Teil hat seine eigene Version und wird für sich aktualisiert; die Integration ändert sich seltener als der Service.
 
-- **Integration und HA-App:** Einstellungen → Updates zeigt, was neu ist. Die HA-App startet sich beim Update selbst neu; nach einem Update der Integration startest du Home Assistant einmal neu. Wird eins der beiden noch nicht angeboten, sorgt Mira dafür, dass Home Assistant gleich nachsieht; die HA-App kommt nach einem Release oft erst ein paar Minuten nach der Integration. Sonst hilft ein Neustart von Home Assistant.
+- **Integration und HA-App:** Einstellungen → Updates zeigt, was neu ist. Die HA-App startet sich beim Update selbst neu; nach einem Update der Integration startest du Home Assistant einmal neu. Wird eins der beiden noch nicht angeboten, sorgt Mira dafür, dass Home Assistant gleich nachsieht; nach einem Release des Mira-Service kommt die HA-App oft erst ein paar Minuten später. Sonst hilft ein Neustart von Home Assistant.
 - **Eigener Container:** im Ordner der `compose.yaml` `docker compose pull && docker compose up -d`. Deine Daten liegen in den Ordnern `config` und `data` und bleiben.
 - **Ist ein Teil zu alt für den anderen**, steht unter Einstellungen → Reparaturen, welcher und auf welche Version er mindestens muss. Sonst dürfen beide verschiedene Versionen haben.
 
@@ -1759,7 +1768,7 @@ Miras Daten kommen mit in die Backups von Home Assistant (Einstellungen → Syst
 - **Jedes Backup** holt sich vorher Miras Daten. Ist Mira dabei nicht erreichbar, entsteht das Backup trotzdem, nur ohne Mira; unter Einstellungen → Reparaturen steht dann **Mira war nicht im letzten Backup** mit dem Grund. Die Meldung verschwindet mit dem nächsten Backup, in dem Mira dabei ist.
 - **Wiederherstellen:** Stellst du Home Assistant aus einem Backup wieder her, erscheint unter Reparaturen **Miras Daten wiederherstellen**, mit dem Datum des Backups. Öffne die Meldung und wähle **Wiederherstellen**: Mira übernimmt die Daten und startet kurz neu. Mit **Mira so lassen** bleibt alles, wie es ist. Das geht auch mit einer frisch eingerichteten Mira, etwa auf einem neuen Rechner.
 - **Ein Backup einer neueren Mira** nimmt Mira nicht an: Aktualisiere Mira zuerst, dann klappt es.
-- **Die Schlüssel** stehen im Backup unverschlüsselt in Miras Daten. Geschützt sind sie durch die Verschlüsselung der Backups von Home Assistant, genau wie die Schlüssel von Home Assistant selbst; lass sie deshalb eingeschaltet (das ist der Standard). Bewahre deshalb den **Backup-Schlüssel** von Home Assistant sicher auf, etwa in einem Passwort-Manager; ohne ihn lässt sich kein Backup öffnen. `MIRA_SECRET_KEY` brauchst du fürs Wiederherstellen nicht.
+- **Die Schlüssel** stehen im Backup ohne eigene Verschlüsselung in Miras Daten. Geschützt sind sie durch die Verschlüsselung der Backups von Home Assistant, genau wie die Schlüssel von Home Assistant selbst; lass sie deshalb eingeschaltet (das ist der Standard). Bewahre deshalb den **Backup-Schlüssel** von Home Assistant sicher auf, etwa in einem Passwort-Manager; ohne ihn lässt sich kein Backup öffnen. `MIRA_SECRET_KEY` brauchst du fürs Wiederherstellen nicht.
 - Ist die `mira.yaml` nur lesbar (im Container so eingebunden), lässt Mira sie beim Wiederherstellen, wie sie ist, und legt die aus dem Backup als `mira.yaml.restored` in ihren Datenordner, zum Vergleichen.
 
 ### Weitere Zugangs-Tokens
@@ -1767,7 +1776,7 @@ Miras Daten kommen mit in die Backups von Home Assistant (Einstellungen → Syst
 Mit einem eigenen Token sieht ein anderes Programm, wie es Mira geht, etwa eines, mit dem eine Firma Mira für dich betreut.
 
 - **Anlegen:** Mira → Einrichtung → **Verbindungen** → **Zugangs-Tokens**: einen Namen eintragen und **Neues Token anlegen**. Mira zeigt das Token ein einziges Mal in einem Fenster; **Kopieren und schließen**. Anlegen und löschen können nur Admins.
-- **Was man damit kann:** nur Miras Zustand lesen (läuft sie, welche Probleme meldet sie, welche Version) und den Namen des Tokens. Alles andere lehnt Mira ab. Soll die Firma etwas einstellen, gib ihr einen eigenen Benutzer in Home Assistant: Dort entscheidest du, was sie darf, und Home Assistant schreibt mit, was sie tut.
+- **Was man damit kann:** Miras Zustand lesen (läuft sie, welche Probleme meldet sie, welche Version) und den Namen des Tokens; und für einen Begleit-Service, den die Firma neben Mira installiert, diesen anmelden: Der Begleit-Service bekommt dann **Miras Zugang zu Home Assistant** (mit den Rechten des Administrators, dessen Token Mira hat), darf Mira ihre Skills neu lesen lassen und Miras KI-Modelle fragen, die du bezahlst. Alles andere lehnt Mira ab. Gib ein Token deshalb nur jemandem, dem du auch einen Administrator-Zugang geben würdest. Soll die Firma etwas einstellen, gib ihr einen eigenen Benutzer in Home Assistant: Dort entscheidest du, was sie darf, und Home Assistant schreibt mit, was sie tut.
 - **Was damit getan wurde:** Öffne das Token. Dort steht jeder Aufruf mit Zeit, Benutzer und was, außer der regelmäßigen Abfrage des Status. Mira hebt das 90 Tage auf.
 - **Zurücknehmen:** **Löschen** beim Token. Ab sofort kommt niemand mehr damit an Mira.
 
@@ -1776,15 +1785,15 @@ Mit einem eigenen Token sieht ein anderes Programm, wie es Mira geht, etwa eines
 - **Zwei Schlüssel:**
   - Home Assistant spricht Mira mit einem **Zugangs-Token** an. Das holt sich die Integration beim Hinzufügen, du siehst es nie. Weitere Programme bekommen ein eigenes (siehe „Weitere Zugangs-Tokens“).
   - Mira spricht Home Assistant mit dem **Token an, das du ihr beim Einrichten gegeben hast**, also mit den Rechten des Administrators, dem es gehört. Die Integration legt selbst nie ein Token an. Du kannst es in dem Profil, in dem du es erstellt hast, unter Sicherheit jederzeit widerrufen; Mira fragt dann unter Reparaturen nach einem neuen. Entfernst du die Integration, bleibt das Token, bis du es dort löschst.
-  - Wer das Token der Integration kennt, kann alles, was Mira kann, auch über ihre Schnittstelle in Home Assistant jede Aktion auslösen. Ein weiteres Zugangs-Token liest nur Miras Zustand. Behandle beide wie ein Passwort.
+  - Wer das Token der Integration kennt, kann alles, was Mira kann, auch über ihre Schnittstelle in Home Assistant jede Aktion auslösen. Ein weiteres Zugangs-Token liest Miras Zustand und kann einen Begleit-Service anmelden, der dann Miras Zugang zu Home Assistant bekommt (siehe „Weitere Zugangs-Tokens“). Behandle beide wie ein Passwort.
 - **Was Mira in HA tut:** nur, was ihre Werkzeuge anbieten: Geräte schalten und eure Aufgaben und Timer als Automationen speichern, so wie der Automationseditor; sie löscht nur ihre eigenen. Benutzer, Integrationen und Einstellungen verwaltet sie nicht. Skills können Blueprints mitbringen; daraus legt Mira Automationen und Skripte in Home Assistant an. Läuft Mira mit einem Token aus ihrer `mira.yaml` (`ha.token`), muss es für Aufgaben und Timer ein Admin-Token sein. Was sie im Gespräch sieht, bestimmst du mit „Für Assist freigeben“. Schlösser, Alarmanlage und alles mit dem Label „Mira: nachfragen“ schaltet sie im Gespräch nur nach deinem Ja. Wer das Token der Integration hat, geht daran vorbei (siehe oben).
 - **Läuft Mira auf demselben Rechner wie Home Assistant** (der Normalfall), bleibt alles auf diesem Rechner.
 - **Läuft Mira auf einem anderen Rechner** in deinem Netz, geht die Verbindung unverschlüsselt durchs Heimnetz: das Zugangs-Token, was du sagst und was Mira antwortet. Im eigenen Heimnetz ist das üblich, wie bei vielen anderen Geräten in Home Assistant. Ein Gästenetz, ein geteiltes Netz oder der Weg übers Internet ohne HTTPS ist dafür nicht geeignet.
-- **Bekommt Mira eine neue Adresse**, folgt die Integration ihr von selbst, aber nur, wenn Mira dort nachweist, dass sie das Zugangs-Token kennt. Ein anderes Gerät, das sich als Mira ausgibt, bekommt es nicht. Halte Mira und die Integration deshalb auf derselben Version.
+- **Bekommt Mira eine neue Adresse**, folgt die Integration ihr von selbst, aber nur, wenn Mira dort nachweist, dass sie das Zugangs-Token kennt. Ein anderes Gerät, das sich als Mira ausgibt, bekommt es nicht. Halte deshalb beide aktuell.
 
 ## Gut zu wissen
 
-- Lässt sich die `mira.yaml` nicht lesen (etwa nach einem Tippfehler), startet Mira trotzdem, aber eingeschränkt: Home Assistant erreicht sie, auf jede Frage antwortet sie, dass sie ihre Einstellungen gerade nicht lesen kann, und unter Einstellungen → System → **Reparaturen** stehen die Datei, die Zeile und der Fehler. Sobald du die korrigierte Datei speicherst, startet Mira neu.
+- Lässt sich die `mira.yaml` nicht lesen (etwa nach einem Tippfehler), startet Mira trotzdem, aber eingeschränkt: Home Assistant erreicht sie, auf jede Frage antwortet sie, dass sie ihre Einstellungen gerade nicht lesen kann, und unter Einstellungen → System → **Reparaturen** stehen die Datei, die Zeile und der Fehler. Sobald du die korrigierte Datei speicherst, startet Mira neu. Fügst du Mira in dieser Zeit in Home Assistant hinzu, endet das sofort mit diesem Satz und dem, was zu tun ist, und Miras Seite sagt dasselbe.
 - Mira erfindet keine Werte: Fehlt ihr etwas, sagt sie es oder fragt nach.
 - Nach einer Websuche führt Mira keine kritischen Aktionen aus, bis du den Befehl noch einmal direkt gibst. Etwas zu merken, eine Nachricht zu schicken oder eine Aufgabe anzulegen macht sie dann erst nach deinem Ja. So kann eine Webseite ihr nichts unterschieben, was sie dauerhaft behält oder weitergibt.
 - Bei Spracherkennungsfehlern hilft es, deutlich und in einem Satz zu sprechen.

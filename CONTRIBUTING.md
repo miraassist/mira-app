@@ -42,8 +42,10 @@ Talk about a larger change in an issue first, so no work is lost. Then:
   fixed id (`AB-07`) and a tag for the step that builds it.
 - **Tests carry the scenario's name**: `TestAB07_…` in Go, `test_AB07_…` in pytest. A built step is entered in
   `docs/scenarios_test.go`; the check fails when a scenario of it has no test.
-- **Run `scripts/check.sh` before you push.** It runs what CI runs: gofmt, go vet, staticcheck, `go test -race`, ruff,
-  pytest for the fake devices, and a syntax check of the page's JavaScript. It needs Go (the version in `go.mod`),
+- **Run `scripts/check.sh` before you push.** It runs what CI runs: gofmt, the check that tests do not
+  depend on the real time, go vet, staticcheck, `go test -race`, ruff, pytest for the fake devices, and a syntax check
+  of the page's JavaScript; with the integration's checkout beside this one (or `MIRA_INTEGRATION` naming it), also
+  that neither side's minimum version is above the other's version. It needs Go (the version in `go.mod`),
   Python with the packages of `requirements_test.txt`, [uv](https://docs.astral.sh/uv/) for ruff, and Node.js. The
   integration is in its own repository, [miraassist/mira](https://github.com/miraassist/mira), with its own checks.
 - **Language.** Code, comments, specs and commit messages in English. Texts users see (pages, setup, repairs) and the

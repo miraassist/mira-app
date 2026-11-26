@@ -13,7 +13,8 @@ says which to update.
 3. Settings → Devices & services → **Add integration** → **Mira**. As the address enter
    `http://localhost:8787`. The setup then asks for the AI model and the assistants Mira answers in.
 
-No config file is needed. For what goes beyond the setup (more models, skills with settings), Mira's `mira.yaml`
+No config file is needed. The AI model from the setup is in `mira.yaml` as `main`; change it on Mira's page under
+**Models** or under Configure → **AI model (LLM)**. For what goes beyond the setup (more models, skills with settings), Mira's `mira.yaml`
 is in this app's config folder (`/addon_configs/…_mira/mira.yaml`). What a skill brings along is kept there too: its
 program in `programs/` (such as korb for the skill `rewe`) and the skill's own folder in `skill-data/<skill>` (a login,
 say); both are in the app's backups. The guide explains everything else:

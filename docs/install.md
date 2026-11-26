@@ -1,6 +1,6 @@
 # Installing Mira in detail
 
-The short way is [Get started](../README.md#get-started) in the README; the guide walks through it with every click
+The short way is [Install the Mira service](../README.md#install-the-mira-service) in the README; the guide walks through it with every click
 ([Deutsch](guide/de.md#einrichtung) · [English](guide/en.md#setup)). This page has the details: running the Mira
 service from source or a container of your own, what it needs, and how the integration pairs with it.
 
@@ -31,9 +31,10 @@ The image `ghcr.io/miraassist/mira` (or one built with the `Dockerfile`: a stati
 | `/etc/mira` | `mira.yaml`, skills of your own, and what skills bring along: their programs (`programs/`) and each skill's own folder (`skill-data/<skill>`, a login, say) |
 | `/var/lib/mira` | Mira's data: the database (`mira.db`, `MIRA_DATA`), the secrets file |
 
-The [compose.yaml in Get started](../README.md#get-started) maps both to folders beside it. Mount the folder
+The [compose.yaml in the README](../README.md#install-the-mira-service) maps both to folders beside it. Mount the folder
 `/etc/mira`, not the single file `mira.yaml`: Mira's page saves `mira.yaml` through a temporary file in the same
-folder, which does not work on a file mounted on its own. Skills of your own go into a folder inside it (say
+folder, which does not work on a file mounted on its own; the setup writes the AI model into it too, so a read-only
+`mira.yaml` makes **Start using Mira** fail with the file and the cause. Skills of your own go into a folder inside it (say
 `config/skills`), listed first in `skills.dirs` as `/etc/mira/skills`, before the built-in `skills`. Programs a skill
 brings are downloaded into `programs/` and run from there, so the folder must not be on a filesystem mounted
 `noexec`.
@@ -85,7 +86,9 @@ Pairing (docs/spec/setup.md): the form chooses and tries the model first (the Mi
 **Start using Mira**. There an administrator pastes a long-lived token of theirs (the integration checks that it is
 long-lived and an admin's; it creates none itself). Then the integration switches on HA's MCP server if it is missing
 and pairs and sets up the Mira service in one call (`POST /v1/pair` with HA's address, the token and the model),
-which keeps everything in its database, hands out its access token and starts anew. A Mira service that was never
+which writes the model into `mira.yaml` (its key into the secrets file), keeps Home Assistant's access in its
+database, hands out its access token and starts anew. While `mira.yaml` cannot be read, the form ends at once with
+what to do instead of pairing. A Mira service that was never
 paired needs no code. The integration makes Mira the conversation agent of the assistants ticked in the form. If the
 token is revoked later, the repair "Mira has no access any more" asks for a new one.
 

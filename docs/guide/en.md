@@ -16,7 +16,7 @@ Home Assistant is her toolbox: lights, sensors, voice satellites. That Mira can 
 
 ▶ [Explainer video: Mira asks (0:50)](https://mira-assist.com/videos/erklaer/rueckfragen-en.mp4)
 
-> 🎬 **Recording to follow:** setting up a task – Mira asks back, proposes, and sets it up after your yes.
+▶ [Setting up a task: Mira asks back, proposes, and sets it up after your yes (in German)](https://mira-assist.com/videos/mira-chat-de.mp4#t=266,312)
 
 This is how it sounds, for example when setting up a task:
 
@@ -200,7 +200,7 @@ These watches are tasks like all others too: "Stop watching the windows for now"
 
 Mira speaks up when something happens: a leak sensor goes off, the washing machine is done, the bins are collected tomorrow, a task finds something unusual. How she tells you depends on the room and the importance.
 
-> 🎬 **Recording to follow:** leaving a message for the house, and asking for messages later.
+▶ [Leaving a message for the house, and asking for messages later (in German)](https://mira-assist.com/videos/mira-chat-de.mp4#t=195,227)
 
 Per satellite you set:
 
@@ -285,7 +285,7 @@ Speaker recognition is **optional**. Without it Mira works as before; **Enroll t
 
 **Setting it up** (for whoever runs Mira). Speaker recognition is a small service of its own, a container (`ghcr.io/miraassist/speaker-id`). It sits in front of your speech recognition (faster-whisper, say), passes the audio on unchanged and recognizes the voice beside it; it needs no graphics card.
 
-1. In an empty folder save the [compose.yaml](https://raw.githubusercontent.com/miraassist/mira/main/services/speaker-id/compose.yaml) and next to it create a `.env` with a long random token (`SPEAKER_TOKEN=…`), and if needed `SPEAKER_UPSTREAM=tcp://<whisper>:10300`, the address of your speech recognition so far. Then `docker compose up -d`. On its first start the service downloads its model (about 25 MB). The voice prints are then kept in `~/.local/share/speaker-id` (`SPEAKER_ID_DATA` changes that).
+1. In an empty folder save the [compose.yaml](https://raw.githubusercontent.com/miraassist/mira-app/main/services/speaker-id/compose.yaml) and next to it create a `.env` with a long random token (`SPEAKER_TOKEN=…`), and if needed `SPEAKER_UPSTREAM=tcp://<whisper>:10300`, the address of your speech recognition so far. Then `docker compose up -d`. On its first start the service downloads its model (about 25 MB). The voice prints are then kept in `~/.local/share/speaker-id` (`SPEAKER_ID_DATA` changes that).
 2. In Home Assistant: Settings → Devices & services → add **Wyoming Protocol**, the service's address, port **10310**. Then under Settings → Voice assistants, in the assistant with Mira, choose the new entry **speaker-id** as **Speech-to-text**. The text stays the same as before.
 3. In Mira's `mira.yaml`:
 
@@ -311,7 +311,7 @@ Mira knows your waste collector's calendar. It is a calendar in Home Assistant (
 - On the evening before, Mira reminds you on her own: "The recycling is collected tomorrow."
 - If the collection is today, she says so in case the bin still has to go out.
 
-> 🎬 **Recording to follow:** "When is the residual waste collected?" and "What gets collected next week?"
+▶ [The waste collection: "When is the residual waste collected?" and "What gets collected next week?" (in German)](https://mira-assist.com/videos/mira-chat-de.mp4#t=592,623)
 
 ### Briefing
 
@@ -627,6 +627,12 @@ in one sentence that the coffee is on its way.
 - What Home Assistant switches only with a yes (locks, alarm, the label "Mira: confirm first") asks here too.
 
 The bundled skills `wecker`, `termin` and `todo` are further examples.
+
+**More for a target:**
+- **Finish with a tool of the skill:** `finish: { tool: <skill>__<tool> }` calls that tool of the skill (its MCP server's or a Starlark tool) with the fields as its arguments, by their names. The person's yes is the tool's confirmation; its answer is the thread's message. The call says in its `_meta` that it is a thread's finish (`io.mira-assist/thread`), which a model's call never does, so a server can let a step happen only after the yes.
+- **Proposals to choose from:** `chosen: <field>` names the field a chosen proposal goes into; the proposals are the lines of the field `proposals`. Choosing one is the person's yes.
+- **Asking privately:** with `private: true` the proposal is not said in the room but goes to the thread's person as a private message, in Telegram and the companion app with buttons: yes and no, or one per proposal. A tap answers; a typed answer works too. `labels` names the buttons per language (`de`, `en`): `yes`, `no`, `choose` (with `{n}` for the proposal's number), `other` (the person says what instead), `dismiss`, `ask` (the question after `other`). Without a private channel Mira asks in the turn as usual.
+- **A kind of its own for Mira's inbox:** a skill with `takes: <kind>` gets what the reading of mails and documents finds as that kind (see "Mira's inbox"); its own `inbox.extract` says how to tell that kind and is added to the reading.
 
 ### A run step by step
 
@@ -1686,6 +1692,9 @@ The dialog says what is wrong, and you can correct it right there:
 - **"Home Assistant does not know this token"**: the token was not copied completely, or it is revoked already. Create a new one and paste it.
 - **"This is not a long-lived access token"**: the token must be created under **Long-lived access tokens**.
 - **"This token does not belong to an administrator"**: create the token in an administrator's profile.
+- **"Mira cannot read her settings"**: her `mira.yaml` has an error. Mira's log says which line (`docker logs mira`, for the HA app under Settings → Apps → Mira → **Log**). Correct the file; Mira starts anew by herself. Then add Mira again.
+- **"Mira cannot write her AI model into … mira.yaml"**: the file is read-only (for Docker: mount the folder, not the file) or cannot be read. Make it writable or correct it, then **Start using Mira** again.
+- **"Mira is paired but does not start"**: Mira's log says why. Correct it, then add Mira again; no pairing code is needed.
 
 Otherwise:
 - **Mira not under "Discovered"?** Usually `--network host` is missing, or Mira is in another network. Then enter the address by hand (see step 3).
@@ -1703,7 +1712,7 @@ For advanced setups (several models, more MCP servers, skills with settings) the
 
 Mira has two parts: the **integration** in Home Assistant and the **Mira service** (the HA app or your container). Each has its own version and is updated on its own; the integration changes less often than the service.
 
-- **Integration and HA app:** Settings → Updates shows what is new. The HA app restarts itself when updated; after an update of the integration, restart Home Assistant once. If one of the two is not offered yet, Mira makes Home Assistant look again at once; after a release the HA app often comes a few minutes after the integration. Otherwise a restart of Home Assistant helps.
+- **Integration and HA app:** Settings → Updates shows what is new. The HA app restarts itself when updated; after an update of the integration, restart Home Assistant once. If one of the two is not offered yet, Mira makes Home Assistant look again at once; after a release of the Mira service, the HA app often comes a few minutes later. Otherwise a restart of Home Assistant helps.
 - **Your own container:** in the folder of `compose.yaml`, `docker compose pull && docker compose up -d`. Your data is in the folders `config` and `data` and stays.
 - **If one part is too old for the other**, Settings → Repairs says which one and the version it needs at least. Otherwise both may have different versions.
 
@@ -1743,7 +1752,7 @@ Mira's data goes into Home Assistant's backups (Settings → System → Backups)
 With a token of its own, another program sees how Mira is doing, one a company uses to look after Mira for you, say.
 
 - **Create:** Mira → Setup → **Connections** → **Access tokens**: enter a name and **Create a new token**. Mira shows the token only once, in a window; **Copy and close**. Only admins can create and delete one.
-- **What it can do:** only read Mira's state (is she running, which problems does she report, which version) and the token's name. Mira refuses everything else. If the company is to change settings, give it a user of its own in Home Assistant: there you decide what it may do, and Home Assistant records what it does.
+- **What it can do:** read Mira's state (is she running, which problems does she report, which version) and the token's name; and, for a companion service the company installs beside Mira, register it: the companion then gets **Mira's access to Home Assistant** (with the rights of the administrator whose token Mira has), may make Mira read her skills again and may ask Mira's AI models, which you pay for. Mira refuses everything else. So give a token only to someone you would also give an administrator's access. If the company is to change settings, give it a user of its own in Home Assistant: there you decide what it may do, and Home Assistant records what it does.
 - **What was done with it:** open the token. Every call is listed there with its time, user and what, except the regular status query. Mira keeps this for 90 days.
 - **Take it back:** **Delete** at the token. From then on nobody reaches Mira with it.
 
@@ -1752,15 +1761,15 @@ With a token of its own, another program sees how Mira is doing, one a company u
 - **Two keys:**
   - Home Assistant reaches Mira with an **access token**. The integration fetches it when adding Mira; you never see it. Other programs get one of their own (see "More access tokens").
   - Mira reaches Home Assistant with **the token you gave her when setting up**, so with the rights of the administrator it belongs to. The integration never makes a token itself. You can revoke it at any time under Security in the profile you created it in; Mira then asks for a new one under Repairs. If you remove the integration, the token stays until you delete it there.
-  - Whoever knows the integration's token can do all that Mira can, including calling any action in Home Assistant through her interface. A further access token only reads Mira's state. Treat both like a password.
+  - Whoever knows the integration's token can do all that Mira can, including calling any action in Home Assistant through her interface. A further access token reads Mira's state and can register a companion service, which then gets Mira's access to Home Assistant (see "More access tokens"). Treat both like a password.
 - **What Mira does in HA:** only what her tools offer: switch devices and save your tasks and timers as automations, the way the automation editor does; she deletes only her own. She manages no users, integrations or settings. Skills may bring blueprints; from them Mira makes automations and scripts in Home Assistant. If Mira runs with a token from her `mira.yaml` (`ha.token`), it must be an admin's for tasks and timers. What she sees in a conversation, you decide with "Expose to Assist". Locks, the alarm panel and everything labelled "Mira: confirm first" she switches in a conversation only after your yes. Whoever has the integration's token goes past this (see above).
 - **If Mira runs on the same machine as Home Assistant** (the usual case), everything stays on that machine.
 - **If Mira runs on another machine** in your network, the connection goes through your home network unencrypted: the access token, what you say and what Mira answers. That is common in your own home network, as with many other devices in Home Assistant. A guest network, a shared network or the way over the internet without HTTPS is not the place for it.
-- **If Mira gets a new address**, the integration follows her by itself, but only once Mira shows there that she knows the access token. Another device posing as Mira does not get it. So keep Mira and the integration at the same version.
+- **If Mira gets a new address**, the integration follows her by itself, but only once Mira shows there that she knows the access token. Another device posing as Mira does not get it. So keep both up to date.
 
 ## Good to know
 
-- If `mira.yaml` cannot be read (after a typo, say), Mira starts anyway, but limited: Home Assistant reaches her, she answers every question that she cannot read her settings right now, and Settings → System → **Repairs** shows the file, the line and the error. Once you save the corrected file, Mira starts anew.
+- If `mira.yaml` cannot be read (after a typo, say), Mira starts anyway, but limited: Home Assistant reaches her, she answers every question that she cannot read her settings right now, and Settings → System → **Repairs** shows the file, the line and the error. Once you save the corrected file, Mira starts anew. Adding Mira in Home Assistant during this time ends at once with that sentence and what to do, and Mira's page says the same.
 - Mira does not make up values: if something is missing, she says so or asks.
 - After a web search Mira performs no critical actions until you give the command again directly. Remembering something, sending a message or creating a task then only happens after your yes. So a web page cannot slip her anything she keeps or passes on.
 - If speech recognition gets you wrong, speak clearly and in one sentence.

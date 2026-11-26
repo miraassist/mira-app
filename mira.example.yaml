@@ -1,5 +1,5 @@
 # Mira — example configuration. The file is optional: without it the Home
-# Assistant integration sets Mira up (pairing code, Home Assistant access,
+# Assistant integration sets Mira up (pairing, Home Assistant access,
 # language model; docs/guide/en.md, "Setup"). Use it for what goes beyond:
 # more models and routing, more MCP servers, skills with settings.
 # When you pair, the integration sets these; who wins:
@@ -10,7 +10,8 @@
 #   model here (endpoint, model, token as ${MIRA_MODEL_MAIN_TOKEN}, privacy and
 #   what follows from it); main's other settings here stay. Mira's page edits it.
 # Copy to mira.yaml and adjust.
-# Secrets are never written here: ${NAME} is read from the environment.
+# Secrets are never written here: ${NAME} is read from the environment or from
+# Mira's secrets file in the data folder (which the page and the setup write).
 # Check a config and all dependencies with:  mira -config mira.yaml check
 
 server:
@@ -140,12 +141,6 @@ web_search:
 #   token: ${SPEAKER_ID_TOKEN}  # the service's SPEAKER_TOKEN
 #   threshold: 0.7          # the score a voice needs; a person's
 #                           # voice_threshold (under persons) wins
-
-# A side channel of the speech-to-text reports what is said while a
-# satellite still listens; Mira then starts the model early and uses its
-# answer when the turn asks the same (docs/spec/speculative-turns.md).
-# speculation:
-#   events_url: http://192.168.x.y:10312/api/events
 
 # Telegram runs through Home Assistant's own Telegram integration
 # (telegram_bot); Mira has no bot of her own (docs/spec/channels.md).

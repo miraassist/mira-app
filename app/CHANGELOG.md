@@ -1,7 +1,22 @@
 # Changelog
 
-The app has the version of Mira's release; what changed is in the release notes:
+The HA app has the version of the Mira service; what changed is in the release notes:
 <https://github.com/miraassist/mira-app/releases>
+
+## 0.41.0
+
+- **Moved to this app with 0.40.0 and stuck in the setup?** The keys of your AI models were not in `mira.yaml` (only
+  references to them); write them into it or enter them again on Mira's page under Models. Then turn on the option
+  **Reset data at next start**, restart the app, remove the old Mira entry and add Mira again.
+- **The AI model is in `mira.yaml`** as `main`; change it on Mira's page under Models or under Configure → AI model
+  (LLM). An installation's model moves there at the first start.
+- **The setup and a `mira.yaml` that cannot be read:** the setup says so at once and what to do (with integration
+  0.41.0); Mira's page says the same.
+- **The option is called "Reset data at next start"**; it no longer says the AI model is deleted.
+- **Each side has its own version:** the Mira service and the integration name the oldest version of the other they
+  work with; a repair only below it.
+- **For skill authors:** a thread can ask its person privately with buttons (Telegram, companion app), offer proposals
+  to choose from, finish with a tool of its skill; a skill can bring its own kind for Mira's inbox.
 
 ## 0.40.0
 
@@ -11,7 +26,8 @@ The app has the version of Mira's release; what changed is in the release notes:
   this is a new app: add `https://github.com/miraassist/mira-app` under Settings → Apps → App store → Repositories,
   install Mira from there, copy `mira.yaml` from the old app's config folder into the new one, then remove the old app
   and the old repository. Mira's memory, messages and other data stay with the old app; the new one starts without
-  them. The integration needs nothing: update it as always.
+  them. Corrected in 0.41.0: the keys of the AI models are not in `mira.yaml` and must be brought along, and the
+  integration needs a new entry (remove the old one, add Mira again).
 - **Share prices** (skill `boerse`): "Wie steht die SAP-Aktie?", "Wo steht der DAX?"
 - **A `mira.yaml` that cannot be read** starts Mira limited, with a repair naming the file, the line and the error.
 - **For skill authors:** Starlark tools that only compute, tools that read Mira's own tools (`mira.tool`), a web API

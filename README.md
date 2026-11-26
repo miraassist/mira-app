@@ -41,13 +41,20 @@ service, one of:
 
 ### Moving the app
 
-Until version 0.30, the app came from `https://github.com/miraassist/mira`. Home Assistant's Marketplace takes no
-repository with an app any more, so the app is here now, and to Home Assistant it is another app. To move: copy
-`mira.yaml` from the old app's config folder (`/addon_configs/…_mira/`), add
-`https://github.com/miraassist/mira-app` under Settings → Apps → App store → Repositories (or with the button
-above), install Mira from there,
-put `mira.yaml` into its config folder, start it, then remove the old app and the old repository. The integration
-stays where it was. Mira's memory, messages and other data stay with the old app; the new one starts without them.
+Until version 0.30, the HA app came from `https://github.com/miraassist/mira`. Home Assistant's Marketplace takes no
+repository with an app any more, so the HA app is here now, and to Home Assistant it is another app, a new Mira. To
+move:
+
+1. Copy `mira.yaml` from the old app's config folder (`/addon_configs/…_mira/`). The keys of your AI models are not
+   in it, only references such as `${MIRA_MODEL_MAIN_TOKEN}`; the keys stayed in the old app's data. Write them into
+   the copy directly, or enter them again on Mira's page under **Models** once she runs.
+2. Add `https://github.com/miraassist/mira-app` under Settings → Apps → App store → Repositories (or with the button
+   above), install Mira from there, put `mira.yaml` into its config folder, start it.
+3. Remove the old Mira entry under Settings → Devices & services and add Mira again (address
+   `http://localhost:8787`).
+4. Remove the old app and the old repository.
+
+Mira's memory, messages and other data stay with the old app; the new one starts without them.
 
 More: [Installing Mira in detail](docs/install.md) · the guide's setup: [Deutsch](docs/guide/de.md#einrichtung) ·
 [English](docs/guide/en.md#setup).
